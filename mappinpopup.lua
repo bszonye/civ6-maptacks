@@ -13,6 +13,7 @@ local COLOR_YELLOW				:number = 0xFF2DFFF8;
 local COLOR_WHITE				:number = 0xFFFFFFFF;
  
 local g_editMapPin :table = nil;
+local g_editMapPinID :number = nil;
 local g_iconOptionEntries = {};
 local g_visibilityTargetEntries = {};
 
@@ -187,6 +188,7 @@ function RequestMapPin(hexX :number, hexY :number)
 	local pMapPin = pPlayerCfg:GetMapPin(hexX, hexY);
 	if(pMapPin ~= nil) then
 		g_editMapPin = pMapPin;
+		g_editMapPinID = g_editMapPin:GetID()
 
 		g_desiredIconName = g_editMapPin:GetIconName();
 		if GameConfiguration.IsAnyMultiplayer() then
@@ -305,6 +307,12 @@ end
 -- Event Handlers
 ---------------------------------------------------------------- 
 function OnMapPinPlayerInfoChanged( playerID :number )
+	if g_editMapPinID ~= nil then
+		-- make sure pin object matches ID after a change
+		local activePlayerID = Game.GetLocalPlayer();
+		local pPlayerCfg = PlayerConfigurations[activePlayerID];
+		g_editMapPin = pPlayerCfg:GetMapPinID(g_editMapPinID);
+	end
 	PlayerTarget_OnPlayerInfoChanged( playerID, Controls.VisibilityPull, nil, g_visibilityTargetEntries, g_playerTarget, true);
 end
 
