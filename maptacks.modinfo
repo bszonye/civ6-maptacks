@@ -10,9 +10,11 @@
   <InGameActions>
     <ImportFiles id="MAPTACKS_FILES">
       <File>mappinpopup.lua</File>
+      <File>mappinpopup.xml</File>
     </ImportFiles>
   </InGameActions>
   <Files>
     <File>mappinpopup.lua</File>
+    <File>mappinpopup.xml</File>
   </Files>
 </Mod>
