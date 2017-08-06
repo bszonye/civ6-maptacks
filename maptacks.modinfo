@@ -9,12 +9,16 @@
   </Properties>
   <InGameActions>
     <ImportFiles id="MAPTACKS_FILES">
+      <File>mappinlistpanel.lua</File>
+      <File>mappinlistpanel.xml</File>
       <File>mappinmanager.lua</File>
       <File>mappinpopup.lua</File>
       <File>mappinpopup.xml</File>
     </ImportFiles>
   </InGameActions>
   <Files>
+    <File>mappinlistpanel.lua</File>
+    <File>mappinlistpanel.xml</File>
     <File>mappinmanager.lua</File>
     <File>mappinpopup.lua</File>
     <File>mappinpopup.xml</File>
