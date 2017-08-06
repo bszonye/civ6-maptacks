@@ -312,14 +312,12 @@ end
 
 -- ===========================================================================
 function OnDelete()
-	local pMapPin = GetMapPinID(g_editMapPinID);
-	if(pMapPin ~= nil) then
+	if(g_editMapPinID ~= nil) then
 		local activePlayerID = Game.GetLocalPlayer();
 		local pPlayerCfg = PlayerConfigurations[activePlayerID];
-		local deletePinID = pMapPin:GetID();
-		pPlayerCfg:DeleteMapPin(deletePinID);
+		pPlayerCfg:DeleteMapPin(g_editMapPinID);
 		Network.BroadcastPlayerInfo();
-        UI.PlaySound("Map_Pin_Remove");
+		UI.PlaySound("Map_Pin_Remove");
 	end
 	UIManager:DequeuePopup( ContextPtr );
 end
