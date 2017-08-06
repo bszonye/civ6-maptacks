@@ -234,8 +234,13 @@ function MapPinFlag.SetColor( self : MapPinFlag )
 	local brighterIconColor :number = DarkenLightenColor(secondaryColor,20,255);
 	local darkerIconColor	:number = DarkenLightenColor(secondaryColor,-30,255);
         
+	local pMapPin = self:GetMapPin();
+	if pMapPin~=nil and pMapPin:GetIconName():find("ICON_DISTRICT") then
+		self.m_Instance.UnitIcon:SetColor( 0xffffffff );
+	else
+		self.m_Instance.UnitIcon:SetColor( brighterIconColor );
+	end
 	self.m_Instance.FlagBase:SetColor( primaryColor );
-	self.m_Instance.UnitIcon:SetColor( brighterIconColor );
 	--self.m_Instance.UnitIconShadow:SetColor( darkerIconColor );
 	self.m_Instance.FlagBaseOutline:SetColor( primaryColor );
 	self.m_Instance.FlagBaseDarken:SetColor( darkerFlagColor );
