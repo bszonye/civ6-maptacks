@@ -255,8 +255,7 @@ end
 -- ===========================================================================
 function ShowHideSendToChatButton()
 	local pMapPin = GetMapPinID(g_editMapPinID);
-	local privatePin = pMapPin ~= nil and pMapPin:IsPrivate();
-	local showSendButton = GameConfiguration.IsNetworkMultiplayer() and not privatePin;
+	local showSendButton = pMapPin ~= nil and not pMapPin:IsPrivate() and GameConfiguration.IsNetworkMultiplayer();
 
 	Controls.SendToChatButton:SetHide(not showSendButton);
 
