@@ -119,8 +119,8 @@ function GetMapPinListEntry(iPlayerID :number, mapPinID :number)
 		Controls.MapPinEntryStack:CalculateSize();
 		Controls.MapPinEntryStack:ReprocessAnchoring();
 
-		--Controls.MapPinLogPanel:CalculateInternalSize();
-		--Controls.MapPinLogPanel:ReprocessAnchoring();
+		Controls.MapPinLogPanel:CalculateInternalSize();
+		Controls.MapPinLogPanel:ReprocessAnchoring();
 	end
 	return mapPinEntry;
 end
