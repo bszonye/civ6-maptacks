@@ -26,6 +26,7 @@ local g_cachedChatPanelTarget = nil; -- Cached player target for ingame chat pan
 -- When we aren't quite so crunched on time, it would be good to add the map pins table to the database
 local g_iconPulldownOptions = 
 {	
+-- standard icons
 	{ name = "ICON_MAP_PIN_STRENGTH" },
 	{ name = "ICON_MAP_PIN_RANGED"   },
 	{ name = "ICON_MAP_PIN_BOMBARD"  },
@@ -39,8 +40,22 @@ local g_iconPulldownOptions =
 	{ name = "ICON_MAP_PIN_TRIANGLE" },
 	{ name = "ICON_MAP_PIN_SUN"      },
 	{ name = "ICON_MAP_PIN_SQUARE"   },
-	{ name = "ICON_MAP_PIN_DIAMOND"  }
-	
+	{ name = "ICON_MAP_PIN_DIAMOND"  },
+-- districts
+	{ name = "ICON_DISTRICT_CITY_CENTER"           },
+	{ name = "ICON_DISTRICT_HOLY_SITE"             },
+	{ name = "ICON_DISTRICT_CAMPUS"                },
+	{ name = "ICON_DISTRICT_ENCAMPMENT"            },
+	{ name = "ICON_DISTRICT_HARBOR"                },
+	{ name = "ICON_DISTRICT_AERODROME"             },
+	{ name = "ICON_DISTRICT_COMMERCIAL_HUB"        },
+	{ name = "ICON_DISTRICT_ENTERTAINMENT_COMPLEX" },
+	{ name = "ICON_DISTRICT_THEATER"               },
+	{ name = "ICON_DISTRICT_INDUSTRIAL_ZONE"       },
+	{ name = "ICON_DISTRICT_NEIGHBORHOOD"          },
+	{ name = "ICON_DISTRICT_AQUEDUCT"              },
+	{ name = "ICON_DISTRICT_SPACEPORT"             },
+	{ name = "ICON_DISTRICT_WONDER"                },
 };
 
 local sendToChatTTStr = Locale.Lookup( "LOC_MAP_PIN_SEND_TO_CHAT_TT" );
