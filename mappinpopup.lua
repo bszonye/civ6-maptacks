@@ -12,7 +12,6 @@ include( "PlayerTargetLogic" );
 local COLOR_YELLOW				:number = 0xFF2DFFF8;
 local COLOR_WHITE				:number = 0xFFFFFFFF;
  
-local g_editMapPin :table = nil;
 local g_editMapPinID :number = nil;
 local g_iconOptionEntries = {};
 local g_visibilityTargetEntries = {};
@@ -197,24 +196,31 @@ function UpdateIconOptionColor(iconEntryIndex :number)
 end
 
 -- ===========================================================================
+function GetMapPinID(id :number)
+	if id == nil then return nil; end
+	local activePlayerID = Game.GetLocalPlayer();
+	local pPlayerCfg = PlayerConfigurations[activePlayerID];
+	return pPlayerCfg:GetMapPinID(id);
+end
+
+-- ===========================================================================
 function RequestMapPin(hexX :number, hexY :number)
 	local activePlayerID = Game.GetLocalPlayer();
 	local pPlayerCfg = PlayerConfigurations[activePlayerID];
 	local pMapPin = pPlayerCfg:GetMapPin(hexX, hexY);
 	if(pMapPin ~= nil) then
-		g_editMapPin = pMapPin;
-		g_editMapPinID = g_editMapPin:GetID()
+		g_editMapPinID = pMapPin:GetID()
 
-		g_desiredIconName = g_editMapPin:GetIconName();
+		g_desiredIconName = pMapPin:GetIconName();
 		if GameConfiguration.IsAnyMultiplayer() then
-			MapPinVisibilityToPlayerTarget(g_editMapPin:GetVisibility(), g_playerTarget);
+			MapPinVisibilityToPlayerTarget(pMapPin:GetVisibility(), g_playerTarget);
 			UpdatePlayerTargetPulldown(Controls.VisibilityPull, g_playerTarget);
 			Controls.VisibilityContainer:SetHide(false);
 		else
 			Controls.VisibilityContainer:SetHide(true);
 		end
 
-		Controls.PinName:SetText(g_editMapPin:GetName());
+		Controls.PinName:SetText(pMapPin:GetName());
 		Controls.PinName:TakeFocus();
 
 		UpdateIconOptionColors();
@@ -248,14 +254,15 @@ end
 
 -- ===========================================================================
 function ShowHideSendToChatButton()
-	local privatePin = g_editMapPin ~= nil and g_editMapPin:IsPrivate();
+	local pMapPin = GetMapPinID(g_editMapPinID);
+	local privatePin = pMapPin ~= nil and pMapPin:IsPrivate();
 	local showSendButton = GameConfiguration.IsNetworkMultiplayer() and not privatePin;
 
 	Controls.SendToChatButton:SetHide(not showSendButton);
 
 	-- Send To Chat disables itself if the current chat panel target is not visible to the map pin.
 	if(showSendButton) then
-		local chatVisible = MapPinIsVisibleToChatTarget(g_editMapPin:GetVisibility(), g_cachedChatPanelTarget);
+		local chatVisible = MapPinIsVisibleToChatTarget(pMapPin:GetVisibility(), g_cachedChatPanelTarget);
 		Controls.SendToChatButton:SetDisabled(not chatVisible);
 		if(chatVisible) then
 			Controls.SendToChatButton:SetToolTipString(sendToChatTTStr);
@@ -278,12 +285,13 @@ end
 -- ===========================================================================
 function OnOk()
 	if( not ContextPtr:IsHidden() ) then
-		if(g_editMapPin ~= nil) then
-			g_editMapPin:SetName(Controls.PinName:GetText());
-			g_editMapPin:SetIconName(g_desiredIconName);
+		local pMapPin = GetMapPinID(g_editMapPinID);
+		if(pMapPin ~= nil) then
+			pMapPin:SetName(Controls.PinName:GetText());
+			pMapPin:SetIconName(g_desiredIconName);
 
 			local newMapPinVisibility = PlayerTargetToMapPinVisibility(g_playerTarget);
-			g_editMapPin:SetVisibility(newMapPinVisibility);
+			pMapPin:SetVisibility(newMapPinVisibility);
 
 			Network.BroadcastPlayerInfo();
 			UI.PlaySound("Map_Pin_Add");
@@ -296,18 +304,20 @@ end
 
 -- ===========================================================================
 function OnSendToChatButton()
-	if(g_editMapPin ~= nil) then
-		g_editMapPin:SetName(Controls.PinName:GetText());
-		LuaEvents.MapPinPopup_SendPinToChat(g_editMapPin:GetPlayerID(), g_editMapPin:GetID());
+	local pMapPin = GetMapPinID(g_editMapPinID);
+	if(pMapPin ~= nil) then
+		pMapPin:SetName(Controls.PinName:GetText());
+		LuaEvents.MapPinPopup_SendPinToChat(pMapPin:GetPlayerID(), pMapPin:GetID());
 	end
 end
 
 -- ===========================================================================
 function OnDelete()
-	if(g_editMapPin ~= nil) then
+	local pMapPin = GetMapPinID(g_editMapPinID);
+	if(pMapPin ~= nil) then
 		local activePlayerID = Game.GetLocalPlayer();
 		local pPlayerCfg = PlayerConfigurations[activePlayerID];
-		local deletePinID = g_editMapPin:GetID();
+		local deletePinID = pMapPin:GetID();
 		pPlayerCfg:DeleteMapPin(deletePinID);
 		Network.BroadcastPlayerInfo();
         UI.PlaySound("Map_Pin_Remove");
@@ -322,12 +332,6 @@ end
 -- Event Handlers
 ---------------------------------------------------------------- 
 function OnMapPinPlayerInfoChanged( playerID :number )
-	if g_editMapPinID ~= nil then
-		-- make sure pin object matches ID after a change
-		local activePlayerID = Game.GetLocalPlayer();
-		local pPlayerCfg = PlayerConfigurations[activePlayerID];
-		g_editMapPin = pPlayerCfg:GetMapPinID(g_editMapPinID);
-	end
 	PlayerTarget_OnPlayerInfoChanged( playerID, Controls.VisibilityPull, nil, g_visibilityTargetEntries, g_playerTarget, true);
 end
 
