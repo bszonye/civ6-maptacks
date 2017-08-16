@@ -4,6 +4,7 @@
 -- Popup used for creating and editting map pins.
 ----------------------------------------------------------------  
 include( "PlayerTargetLogic" );
+include( "ToolTipHelper" );
 
 
 ----------------------------------------------------------------  
@@ -23,7 +24,8 @@ local g_playerTarget = { targetType = ChatTargetTypes.CHATTARGET_PLAYER, targetI
 local g_cachedChatPanelTarget = nil; -- Cached player target for ingame chat panel
 
 -- When we aren't quite so crunched on time, it would be good to add the map pins table to the database
-local g_iconPulldownOptions = 
+local g_iconPulldownOptions = {};
+local g_standardIcons =
 {	
 -- standard icons
 	{ name = "ICON_MAP_PIN_STRENGTH" },
@@ -40,21 +42,6 @@ local g_iconPulldownOptions =
 	{ name = "ICON_MAP_PIN_SUN"      },
 	{ name = "ICON_MAP_PIN_SQUARE"   },
 	{ name = "ICON_MAP_PIN_DIAMOND"  },
--- districts
-	{ name = "ICON_DISTRICT_CITY_CENTER"           },
-	{ name = "ICON_DISTRICT_HOLY_SITE"             },
-	{ name = "ICON_DISTRICT_CAMPUS"                },
-	{ name = "ICON_DISTRICT_ENCAMPMENT"            },
-	{ name = "ICON_DISTRICT_HARBOR"                },
-	{ name = "ICON_DISTRICT_AERODROME"             },
-	{ name = "ICON_DISTRICT_COMMERCIAL_HUB"        },
-	{ name = "ICON_DISTRICT_ENTERTAINMENT_COMPLEX" },
-	{ name = "ICON_DISTRICT_THEATER"               },
-	{ name = "ICON_DISTRICT_INDUSTRIAL_ZONE"       },
-	{ name = "ICON_DISTRICT_NEIGHBORHOOD"          },
-	{ name = "ICON_DISTRICT_AQUEDUCT"              },
-	{ name = "ICON_DISTRICT_SPACEPORT"             },
-	{ name = "ICON_DISTRICT_WONDER"                },
 };
 
 local sendToChatTTStr = Locale.Lookup( "LOC_MAP_PIN_SEND_TO_CHAT_TT" );
@@ -143,7 +130,129 @@ function SetMapPinIcon(imageControl :table, mapPinIconName :string)
 end
 
 -- ===========================================================================
+function AddIcon(name, tooltip)
+	table.insert(g_iconPulldownOptions, { name=name, tooltip=tooltip });
+	print(name, tooltip);
+end
+
+-- ===========================================================================
 function PopulateIconOptions()
+	-- build icon table with default pins + extensions
+	g_iconPulldownOptions = {};
+
+	local activePlayerID = Game.GetLocalPlayer();
+	local pPlayerCfg = PlayerConfigurations[activePlayerID];
+	local civ = pPlayerCfg:GetCivilizationTypeName();
+	-- civ = 'CIVILIZATION_GREECE';
+	-- civ = 'CIVILIZATION_ROME';
+	-- civ = 'CIVILIZATION_GERMANY';
+	-- civ = 'CIVILIZATION_RUSSIA';
+	-- civ = 'CIVILIZATION_KONGO';
+	-- civ = 'CIVILIZATION_BRAZIL';
+	-- civ = 'CIVILIZATION_ENGLAND';
+	-- civ = 'CIVILIZATION_CHINA';
+	print(civ);
+
+	-- Table of special/indirect traits
+	local extra_traits = {
+		IMPROVEMENT_ROMAN_FORT="TRAIT_CIVILIZATION_UNIT_ROMAN_LEGION",
+	}
+	-- Get unique traits for the player civilization
+	local traits = {};
+	for item in GameInfo.CivilizationTraits() do
+		if item.CivilizationType == civ then
+			-- print(item.TraitType);
+			traits[item.TraitType] = true;
+		end
+	end
+	-- Get unique district replacement info
+	local districts = {};
+	for item in GameInfo.Districts() do
+		if item.TraitType and traits[item.TraitType] then
+			local swap = GameInfo.DistrictReplaces[item.DistrictType];
+			districts[swap.ReplacesDistrictType] = item.DistrictType;
+			-- print(item.DistrictType, "replaces", base);
+		end
+	end
+	-- for i, item in pairs(traits) do print(i, item); end
+
+	-- Standard map pins
+	for i, item in ipairs(g_standardIcons) do
+		AddIcon(item.name);
+	end
+
+	-- Districts
+	for item in GameInfo.Districts() do
+		local itype = item.DistrictType;
+		if districts[itype] then
+			-- unique district replacements for this civ
+			itype = districts[itype]
+			AddIcon("ICON_"..itype, itype);
+		elseif item.TraitType then
+			-- skip other unique districts
+		elseif item.InternalOnly then
+			-- these districts have icons but not tooltips
+			AddIcon("ICON_"..itype);
+		else
+			AddIcon("ICON_"..itype, itype);
+		end
+	end
+
+	-- Improvements
+	local minor_civ_improvements = {};
+	local unique_improvements = {};
+	for item in GameInfo.Improvements() do
+		local itype = item.ImprovementType;
+		if item.BarbarianCamp or item.Goody then
+			-- skip
+		elseif item.TraitType then
+			-- organize unique & city state improvements
+			if item.TraitType:find("^TRAIT_CIVILIZATION_") then
+				if traits[item.TraitType] then
+					table.insert(unique_improvements, item);
+				end
+			elseif item.TraitType:find("^MINOR_CIV_") then
+				table.insert(minor_civ_improvements, item);
+			end
+		elseif extra_traits[itype] then
+			-- handle special cases like the Roman Fort
+			if traits[extra_traits[itype]] then
+				table.insert(unique_improvements, item);
+			end
+		else
+			AddIcon(item.Icon, itype);
+		end
+	end
+	-- Unique improvements
+	for i, item in ipairs(unique_improvements) do
+		AddIcon(item.Icon, item.ImprovementType);
+	end
+	-- Minor civ improvements
+	for i, item in ipairs(minor_civ_improvements) do
+		AddIcon(item.Icon, item.ImprovementType);
+	end
+
+	-- Great people
+	for item in GameInfo.GreatPersonClasses() do
+		AddIcon(item.ActionIcon, item.Name);
+	end
+
+	-- Unit commands
+	-- TODO: these mostly make poor map pins
+	for item in GameInfo.UnitCommands() do
+		if item.VisibleInUI then
+			AddIcon(item.Icon, item.Description);
+		end
+	end
+
+	-- Unit operations
+	-- TODO: only some of these make good map pins
+	for item in GameInfo.UnitOperations() do
+		if item.VisibleInUI then
+			AddIcon(item.Icon, item.Description);
+		end
+	end
+
 	g_iconOptionEntries = {};
 	Controls.IconOptionStack:DestroyAllChildren();
 
@@ -156,6 +265,10 @@ function PopulateIconOptions()
 		SetMapPinIcon(controlTable.Icon, pair.name);
 	    controlTable.IconOptionButton:RegisterCallback(Mouse.eLClick, OnIconOption);
 		controlTable.IconOptionButton:SetVoids(i, -1);
+		if pair.tooltip ~= nil then
+			local tooltip = ToolTipHelper.GetToolTip(pair.tooltip, Game.GetLocalPlayer()) or Locale.Lookup(pair.tooltip);
+			controlTable.IconOptionButton:SetToolTipString(tooltip);
+		end
 
 		newIconEntry.IconName = pair.name;
 		newIconEntry.Instance = controlTable;
@@ -387,4 +500,4 @@ function Initialize()
 end
 Initialize();
 
-
+-- vim: sw=4 ts=4

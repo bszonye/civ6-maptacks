@@ -226,6 +226,14 @@ function MapPinFlag.SetInteractivity( self : MapPinFlag )
 end
 
 ------------------------------------------------------------------
+function ColorValue( abgr : number )
+	local r = abgr % 256;
+	local g = math.floor(abgr / 256) % 256;
+	local b = math.floor(abgr / 65536) % 256;
+	return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+end
+
+------------------------------------------------------------------
 -- Set the flag color based on the player colors.
 function MapPinFlag.SetColor( self : MapPinFlag )
 	local primaryColor, secondaryColor  = UI.GetPlayerColors( self.m_Player:GetID() );
@@ -235,12 +243,23 @@ function MapPinFlag.SetColor( self : MapPinFlag )
 	local darkerIconColor	:number = DarkenLightenColor(secondaryColor,-30,255);
         
 	local pMapPin = self:GetMapPin();
-	if pMapPin~=nil and pMapPin:GetIconName():find("ICON_DISTRICT") then
-		self.m_Instance.UnitIcon:SetColor( 0xffffffff );
-	else
+	if pMapPin==nil or pMapPin:GetIconName():find("^ICON_MAP_PIN_") then
+		-- standard map pins use standard civ colors
+		self.m_Instance.FlagBase:SetColor( primaryColor );
 		self.m_Instance.UnitIcon:SetColor( brighterIconColor );
+	elseif pMapPin:GetIconName():find("^ICON_DISTRICT_") then
+		-- district pins are neutral (white) on civ primary color
+		self.m_Instance.FlagBase:SetColor( primaryColor );
+		self.m_Instance.UnitIcon:SetColor( -1 );
+	elseif (ColorValue(primaryColor) < ColorValue(secondaryColor)) then
+		-- other pin are white on civ primary color
+		self.m_Instance.FlagBase:SetColor( primaryColor );
+		self.m_Instance.UnitIcon:SetColor( -1 );
+	else
+		-- or white on civ secondary color, if it is darker
+		self.m_Instance.FlagBase:SetColor( secondaryColor );
+		self.m_Instance.UnitIcon:SetColor( -1 );
 	end
-	self.m_Instance.FlagBase:SetColor( primaryColor );
 	--self.m_Instance.UnitIconShadow:SetColor( darkerIconColor );
 	self.m_Instance.FlagBaseOutline:SetColor( primaryColor );
 	self.m_Instance.FlagBaseDarken:SetColor( darkerFlagColor );
@@ -621,3 +640,4 @@ function Initialize()
 end
 Initialize();
 
+-- vim: sw=4 ts=4

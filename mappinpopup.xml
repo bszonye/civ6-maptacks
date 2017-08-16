@@ -48,7 +48,7 @@
   <Instance Name="IconOptionInstance">
     <Container ID="IconOptionRoot" Anchor="L,T" Size="40,36">
       <GridButton ID="IconOptionButton" Anchor="C,C" Size="parent,parent" Style="ButtonControl">
-        <Image ID="Icon"  Texture="MapPins24" Size="32,32" Anchor="C,C" Color="254,254,230"/>
+        <Image ID="Icon"  Texture="MapPins24" Size="32,32" Anchor="C,C" Color="255,255,255"/>
       </GridButton>
     </Container>
   </Instance>
