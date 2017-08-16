@@ -118,9 +118,6 @@ function GetMapPinListEntry(iPlayerID :number, mapPinID :number)
 
 		Controls.MapPinEntryStack:CalculateSize();
 		Controls.MapPinEntryStack:ReprocessAnchoring();
-
-		Controls.MapPinLogPanel:CalculateInternalSize();
-		Controls.MapPinLogPanel:ReprocessAnchoring();
 	end
 	return mapPinEntry;
 end
@@ -152,6 +149,13 @@ function BuildMapPinList()
 	-- Recalc after sorting so the anchoring can account for hidden elements.
 	Controls.MapPinEntryStack:CalculateSize();
 	Controls.MapPinEntryStack:ReprocessAnchoring();
+	-- Dynamically resize scroll panel
+	local scrollSize = Controls.MapPinEntryStack:GetSizeY();
+	Controls.MapPinScrollPanel:SetSizeX(scrollSize <= 299 and 280 or 260);
+	Controls.MapPinScrollPanel:SetSizeY(math.min(scrollSize, 299));
+	Controls.MapPinScrollPanel:ReprocessAnchoring();
+	Controls.MapPinStack:CalculateSize();
+	Controls.MapPinStack:ReprocessAnchoring();
 	Controls.MapPinPanel:ReprocessAnchoring();
 end
 
@@ -240,3 +244,5 @@ function Initialize()
 	BuildMapPinList();
 end
 Initialize()
+
+-- vim: sw=4 ts=4

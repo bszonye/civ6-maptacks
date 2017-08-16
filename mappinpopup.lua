@@ -132,7 +132,7 @@ end
 -- ===========================================================================
 function AddIcon(name, tooltip)
 	table.insert(g_iconPulldownOptions, { name=name, tooltip=tooltip });
-	print(name, tooltip);
+	-- print(name, tooltip);
 end
 
 -- ===========================================================================
@@ -151,7 +151,7 @@ function PopulateIconOptions()
 	-- civ = 'CIVILIZATION_BRAZIL';
 	-- civ = 'CIVILIZATION_ENGLAND';
 	-- civ = 'CIVILIZATION_CHINA';
-	print(civ);
+	-- print(civ);
 
 	-- Table of special/indirect traits
 	local extra_traits = {
