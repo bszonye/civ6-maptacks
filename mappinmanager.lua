@@ -226,41 +226,67 @@ function MapPinFlag.SetInteractivity( self : MapPinFlag )
 end
 
 ------------------------------------------------------------------
-function ColorValue( abgr : number )
+-- Calculate a highlight color for a given midtone color
+function HighlightColor( abgr : number )
 	local r = abgr % 256;
 	local g = math.floor(abgr / 256) % 256;
 	local b = math.floor(abgr / 65536) % 256;
-	return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+	local v = math.floor(0.2126 * r + 0.7152 * g + 0.0722 * b);
+	local x = 1.6;
+	local y = 0;
+	if x * v > 255 then
+		x = 255 / v;
+	else
+		y = math.max(0, 192 - x * v) / 2;
+	end
+	print(v, x, y);
+	r = math.min(255, math.floor(r * x + y));
+	g = math.min(255, math.floor(g * x + y));
+	b = math.min(255, math.floor(b * x + y));
+	print(r, g, b);
+	return ((-256 + b) * 256 + g) * 256 + r;
+end
+
+------------------------------------------------------------------
+-- temporary helper function to mix other civ colors
+function MixColors( r1, g1, b1, r2, g2, b2 )
+	local primaryColor = ((-256 + b1) * 256 + g1) * 256 + r1;
+	local secondaryColor = ((-256 + b2) * 256 + g2) * 256 + r2;
+	return primaryColor, secondaryColor
 end
 
 ------------------------------------------------------------------
 -- Set the flag color based on the player colors.
 function MapPinFlag.SetColor( self : MapPinFlag )
 	local primaryColor, secondaryColor  = UI.GetPlayerColors( self.m_Player:GetID() );
+	-- primaryColor, secondaryColor = MixColors(137,239,213, 161,57,35) -- Aztec
+	-- primaryColor, secondaryColor = MixColors(255,255,88, 21,87,96) -- Egypt
+	-- primaryColor, secondaryColor = MixColors(109,2,0, 255,255,255); -- England
+	-- primaryColor, secondaryColor = MixColors(65,141,254, 235,235,139); -- France
+	-- primaryColor, secondaryColor = MixColors(179,178,184, 37,43,33); -- Germany
+	-- primaryColor, secondaryColor = MixColors(255,255,255, 146,16,16); -- Japan
+	-- primaryColor, secondaryColor = MixColors(217,31,66, 242,230,240); -- Poland
+	-- primaryColor, secondaryColor = MixColors(239,215,86, 0,0,0); -- Russia
 	local darkerFlagColor	:number = DarkenLightenColor(primaryColor,(-85),255);
 	local brighterFlagColor :number = DarkenLightenColor(primaryColor,90,255);
 	local brighterIconColor :number = DarkenLightenColor(secondaryColor,20,255);
 	local darkerIconColor	:number = DarkenLightenColor(secondaryColor,-30,255);
         
 	local pMapPin = self:GetMapPin();
+	local isDistrict = false;
+	-- set icon tint appropriate for the icon color
 	if pMapPin==nil or pMapPin:GetIconName():find("^ICON_MAP_PIN_") then
-		-- standard map pins use standard civ colors
-		self.m_Instance.FlagBase:SetColor( primaryColor );
+		-- standard white map pins
 		self.m_Instance.UnitIcon:SetColor( brighterIconColor );
 	elseif pMapPin:GetIconName():find("^ICON_DISTRICT_") then
-		-- district pins are neutral (white) on civ primary color
-		self.m_Instance.FlagBase:SetColor( primaryColor );
+		-- district icons: white
 		self.m_Instance.UnitIcon:SetColor( -1 );
-	elseif (ColorValue(primaryColor) < ColorValue(secondaryColor)) then
-		-- other pin are white on civ primary color
-		self.m_Instance.FlagBase:SetColor( primaryColor );
-		self.m_Instance.UnitIcon:SetColor( -1 );
+		isDistrict = true;
 	else
-		-- or white on civ secondary color, if it is darker
-		self.m_Instance.FlagBase:SetColor( secondaryColor );
-		self.m_Instance.UnitIcon:SetColor( -1 );
+		-- shaded icons: match midtones to standard pin color
+		self.m_Instance.UnitIcon:SetColor(HighlightColor(brighterIconColor));
 	end
-	--self.m_Instance.UnitIconShadow:SetColor( darkerIconColor );
+	self.m_Instance.FlagBase:SetColor(primaryColor);
 	self.m_Instance.FlagBaseOutline:SetColor( primaryColor );
 	self.m_Instance.FlagBaseDarken:SetColor( darkerFlagColor );
 	self.m_Instance.FlagBaseLighten:SetColor( primaryColor );
@@ -268,6 +294,15 @@ function MapPinFlag.SetColor( self : MapPinFlag )
 	self.m_Instance.FlagOver:SetColor( brighterFlagColor );
 	self.m_Instance.NormalSelect:SetColor( brighterFlagColor );
 	self.m_Instance.NormalSelectPulse:SetColor( brighterFlagColor );
+
+	-- improve district pin styling
+	-- self.m_Instance.UnitIcon:SetHide( isDistrict );
+	-- self.m_Instance.FlagOver:SetHide( isDistrict );
+	-- self.m_Instance.FlagBaseOutline:SetHide( isDistrict );
+	-- self.m_Instance.FlagBaseDarken:SetHide( isDistrict );
+	-- self.m_Instance.FlagBaseLighten:SetHide( isDistrict );
+	self.m_Instance.NormalScrollAnim:SetHide( isDistrict );
+	self.m_Instance.DistrictScrollAnim:SetHide( not isDistrict );
 end
 
 ------------------------------------------------------------------
@@ -276,6 +311,13 @@ function MapPinFlag.SetFlagUnitEmblem( self : MapPinFlag )
 	local pMapPin = self:GetMapPin();
     if pMapPin ~= nil then			
 		local iconName = pMapPin:GetIconName();
+		if iconName:find("^ICON_MAP_PIN_") then
+			self.m_Instance.UnitIcon:SetSizeVal(24, 24);
+		elseif iconName:find("^ICON_DISTRICT_") then
+			self.m_Instance.UnitIcon:SetSizeVal(30, 30);
+		else
+			self.m_Instance.UnitIcon:SetSizeVal(30, 30);
+		end
 		if(not self.m_Instance.UnitIcon:SetIcon(iconName)) then
 			self.m_Instance.UnitIcon:SetIcon("ICON_MAP_PIN_UNKNOWN_WHITE");
 		end
