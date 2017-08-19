@@ -291,6 +291,7 @@ function MapPinFlag.SetColor( self : MapPinFlag )
 	-- primaryColor, secondaryColor = MixColors(173,36,36, 221,205,0);     -- Spain
 	-- primaryColor, secondaryColor = MixColors(170,156,109, 164,16,14);   -- Scythia
 	-- primaryColor, secondaryColor = MixColors(64,76,134, 226,141,24);    -- Sumeria
+
 	local darkerFlagColor	:number = DarkenLightenColor(primaryColor,(-85),255);
 	local brighterFlagColor :number = DarkenLightenColor(primaryColor,90,255);
 	local brighterIconColor :number = DarkenLightenColor(secondaryColor,20,255);
@@ -340,7 +341,7 @@ function MapPinFlag.SetFlagUnitEmblem( self : MapPinFlag )
 		if iconName:find("^ICON_MAP_PIN_") then
 			self.m_Instance.UnitIcon:SetSizeVal(24, 24);
 		elseif iconName:find("^ICON_DISTRICT_") then
-			self.m_Instance.UnitIcon:SetSizeVal(28, 28);
+			self.m_Instance.UnitIcon:SetSizeVal(30, 30);
 		else
 			self.m_Instance.UnitIcon:SetSizeVal(28, 28);
 		end
