@@ -14,6 +14,7 @@ local COLOR_YELLOW				:number = 0xFF2DFFF8;
 local COLOR_WHITE				:number = 0xFFFFFFFF;
  
 local g_editMapPinID :number = nil;
+local g_uniqueIconsPlayer :number = nil;  -- tailor UAs to the player
 local g_iconOptionEntries = {};
 local g_visibilityTargetEntries = {};
 
@@ -141,6 +142,7 @@ function PopulateIconOptions()
 	g_iconPulldownOptions = {};
 
 	local activePlayerID = Game.GetLocalPlayer();
+	g_uniqueIconsPlayer = activePlayerID;
 	local pPlayerCfg = PlayerConfigurations[activePlayerID];
 	local civ = pPlayerCfg:GetCivilizationTypeName();
 	-- civ = 'CIVILIZATION_GREECE';
@@ -319,6 +321,8 @@ end
 -- ===========================================================================
 function RequestMapPin(hexX :number, hexY :number)
 	local activePlayerID = Game.GetLocalPlayer();
+	-- update UA icons if the active player has changed
+	if g_uniqueIconsPlayer ~= activePlayerID then PopulateIconOptions(); end
 	local pPlayerCfg = PlayerConfigurations[activePlayerID];
 	local pMapPin = pPlayerCfg:GetMapPin(hexX, hexY);
 	if(pMapPin ~= nil) then
