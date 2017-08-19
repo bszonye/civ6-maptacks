@@ -226,24 +226,31 @@ function MapPinFlag.SetInteractivity( self : MapPinFlag )
 end
 
 ------------------------------------------------------------------
--- Calculate a highlight color for a given midtone color
-function HighlightColor( abgr : number )
+-- Calculate icon tint color
+function IconTint( abgr : number )
 	local r = abgr % 256;
 	local g = math.floor(abgr / 256) % 256;
 	local b = math.floor(abgr / 65536) % 256;
-	local v = math.floor(0.2126 * r + 0.7152 * g + 0.0722 * b);
-	local x = 1.6;
-	local y = 0;
-	if x * v > 255 then
-		x = 255 / v;
-	else
-		y = math.max(0, 192 - x * v) / 2;
-	end
-	print(v, x, y);
-	r = math.min(255, math.floor(r * x + y));
-	g = math.min(255, math.floor(g * x + y));
-	b = math.min(255, math.floor(b * x + y));
-	print(r, g, b);
+	-- calculate sRGB luma, rounded to nearest integer
+	local v = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+	-- avoid division by zero
+	if v < 1 then r = r + 1; g = g + 1; b = b + 1; v = v + 1; end
+	print(string.format("r%d g%d b%d v%d", r, g, b, v));
+	-- lighten tint
+	local lt = 32;
+	local max = math.max(r, g, b);
+	local x0 = (160 - lt + v) / v;  -- for dark colors
+	local x1 = (255 - lt) / max;  -- for lighter colors
+	local x = math.min(x0, x1);
+	print(string.format("%0.3f %0.3f %0.3f", x, x0, x1));
+	r = r * x + lt;
+	g = g * x + lt;
+	b = b * x + lt;
+	r = math.min(255, math.floor(r + 0.5));
+	g = math.min(255, math.floor(g + 0.5));
+	b = math.min(255, math.floor(b + 0.5));
+	v = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+	print(string.format("r%d g%d b%d v%d", r, g, b, v));
 	return ((-256 + b) * 256 + g) * 256 + r;
 end
 
@@ -259,14 +266,31 @@ end
 -- Set the flag color based on the player colors.
 function MapPinFlag.SetColor( self : MapPinFlag )
 	local primaryColor, secondaryColor  = UI.GetPlayerColors( self.m_Player:GetID() );
-	-- primaryColor, secondaryColor = MixColors(137,239,213, 161,57,35) -- Aztec
-	-- primaryColor, secondaryColor = MixColors(255,255,88, 21,87,96) -- Egypt
-	-- primaryColor, secondaryColor = MixColors(109,2,0, 255,255,255); -- England
-	-- primaryColor, secondaryColor = MixColors(65,141,254, 235,235,139); -- France
-	-- primaryColor, secondaryColor = MixColors(179,178,184, 37,43,33); -- Germany
-	-- primaryColor, secondaryColor = MixColors(255,255,255, 146,16,16); -- Japan
-	-- primaryColor, secondaryColor = MixColors(217,31,66, 242,230,240); -- Poland
-	-- primaryColor, secondaryColor = MixColors(239,215,86, 0,0,0); -- Russia
+	-- primaryColor, secondaryColor = MixColors(239,159,62, 237,239,237);  -- Australia
+	-- primaryColor, secondaryColor = MixColors(137,239,213, 161,57,35)    -- Aztec
+	-- primaryColor, secondaryColor = MixColors(217,31,66, 242,230,240);   -- Poland
+	-- primaryColor, secondaryColor = MixColors(135,135,135, 233,235,0);   -- Macedon
+	-- primaryColor, secondaryColor = MixColors(197,189,160, 88,47,27);    -- Nubia
+	-- primaryColor, secondaryColor = MixColors(107,151,255, 144,23,22);   -- Persia
+	-- primaryColor, secondaryColor = MixColors(32,57,124, 255,255,255);   -- America
+	-- primaryColor, secondaryColor = MixColors(23,163,68, 225,211,32);    -- Brazil
+	-- primaryColor, secondaryColor = MixColors(125,150,60, 255,255,255);  -- China
+	-- primaryColor, secondaryColor = MixColors(255,255,88, 21,87,96);     -- Egypt
+	-- primaryColor, secondaryColor = MixColors(109,2,0, 255,255,255);     -- England
+	-- primaryColor, secondaryColor = MixColors(65,141,254, 235,235,139);  -- France
+	-- primaryColor, secondaryColor = MixColors(179,178,184, 37,43,33);    -- Germany
+	-- primaryColor, secondaryColor = MixColors(255,255,255, 79,134,185);  -- Greece
+	-- primaryColor, secondaryColor = MixColors(115,52,44, 191,217,219);   -- Sparta
+	-- primaryColor, secondaryColor = MixColors(146,36,121, 116,219,202);  -- India
+	-- primaryColor, secondaryColor = MixColors(255,255,255, 146,16,16);   -- Japan
+	-- primaryColor, secondaryColor = MixColors(238,225,83, 187,18,18);    -- Kongo
+	-- primaryColor, secondaryColor = MixColors(42,51,128, 234,45,25);     -- Norway
+	-- primaryColor, secondaryColor = MixColors(70,0,118, 240,199,0);      -- Rome
+	-- primaryColor, secondaryColor = MixColors(239,215,86, 0,0,0);        -- Russia
+	-- primaryColor, secondaryColor = MixColors(251,228,104, 37,98,16);    -- Arabia
+	-- primaryColor, secondaryColor = MixColors(173,36,36, 221,205,0);     -- Spain
+	-- primaryColor, secondaryColor = MixColors(170,156,109, 164,16,14);   -- Scythia
+	-- primaryColor, secondaryColor = MixColors(64,76,134, 226,141,24);    -- Sumeria
 	local darkerFlagColor	:number = DarkenLightenColor(primaryColor,(-85),255);
 	local brighterFlagColor :number = DarkenLightenColor(primaryColor,90,255);
 	local brighterIconColor :number = DarkenLightenColor(secondaryColor,20,255);
@@ -274,8 +298,10 @@ function MapPinFlag.SetColor( self : MapPinFlag )
         
 	local pMapPin = self:GetMapPin();
 	local isDistrict = false;
+	local iconName :string = pMapPin and pMapPin:GetIconName() or nil;
+	print(iconName);
 	-- set icon tint appropriate for the icon color
-	if pMapPin==nil or pMapPin:GetIconName():find("^ICON_MAP_PIN_") then
+	if not iconName or iconName:find("^ICON_MAP_PIN_") or iconName:find("^ICON_UNITOPERATION_SPY_") then
 		-- standard white map pins
 		self.m_Instance.UnitIcon:SetColor( brighterIconColor );
 	elseif pMapPin:GetIconName():find("^ICON_DISTRICT_") then
@@ -284,7 +310,7 @@ function MapPinFlag.SetColor( self : MapPinFlag )
 		isDistrict = true;
 	else
 		-- shaded icons: match midtones to standard pin color
-		self.m_Instance.UnitIcon:SetColor(HighlightColor(brighterIconColor));
+		self.m_Instance.UnitIcon:SetColor(IconTint(brighterIconColor));
 	end
 	self.m_Instance.FlagBase:SetColor(primaryColor);
 	self.m_Instance.FlagBaseOutline:SetColor( primaryColor );
@@ -314,9 +340,9 @@ function MapPinFlag.SetFlagUnitEmblem( self : MapPinFlag )
 		if iconName:find("^ICON_MAP_PIN_") then
 			self.m_Instance.UnitIcon:SetSizeVal(24, 24);
 		elseif iconName:find("^ICON_DISTRICT_") then
-			self.m_Instance.UnitIcon:SetSizeVal(30, 30);
+			self.m_Instance.UnitIcon:SetSizeVal(28, 28);
 		else
-			self.m_Instance.UnitIcon:SetSizeVal(30, 30);
+			self.m_Instance.UnitIcon:SetSizeVal(28, 28);
 		end
 		if(not self.m_Instance.UnitIcon:SetIcon(iconName)) then
 			self.m_Instance.UnitIcon:SetIcon("ICON_MAP_PIN_UNKNOWN_WHITE");
