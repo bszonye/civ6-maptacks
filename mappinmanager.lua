@@ -227,7 +227,9 @@ end
 
 ------------------------------------------------------------------
 -- Calculate icon tint color
+local g_tintCache = {};
 function IconTint( abgr : number )
+	if g_tintCache[abgr] ~= nil then return g_tintCache[abgr]; end
 	local r = abgr % 256;
 	local g = math.floor(abgr / 256) % 256;
 	local b = math.floor(abgr / 65536) % 256;
@@ -235,14 +237,14 @@ function IconTint( abgr : number )
 	local v = 0.2126 * r + 0.7152 * g + 0.0722 * b;
 	-- avoid division by zero
 	if v < 1 then r = r + 1; g = g + 1; b = b + 1; v = v + 1; end
-	print(string.format("r%d g%d b%d v%d", r, g, b, v));
+	-- print(string.format("r%d g%d b%d v%d", r, g, b, v));
 	-- lighten tint
 	local lt = 32;
 	local max = math.max(r, g, b);
 	local x0 = (160 - lt + v) / v;  -- for dark colors
 	local x1 = (255 - lt) / max;  -- for lighter colors
 	local x = math.min(x0, x1);
-	print(string.format("%0.3f %0.3f %0.3f", x, x0, x1));
+	-- print(string.format("%0.3f %0.3f %0.3f", x, x0, x1));
 	r = r * x + lt;
 	g = g * x + lt;
 	b = b * x + lt;
@@ -250,47 +252,80 @@ function IconTint( abgr : number )
 	g = math.min(255, math.floor(g + 0.5));
 	b = math.min(255, math.floor(b + 0.5));
 	v = 0.2126 * r + 0.7152 * g + 0.0722 * b;
-	print(string.format("r%d g%d b%d v%d", r, g, b, v));
-	return ((-256 + b) * 256 + g) * 256 + r;
+	-- print(string.format("r%d g%d b%d v%d", r, g, b, v));
+	local tint = ((-256 + b) * 256 + g) * 256 + r;
+	g_tintCache[abgr] = tint;
+	print(string.format("saved %d = tint %d", abgr, tint));
+	return tint;
 end
 
 ------------------------------------------------------------------
--- temporary helper function to mix other civ colors
-function MixColors( r1, g1, b1, r2, g2, b2 )
-	local primaryColor = ((-256 + b1) * 256 + g1) * 256 + r1;
-	local secondaryColor = ((-256 + b2) * 256 + g2) * 256 + r2;
-	return primaryColor, secondaryColor
+-- XXX debug
+
+function FixColor( abgr : number )
+	local r = abgr % 256;
+	local g = math.floor(abgr / 256) % 256;
+	local b = math.floor(abgr / 65536) % 256;
+	return ((-256 + b) * 256 + g) * 256 + r;
+end
+
+local g_civColors :table = nil;
+function CivColors( civ : string, primaryColor, secondaryColor )
+	if g_civColors == nil then
+		g_civColors = {};
+		for item in GameInfo.PlayerColors() do
+			local leader = item.Type:match("LEADER_(.+)");
+			if leader then
+				local civ = item.PrimaryColor:match("^COLOR_PLAYER_(.*)_[^_]+");
+				-- print(item.Type, civ, item.PrimaryColor, item.SecondaryColor);
+				g_civColors[civ] = {
+					leader = leader,
+					primary = FixColor(UI.GetColorValue(item.PrimaryColor)),
+					secondary = FixColor(UI.GetColorValue(item.SecondaryColor))
+				}
+			end
+		end
+	end
+	local colors = g_civColors[civ];
+	if colors then
+		primaryColor = colors.primary;
+		secondaryColor = colors.secondary;
+	end
+	return primaryColor, secondaryColor;
 end
 
 ------------------------------------------------------------------
 -- Set the flag color based on the player colors.
 function MapPinFlag.SetColor( self : MapPinFlag )
 	local primaryColor, secondaryColor  = UI.GetPlayerColors( self.m_Player:GetID() );
-	-- primaryColor, secondaryColor = MixColors(239,159,62, 237,239,237);  -- Australia
-	-- primaryColor, secondaryColor = MixColors(137,239,213, 161,57,35)    -- Aztec
-	-- primaryColor, secondaryColor = MixColors(217,31,66, 242,230,240);   -- Poland
-	-- primaryColor, secondaryColor = MixColors(135,135,135, 233,235,0);   -- Macedon
-	-- primaryColor, secondaryColor = MixColors(197,189,160, 88,47,27);    -- Nubia
-	-- primaryColor, secondaryColor = MixColors(107,151,255, 144,23,22);   -- Persia
-	-- primaryColor, secondaryColor = MixColors(32,57,124, 255,255,255);   -- America
-	-- primaryColor, secondaryColor = MixColors(23,163,68, 225,211,32);    -- Brazil
-	-- primaryColor, secondaryColor = MixColors(125,150,60, 255,255,255);  -- China
-	-- primaryColor, secondaryColor = MixColors(255,255,88, 21,87,96);     -- Egypt
-	-- primaryColor, secondaryColor = MixColors(109,2,0, 255,255,255);     -- England
-	-- primaryColor, secondaryColor = MixColors(65,141,254, 235,235,139);  -- France
-	-- primaryColor, secondaryColor = MixColors(179,178,184, 37,43,33);    -- Germany
-	-- primaryColor, secondaryColor = MixColors(255,255,255, 79,134,185);  -- Greece
-	-- primaryColor, secondaryColor = MixColors(115,52,44, 191,217,219);   -- Sparta
-	-- primaryColor, secondaryColor = MixColors(146,36,121, 116,219,202);  -- India
-	-- primaryColor, secondaryColor = MixColors(255,255,255, 146,16,16);   -- Japan
-	-- primaryColor, secondaryColor = MixColors(238,225,83, 187,18,18);    -- Kongo
-	-- primaryColor, secondaryColor = MixColors(42,51,128, 234,45,25);     -- Norway
-	-- primaryColor, secondaryColor = MixColors(70,0,118, 240,199,0);      -- Rome
-	-- primaryColor, secondaryColor = MixColors(239,215,86, 0,0,0);        -- Russia
-	-- primaryColor, secondaryColor = MixColors(251,228,104, 37,98,16);    -- Arabia
-	-- primaryColor, secondaryColor = MixColors(173,36,36, 221,205,0);     -- Spain
-	-- primaryColor, secondaryColor = MixColors(170,156,109, 164,16,14);   -- Scythia
-	-- primaryColor, secondaryColor = MixColors(64,76,134, 226,141,24);    -- Sumeria
+
+	-- XXX debug
+	-- primaryColor, secondaryColor = CivColors(self:GetMapPin():GetName(), primaryColor, secondaryColor);
+	-- primaryColor, secondaryColor = CivColors("AUSTRALIA");
+	-- primaryColor, secondaryColor = CivColors("AZTEC");
+	-- primaryColor, secondaryColor = CivColors("POLAND");
+	-- primaryColor, secondaryColor = CivColors("MACEDON");
+	-- primaryColor, secondaryColor = CivColors("NUBIA");
+	-- primaryColor, secondaryColor = CivColors("PERSIA");
+	-- primaryColor, secondaryColor = CivColors("AMERICA");
+	-- primaryColor, secondaryColor = CivColors("BRAZIL");
+	-- primaryColor, secondaryColor = CivColors("CHINA");
+	-- primaryColor, secondaryColor = CivColors("EGYPT");
+	-- primaryColor, secondaryColor = CivColors("ENGLAND");
+	-- primaryColor, secondaryColor = CivColors("FRANCE");
+	-- primaryColor, secondaryColor = CivColors("GERMANY");
+	-- primaryColor, secondaryColor = CivColors("GREECE");
+	-- primaryColor, secondaryColor = CivColors("SPARTA");
+	-- primaryColor, secondaryColor = CivColors("INDIA");
+	-- primaryColor, secondaryColor = CivColors("JAPAN");
+	-- primaryColor, secondaryColor = CivColors("KONGO");
+	-- primaryColor, secondaryColor = CivColors("NORWAY");
+	-- primaryColor, secondaryColor = CivColors("ROME");
+	-- primaryColor, secondaryColor = CivColors("RUSSIA");
+	-- primaryColor, secondaryColor = CivColors("ARABIA");
+	-- primaryColor, secondaryColor = CivColors("SPAIN");
+	-- primaryColor, secondaryColor = CivColors("SCYTHIA");
+	-- primaryColor, secondaryColor = CivColors("SUMERIA");
 
 	local darkerFlagColor	:number = DarkenLightenColor(primaryColor,(-85),255);
 	local brighterFlagColor :number = DarkenLightenColor(primaryColor,90,255);
@@ -300,7 +335,7 @@ function MapPinFlag.SetColor( self : MapPinFlag )
 	local pMapPin = self:GetMapPin();
 	local isDistrict = false;
 	local iconName :string = pMapPin and pMapPin:GetIconName() or nil;
-	print(iconName);
+	-- print(iconName);
 	-- set icon tint appropriate for the icon color
 	if not iconName or iconName:find("^ICON_MAP_PIN_") or iconName:find("^ICON_UNITOPERATION_SPY_") then
 		-- standard white map pins
@@ -321,32 +356,26 @@ function MapPinFlag.SetColor( self : MapPinFlag )
 	self.m_Instance.FlagOver:SetColor( brighterFlagColor );
 	self.m_Instance.NormalSelect:SetColor( brighterFlagColor );
 	self.m_Instance.NormalSelectPulse:SetColor( brighterFlagColor );
-
-	-- improve district pin styling
-	-- self.m_Instance.UnitIcon:SetHide( isDistrict );
-	-- self.m_Instance.FlagOver:SetHide( isDistrict );
-	-- self.m_Instance.FlagBaseOutline:SetHide( isDistrict );
-	-- self.m_Instance.FlagBaseDarken:SetHide( isDistrict );
-	-- self.m_Instance.FlagBaseLighten:SetHide( isDistrict );
-	self.m_Instance.NormalScrollAnim:SetHide( isDistrict );
-	self.m_Instance.DistrictScrollAnim:SetHide( not isDistrict );
 end
 
 ------------------------------------------------------------------
 -- Set the flag texture based on the unit's type
 function MapPinFlag.SetFlagUnitEmblem( self : MapPinFlag )
 	local pMapPin = self:GetMapPin();
-    if pMapPin ~= nil then			
+    if pMapPin ~= nil then
 		local iconName = pMapPin:GetIconName();
-		if iconName:find("^ICON_MAP_PIN_") then
-			self.m_Instance.UnitIcon:SetSizeVal(24, 24);
-		elseif iconName:find("^ICON_DISTRICT_") then
-			self.m_Instance.UnitIcon:SetSizeVal(30, 30);
+		if iconName:find("^ICON_DISTRICT_") then
+			self.m_Instance.DistrictIcon:SetIcon(iconName);
+			self.m_Instance.DistrictIcon:SetHide(false);
+			self.m_Instance.UnitIcon:SetHide(true);
 		else
-			self.m_Instance.UnitIcon:SetSizeVal(28, 28);
-		end
-		if(not self.m_Instance.UnitIcon:SetIcon(iconName)) then
-			self.m_Instance.UnitIcon:SetIcon("ICON_MAP_PIN_UNKNOWN_WHITE");
+			local size = iconName:find("^ICON_MAP_PIN_") and 24 or 28;
+			self.m_Instance.UnitIcon:SetSizeVal(size, size);
+			if not self.m_Instance.UnitIcon:SetIcon(iconName) then
+				self.m_Instance.UnitIcon:SetIcon("ICON_MAP_PIN_UNKNOWN_WHITE");
+			end
+			self.m_Instance.UnitIcon:SetHide(false);
+			self.m_Instance.DistrictIcon:SetHide(true);
 		end
 
 	end
@@ -438,13 +467,9 @@ function MapPinFlag.UpdateName( self : MapPinFlag )
 	local pMapPin = self:GetMapPin();
 	if(pMapPin ~= nil) then
 		local nameString = pMapPin:GetName();
-		self.m_Instance.UnitIcon:SetToolTipString( nameString );
+		self.m_Instance.NormalButton:SetToolTipString( nameString );
 		self.m_Instance.NameLabel:SetText( nameString );
-		if(nameString ~= nil) then
-			self.m_Instance.NameContainer:SetHide(false);
-		else
-			self.m_Instance.NameContainer:SetHide(true);
-		end
+		self.m_Instance.NameContainer:SetHide( nameString == nil );
 	end
 end
 
@@ -550,7 +575,8 @@ function OnCameraUpdate( vFocusX:number, vFocusY:number, fZoomLevel:number )
 	end
 	m_zoomMultiplier= 1-fZoomLevel;
 
-	Refresh();
+	-- Map pins do not really use zoom, so skip the refresh.
+	-- Refresh();
 end
 
 ------------------------------------------------------------------
@@ -692,7 +718,6 @@ end
 
 -- ===========================================================================
 function Initialize()
-	
 	ContextPtr:SetInitHandler( OnContextInitialize );
 	ContextPtr:SetShutdown( OnShutdown );
 
