@@ -233,7 +233,18 @@ ContextPtr:SetShowHideHandler( ShowHideHandler );
 
 
 -- ===========================================================================
+-- XXX debug
+function OnMapTacksTestPattern()
+	-- Creates a test pattern of map pins
+	-- print("Creating test pattern");
+	LuaEvents.MapTacksTestPattern();
+end
+
+-- ===========================================================================
 function Initialize()
+	-- XXX debug
+	Controls.AddPinButton:RegisterCallback( Mouse.eRClick, OnMapTacksTestPattern );
+
 	Controls.AddPinButton:RegisterCallback( Mouse.eLClick, OnAddPinButton );
     Controls.AddPinButton:RegisterCallback( Mouse.eMouseEnter, function() UI.PlaySound("Main_Menu_Mouse_Over"); end);
 	Events.PlayerInfoChanged.Add(OnPlayerInfoChanged);

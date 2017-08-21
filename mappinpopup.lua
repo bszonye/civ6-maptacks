@@ -311,6 +311,33 @@ function UpdateIconOptionColor(iconEntryIndex :number)
 end
 
 -- ===========================================================================
+-- XXX debug
+function MapTacksTestPattern()
+	local civs = {};
+	for item in GameInfo.PlayerColors() do
+		if item.Type:find("^LEADER_") then
+			local civ = item.PrimaryColor:match("^COLOR_PLAYER_(.*)_[^_]+");
+			table.insert(civs, civ);
+		end
+	end
+	table.sort(civs);
+	local activePlayerID = Game.GetLocalPlayer();
+	local pPlayerCfg = PlayerConfigurations[activePlayerID];
+	local pMapPin = pPlayerCfg:GetMapPin(hexX, hexY);
+	for i, leaderName in ipairs(civs) do
+		for j, icon in ipairs({14, 109, 29, 30, 31, 33, 34, 52, 57, 81}) do
+			local pMapPin = pPlayerCfg:GetMapPin(j-1, i-1);
+			local iconName = g_iconPulldownOptions[icon].name;
+			print(string.format("i=%d, j=%d %s %s", i, j, leaderName, iconName));
+			pMapPin:SetName(leaderName);
+			pMapPin:SetIconName(iconName);
+		end
+	end
+	Network.BroadcastPlayerInfo();
+	UI.PlaySound("Map_Pin_Add");
+end
+
+-- ===========================================================================
 function GetMapPinID(id :number)
 	if id == nil then return nil; end
 	local activePlayerID = Game.GetLocalPlayer();
@@ -501,6 +528,8 @@ function Initialize()
 	-- and the chat panel's show/hide handler is not triggered as expected.
 	LuaEvents.MapPinPopup_RequestChatPlayerTarget();
 		
+	-- XXX debug
+	LuaEvents.MapTacksTestPattern.Add(MapTacksTestPattern);
 end
 Initialize();
 

@@ -277,7 +277,7 @@ function CivColors( civ : string, primaryColor, secondaryColor )
 			local leader = item.Type:match("LEADER_(.+)");
 			if leader then
 				local civ = item.PrimaryColor:match("^COLOR_PLAYER_(.*)_[^_]+");
-				-- print(item.Type, civ, item.PrimaryColor, item.SecondaryColor);
+				print(item.Type, civ, item.PrimaryColor, item.SecondaryColor);
 				g_civColors[civ] = {
 					leader = leader,
 					primary = FixColor(UI.GetColorValue(item.PrimaryColor)),
@@ -300,7 +300,7 @@ function MapPinFlag.SetColor( self : MapPinFlag )
 	local primaryColor, secondaryColor  = UI.GetPlayerColors( self.m_Player:GetID() );
 
 	-- XXX debug
-	-- primaryColor, secondaryColor = CivColors(self:GetMapPin():GetName(), primaryColor, secondaryColor);
+	primaryColor, secondaryColor = CivColors(self:GetMapPin():GetName(), primaryColor, secondaryColor);
 	-- primaryColor, secondaryColor = CivColors("AUSTRALIA");
 	-- primaryColor, secondaryColor = CivColors("AZTEC");
 	-- primaryColor, secondaryColor = CivColors("POLAND");
@@ -467,6 +467,14 @@ function MapPinFlag.UpdateName( self : MapPinFlag )
 	local pMapPin = self:GetMapPin();
 	if(pMapPin ~= nil) then
 		local nameString = pMapPin:GetName();
+		-- XXX debug
+		civ = g_civColors[nameString];
+		if civ then
+			local leader = Locale.Lookup("LOC_LEADER_"..civ.leader.."_NAME");
+			self.m_Instance.NameContainer:SetHide( true );
+			self.m_Instance.NormalButton:SetToolTipString( leader );
+			return;
+		end
 		self.m_Instance.NormalButton:SetToolTipString( nameString );
 		self.m_Instance.NameLabel:SetText( nameString );
 		self.m_Instance.NameContainer:SetHide( nameString == nil );
