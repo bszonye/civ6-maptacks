@@ -229,33 +229,32 @@ end
 -- Calculate icon tint color
 local g_tintCache = {};
 function IconTint( abgr : number )
-	if g_tintCache[abgr] ~= nil then return g_tintCache[abgr]; end
+	-- if g_tintCache[abgr] ~= nil then return g_tintCache[abgr]; end
 	local r = abgr % 256;
 	local g = math.floor(abgr / 256) % 256;
 	local b = math.floor(abgr / 65536) % 256;
-	-- calculate sRGB luma, rounded to nearest integer
-	local v = 0.2126 * r + 0.7152 * g + 0.0722 * b;
-	-- avoid division by zero
-	if v < 1 then r = r + 1; g = g + 1; b = b + 1; v = v + 1; end
-	-- print(string.format("r%d g%d b%d v%d", r, g, b, v));
+	-- sRGB luma
+	-- local v = 0.2126 * r + 0.7152 * g + 0.0722 * b;
 	-- lighten tint
-	local lt = 32;
 	local max = math.max(r, g, b);
-	local x0 = (160 - lt + v) / v;  -- for dark colors
-	local x1 = (255 - lt) / max;  -- for lighter colors
-	local x = math.min(x0, x1);
-	-- print(string.format("%0.3f %0.3f %0.3f", x, x0, x1));
-	r = r * x + lt;
-	g = g * x + lt;
-	b = b * x + lt;
+	local sat = max - math.min(r, g, b) + 1;
+	local x0 = (max + 128) / max;  -- for dark colors
+	local x1 = (sat + 48) / sat;  -- for medium colors
+	local x2 = 255 / max;  -- for light colors
+	local x = math.min(x0, x1, x2);
+	if x < x2 then
+		print(string.format("%0.3f %0.3f %0.3f %0.3f", x, x0, x1, x2));
+		print(string.format("m%d r%d g%d b%d", max, r, g, b));
+	end
+	r = r * x;
+	g = g * x;
+	b = b * x;
 	r = math.min(255, math.floor(r + 0.5));
 	g = math.min(255, math.floor(g + 0.5));
 	b = math.min(255, math.floor(b + 0.5));
-	v = 0.2126 * r + 0.7152 * g + 0.0722 * b;
-	-- print(string.format("r%d g%d b%d v%d", r, g, b, v));
 	local tint = ((-256 + b) * 256 + g) * 256 + r;
 	g_tintCache[abgr] = tint;
-	print(string.format("saved %d = tint %d", abgr, tint));
+	-- print(string.format("saved %d = tint %d", abgr, tint));
 	return tint;
 end
 
@@ -288,6 +287,7 @@ function CivColors( civ : string, primaryColor, secondaryColor )
 	end
 	local colors = g_civColors[civ];
 	if colors then
+		print(colors.leader);
 		primaryColor = colors.primary;
 		secondaryColor = colors.secondary;
 	end
