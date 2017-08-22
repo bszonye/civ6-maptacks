@@ -227,31 +227,33 @@ end
 
 ------------------------------------------------------------------
 -- Calculate icon tint color
+-- Icons generally have light=224, shadow=112 (out of 255).
+-- So, to match icons to civ colors, ideally brighten the original color:
+-- by 255/224 to match light areas, or by 255/112 to match shadows.
+--
+-- In practice:
+-- Light colors look best as bright as possible without distortion.
+-- The darkest colors need shadow=64, light=128, max=144 for legibility.
+-- Other colors look good around 1.5-1.8x brightness, matching midtones.
 local g_tintCache = {};
 function IconTint( abgr : number )
-	-- if g_tintCache[abgr] ~= nil then return g_tintCache[abgr]; end
+	if g_tintCache[abgr] ~= nil then return g_tintCache[abgr]; end
 	local r = abgr % 256;
 	local g = math.floor(abgr / 256) % 256;
 	local b = math.floor(abgr / 65536) % 256;
+	local max = math.max(r, g, b, 1);  -- avoid division by zero
+	local light = 255/max;  -- maximum brightness without distortion
+	local dark = 144/max;  -- minimum brightness
+	local x = 1.6;  -- match midtones
+	if light < x then x = light; elseif x < dark then x = dark; end
+
 	-- sRGB luma
 	-- local v = 0.2126 * r + 0.7152 * g + 0.0722 * b;
-	-- lighten tint
-	local max = math.max(r, g, b);
-	local sat = max - math.min(r, g, b) + 1;
-	local x0 = (max + 128) / max;  -- for dark colors
-	local x1 = (sat + 48) / sat;  -- for medium colors
-	local x2 = 255 / max;  -- for light colors
-	local x = math.min(x0, x1, x2);
-	if x < x2 then
-		print(string.format("%0.3f %0.3f %0.3f %0.3f", x, x0, x1, x2));
-		print(string.format("m%d r%d g%d b%d", max, r, g, b));
-	end
-	r = r * x;
-	g = g * x;
-	b = b * x;
-	r = math.min(255, math.floor(r + 0.5));
-	g = math.min(255, math.floor(g + 0.5));
-	b = math.min(255, math.floor(b + 0.5));
+	-- print(string.format("m%d r%d g%d b%d", max, r, g, b));
+	-- print(string.format("%0.3f %0.3f", x, 255/max));
+	r = math.min(255, math.floor(x * r + 0.5));
+	g = math.min(255, math.floor(x * g + 0.5));
+	b = math.min(255, math.floor(x * b + 0.5));
 	local tint = ((-256 + b) * 256 + g) * 256 + r;
 	g_tintCache[abgr] = tint;
 	-- print(string.format("saved %d = tint %d", abgr, tint));
@@ -276,7 +278,7 @@ function CivColors( civ : string, primaryColor, secondaryColor )
 			local leader = item.Type:match("LEADER_(.+)");
 			if leader then
 				local civ = item.PrimaryColor:match("^COLOR_PLAYER_(.*)_[^_]+");
-				print(item.Type, civ, item.PrimaryColor, item.SecondaryColor);
+				-- print(item.Type, civ, item.PrimaryColor, item.SecondaryColor);
 				g_civColors[civ] = {
 					leader = leader,
 					primary = FixColor(UI.GetColorValue(item.PrimaryColor)),
@@ -287,7 +289,6 @@ function CivColors( civ : string, primaryColor, secondaryColor )
 	end
 	local colors = g_civColors[civ];
 	if colors then
-		print(colors.leader);
 		primaryColor = colors.primary;
 		secondaryColor = colors.secondary;
 	end
@@ -346,6 +347,7 @@ function MapPinFlag.SetColor( self : MapPinFlag )
 		isDistrict = true;
 	else
 		-- shaded icons: match midtones to standard pin color
+		-- if g_tintCache[brighterIconColor] == nil then print(pMapPin:GetName()); end;
 		self.m_Instance.UnitIcon:SetColor(IconTint(brighterIconColor));
 	end
 	self.m_Instance.FlagBase:SetColor(primaryColor);
