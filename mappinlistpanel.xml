@@ -10,8 +10,13 @@
       <Container Size="280,30"/>
       <GridButton ID="AddPinButton" Anchor="C,T" Size="280,24" String="LOC_HUD_MAP_PLACE_MAP_PIN" ToolTip="LOC_HUD_MAP_PLACE_MAP_PIN_TT" Style="ButtonControl"/>
       <!-- dynamically resized by BuildMapPinList() -->
-      <ScrollPanel Anchor="R,T" ID="MapPinScrollPanel" Offset="0,0" Size="260,299" Style="ScrollPanelWithLeftBar" Vertical="1" >
+      <ScrollPanel Anchor="L,T" ID="MapPinScrollPanel" Offset="0,0" Size="260,374" Vertical="1" >
         <Stack Anchor="C,T" ID="MapPinEntryStack" StackGrowth="Bottom" Offset="0,0" StackPadding="1" />
+        <ScrollBar  Anchor="R,C" AnchorSide="O,I" Offset="4,0" Style="ScrollVerticalBar" />
+        <!--
+        <UpButton   Anchor="R,T" AnchorSide="O,I" Offset="1,0" Style="ScrollUpButton" />
+        <DownButton Anchor="R,B" AnchorSide="O,I" Offset="1,0" Style="ScrollDownButton" />
+        -->
       </ScrollPanel>
     </Stack>
 
