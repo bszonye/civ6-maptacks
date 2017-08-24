@@ -334,7 +334,6 @@ function MapPinFlag.SetColor( self : MapPinFlag )
 	local darkerIconColor	:number = DarkenLightenColor(secondaryColor,-30,255);
         
 	local pMapPin = self:GetMapPin();
-	local isDistrict = false;
 	local iconName :string = pMapPin and pMapPin:GetIconName() or nil;
 	-- print(iconName);
 	-- set icon tint appropriate for the icon color
@@ -344,7 +343,6 @@ function MapPinFlag.SetColor( self : MapPinFlag )
 	elseif pMapPin:GetIconName():find("^ICON_DISTRICT_") then
 		-- district icons: white
 		self.m_Instance.UnitIcon:SetColor( -1 );
-		isDistrict = true;
 	else
 		-- shaded icons: match midtones to standard pin color
 		-- if g_tintCache[brighterIconColor] == nil then print(pMapPin:GetName()); end;
@@ -470,7 +468,7 @@ function MapPinFlag.UpdateName( self : MapPinFlag )
 	if(pMapPin ~= nil) then
 		local nameString = pMapPin:GetName();
 		-- XXX debug
-		civ = g_civColors[nameString];
+		local civ = g_civColors[nameString];
 		if civ then
 			local leader = Locale.Lookup("LOC_LEADER_"..civ.leader.."_NAME");
 			self.m_Instance.NameContainer:SetHide( true );
