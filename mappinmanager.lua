@@ -226,41 +226,129 @@ function MapPinFlag.SetInteractivity( self : MapPinFlag )
 end
 
 ------------------------------------------------------------------
-function ColorValue( abgr : number )
+-- Calculate icon tint color
+-- Icons generally have light=224, shadow=112 (out of 255).
+-- So, to match icons to civ colors, ideally brighten the original color:
+-- by 255/224 to match light areas, or by 255/112 to match shadows.
+--
+-- In practice:
+-- Light colors look best as bright as possible without distortion.
+-- The darkest colors need shadow=64, light=128, max=144 for legibility.
+-- Other colors look good around 1.5-1.8x brightness, matching midtones.
+local g_tintCache = {};
+function IconTint( abgr : number )
+	if g_tintCache[abgr] ~= nil then return g_tintCache[abgr]; end
 	local r = abgr % 256;
 	local g = math.floor(abgr / 256) % 256;
 	local b = math.floor(abgr / 65536) % 256;
-	return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+	local max = math.max(r, g, b, 1);  -- avoid division by zero
+	local light = 255/max;  -- maximum brightness without distortion
+	local dark = 144/max;  -- minimum brightness
+	local x = 1.6;  -- match midtones
+	if light < x then x = light; elseif x < dark then x = dark; end
+
+	-- sRGB luma
+	-- local v = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+	-- print(string.format("m%d r%d g%d b%d", max, r, g, b));
+	-- print(string.format("%0.3f %0.3f", x, 255/max));
+	r = math.min(255, math.floor(x * r + 0.5));
+	g = math.min(255, math.floor(x * g + 0.5));
+	b = math.min(255, math.floor(x * b + 0.5));
+	local tint = ((-256 + b) * 256 + g) * 256 + r;
+	g_tintCache[abgr] = tint;
+	-- print(string.format("saved %d = tint %d", abgr, tint));
+	return tint;
+end
+
+------------------------------------------------------------------
+-- XXX debug
+
+function FixColor( abgr : number )
+	local r = abgr % 256;
+	local g = math.floor(abgr / 256) % 256;
+	local b = math.floor(abgr / 65536) % 256;
+	return ((-256 + b) * 256 + g) * 256 + r;
+end
+
+local g_civColors :table = nil;
+function CivColors( civ : string, primaryColor, secondaryColor )
+	if g_civColors == nil then
+		g_civColors = {};
+		for item in GameInfo.PlayerColors() do
+			local leader = item.Type:match("LEADER_(.+)");
+			if leader then
+				local civ = item.PrimaryColor:match("^COLOR_PLAYER_(.*)_[^_]+");
+				-- print(item.Type, civ, item.PrimaryColor, item.SecondaryColor);
+				g_civColors[civ] = {
+					leader = leader,
+					primary = FixColor(UI.GetColorValue(item.PrimaryColor)),
+					secondary = FixColor(UI.GetColorValue(item.SecondaryColor))
+				}
+			end
+		end
+	end
+	local colors = g_civColors[civ];
+	if colors then
+		primaryColor = colors.primary;
+		secondaryColor = colors.secondary;
+	end
+	return primaryColor, secondaryColor;
 end
 
 ------------------------------------------------------------------
 -- Set the flag color based on the player colors.
 function MapPinFlag.SetColor( self : MapPinFlag )
 	local primaryColor, secondaryColor  = UI.GetPlayerColors( self.m_Player:GetID() );
+
+	-- XXX debug
+	primaryColor, secondaryColor = CivColors(self:GetMapPin():GetName(), primaryColor, secondaryColor);
+	-- primaryColor, secondaryColor = CivColors("AUSTRALIA");
+	-- primaryColor, secondaryColor = CivColors("AZTEC");
+	-- primaryColor, secondaryColor = CivColors("POLAND");
+	-- primaryColor, secondaryColor = CivColors("MACEDON");
+	-- primaryColor, secondaryColor = CivColors("NUBIA");
+	-- primaryColor, secondaryColor = CivColors("PERSIA");
+	-- primaryColor, secondaryColor = CivColors("AMERICA");
+	-- primaryColor, secondaryColor = CivColors("BRAZIL");
+	-- primaryColor, secondaryColor = CivColors("CHINA");
+	-- primaryColor, secondaryColor = CivColors("EGYPT");
+	-- primaryColor, secondaryColor = CivColors("ENGLAND");
+	-- primaryColor, secondaryColor = CivColors("FRANCE");
+	-- primaryColor, secondaryColor = CivColors("GERMANY");
+	-- primaryColor, secondaryColor = CivColors("GREECE");
+	-- primaryColor, secondaryColor = CivColors("SPARTA");
+	-- primaryColor, secondaryColor = CivColors("INDIA");
+	-- primaryColor, secondaryColor = CivColors("JAPAN");
+	-- primaryColor, secondaryColor = CivColors("KONGO");
+	-- primaryColor, secondaryColor = CivColors("NORWAY");
+	-- primaryColor, secondaryColor = CivColors("ROME");
+	-- primaryColor, secondaryColor = CivColors("RUSSIA");
+	-- primaryColor, secondaryColor = CivColors("ARABIA");
+	-- primaryColor, secondaryColor = CivColors("SPAIN");
+	-- primaryColor, secondaryColor = CivColors("SCYTHIA");
+	-- primaryColor, secondaryColor = CivColors("SUMERIA");
+
 	local darkerFlagColor	:number = DarkenLightenColor(primaryColor,(-85),255);
 	local brighterFlagColor :number = DarkenLightenColor(primaryColor,90,255);
 	local brighterIconColor :number = DarkenLightenColor(secondaryColor,20,255);
 	local darkerIconColor	:number = DarkenLightenColor(secondaryColor,-30,255);
         
 	local pMapPin = self:GetMapPin();
-	if pMapPin==nil or pMapPin:GetIconName():find("^ICON_MAP_PIN_") then
-		-- standard map pins use standard civ colors
-		self.m_Instance.FlagBase:SetColor( primaryColor );
+	local iconName :string = pMapPin and pMapPin:GetIconName() or nil;
+	-- print(iconName);
+	-- set icon tint appropriate for the icon color
+	if not iconName or iconName:find("^ICON_MAP_PIN_") or iconName:find("^ICON_UNITOPERATION_SPY_") then
+		-- standard white map pins
 		self.m_Instance.UnitIcon:SetColor( brighterIconColor );
 	elseif pMapPin:GetIconName():find("^ICON_DISTRICT_") then
-		-- district pins are neutral (white) on civ primary color
-		self.m_Instance.FlagBase:SetColor( primaryColor );
-		self.m_Instance.UnitIcon:SetColor( -1 );
-	elseif (ColorValue(primaryColor) < ColorValue(secondaryColor)) then
-		-- other pin are white on civ primary color
-		self.m_Instance.FlagBase:SetColor( primaryColor );
+		-- district icons: white
 		self.m_Instance.UnitIcon:SetColor( -1 );
 	else
-		-- or white on civ secondary color, if it is darker
-		self.m_Instance.FlagBase:SetColor( secondaryColor );
-		self.m_Instance.UnitIcon:SetColor( -1 );
+		-- shaded icons: match midtones to standard pin color
+		-- if g_tintCache[brighterIconColor] == nil then print(pMapPin:GetName()); end;
+		self.m_Instance.UnitIcon:SetColor(IconTint(brighterIconColor));
 	end
-	--self.m_Instance.UnitIconShadow:SetColor( darkerIconColor );
+	self.m_Instance.FlagBase:SetColor(primaryColor);
 	self.m_Instance.FlagBaseOutline:SetColor( primaryColor );
 	self.m_Instance.FlagBaseDarken:SetColor( darkerFlagColor );
 	self.m_Instance.FlagBaseLighten:SetColor( primaryColor );
@@ -274,10 +362,20 @@ end
 -- Set the flag texture based on the unit's type
 function MapPinFlag.SetFlagUnitEmblem( self : MapPinFlag )
 	local pMapPin = self:GetMapPin();
-    if pMapPin ~= nil then			
+    if pMapPin ~= nil then
 		local iconName = pMapPin:GetIconName();
-		if(not self.m_Instance.UnitIcon:SetIcon(iconName)) then
-			self.m_Instance.UnitIcon:SetIcon("ICON_MAP_PIN_UNKNOWN_WHITE");
+		if iconName:find("^ICON_DISTRICT_") then
+			self.m_Instance.DistrictIcon:SetIcon(iconName);
+			self.m_Instance.DistrictIcon:SetHide(false);
+			self.m_Instance.UnitIcon:SetHide(true);
+		else
+			local size = iconName:find("^ICON_MAP_PIN_") and 24 or 28;
+			self.m_Instance.UnitIcon:SetSizeVal(size, size);
+			if not self.m_Instance.UnitIcon:SetIcon(iconName) then
+				self.m_Instance.UnitIcon:SetIcon("ICON_MAP_PIN_UNKNOWN_WHITE");
+			end
+			self.m_Instance.UnitIcon:SetHide(false);
+			self.m_Instance.DistrictIcon:SetHide(true);
 		end
 
 	end
@@ -369,13 +467,17 @@ function MapPinFlag.UpdateName( self : MapPinFlag )
 	local pMapPin = self:GetMapPin();
 	if(pMapPin ~= nil) then
 		local nameString = pMapPin:GetName();
-		self.m_Instance.UnitIcon:SetToolTipString( nameString );
-		self.m_Instance.NameLabel:SetText( nameString );
-		if(nameString ~= nil) then
-			self.m_Instance.NameContainer:SetHide(false);
-		else
-			self.m_Instance.NameContainer:SetHide(true);
+		-- XXX debug
+		local civ = g_civColors[nameString];
+		if civ then
+			local leader = Locale.Lookup("LOC_LEADER_"..civ.leader.."_NAME");
+			self.m_Instance.NameContainer:SetHide( true );
+			self.m_Instance.NormalButton:SetToolTipString( leader );
+			return;
 		end
+		self.m_Instance.NormalButton:SetToolTipString( nameString );
+		self.m_Instance.NameLabel:SetText( nameString );
+		self.m_Instance.NameContainer:SetHide( nameString == nil );
 	end
 end
 
@@ -481,7 +583,8 @@ function OnCameraUpdate( vFocusX:number, vFocusY:number, fZoomLevel:number )
 	end
 	m_zoomMultiplier= 1-fZoomLevel;
 
-	Refresh();
+	-- Map pins do not really use zoom, so skip the refresh.
+	-- Refresh();
 end
 
 ------------------------------------------------------------------
@@ -623,7 +726,6 @@ end
 
 -- ===========================================================================
 function Initialize()
-	
 	ContextPtr:SetInitHandler( OnContextInitialize );
 	ContextPtr:SetShutdown( OnShutdown );
 

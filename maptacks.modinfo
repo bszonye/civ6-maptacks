@@ -12,6 +12,7 @@
       <File>mappinlistpanel.lua</File>
       <File>mappinlistpanel.xml</File>
       <File>mappinmanager.lua</File>
+      <File>mappinmanager.xml</File>
       <File>mappinpopup.lua</File>
       <File>mappinpopup.xml</File>
     </ImportFiles>
@@ -20,6 +21,7 @@
     <File>mappinlistpanel.lua</File>
     <File>mappinlistpanel.xml</File>
     <File>mappinmanager.lua</File>
+    <File>mappinmanager.xml</File>
     <File>mappinpopup.lua</File>
     <File>mappinpopup.xml</File>
   </Files>

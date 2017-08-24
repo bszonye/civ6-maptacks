@@ -311,6 +311,60 @@ function UpdateIconOptionColor(iconEntryIndex :number)
 end
 
 -- ===========================================================================
+-- XXX debug
+local g_civs = {  -- max luma
+	"RUSSIA",     --  20   20
+	"GERMANY",    --  63   61
+	"NUBIA",      -- 108   74
+	"ARABIA",     -- 118   99
+	"PERSIA",     -- 164   69
+	"JAPAN",      -- 166   64
+	"AZTEC",      -- 181   98
+	"SCYTHIA",    -- 184   67
+	"KONGO",      -- 207   74
+	"INDIA",      -- 239  216
+	"SPARTA",     -- 239  232
+	"SPAIN",      -- 241  214
+	"BRAZIL",     -- 245  221
+	"SUMERIA",    -- 246  171
+	"NORWAY",     -- 254  104
+	"ROME",       -- 255  212
+	"MACEDON",    -- 255  238
+	"EGYPT",      -- 255  244
+	"FRANCE",     -- 255  248
+	"POLAND",     -- 255  251
+	"AMERICA",    -- 255  255
+	"AUSTRALIA",  -- 255  255
+	"CHINA",      -- 255  255
+	"ENGLAND",    -- 255  255
+	"GREECE",     -- 255  255
+};
+function MapTacksTestPattern()
+	local civs = {};
+	for item in GameInfo.PlayerColors() do
+		if item.Type:find("^LEADER_") then
+			local civ = item.PrimaryColor:match("^COLOR_PLAYER_(.*)_[^_]+");
+			table.insert(civs, civ);
+		end
+	end
+	table.sort(civs);
+	local activePlayerID = Game.GetLocalPlayer();
+	local pPlayerCfg = PlayerConfigurations[activePlayerID];
+	local pMapPin = pPlayerCfg:GetMapPin(hexX, hexY);
+	for i, leaderName in ipairs(g_civs) do
+		for j, icon in ipairs({17, 14, 109, 29, 30, 31, 33, 34, 52, 81}) do
+			local pMapPin = pPlayerCfg:GetMapPin(j-1, #civs-i);
+			local iconName = g_iconPulldownOptions[icon].name;
+			-- print(string.format("i=%d, j=%d %s %s", i, j, leaderName, iconName));
+			pMapPin:SetName(leaderName);
+			pMapPin:SetIconName(iconName);
+		end
+	end
+	Network.BroadcastPlayerInfo();
+	UI.PlaySound("Map_Pin_Add");
+end
+
+-- ===========================================================================
 function GetMapPinID(id :number)
 	if id == nil then return nil; end
 	local activePlayerID = Game.GetLocalPlayer();
@@ -335,6 +389,8 @@ function RequestMapPin(hexX :number, hexY :number)
 			Controls.VisibilityContainer:SetHide(false);
 		else
 			Controls.VisibilityContainer:SetHide(true);
+			-- XXX debug
+			-- Controls.VisibilityContainer:SetHide(false);
 		end
 
 		Controls.PinName:SetText(pMapPin:GetName());
@@ -373,6 +429,8 @@ end
 function ShowHideSendToChatButton()
 	local pMapPin = GetMapPinID(g_editMapPinID);
 	local showSendButton = pMapPin ~= nil and not pMapPin:IsPrivate() and GameConfiguration.IsNetworkMultiplayer();
+	-- XXX debug
+	-- showSendButton = true;
 
 	Controls.SendToChatButton:SetHide(not showSendButton);
 
@@ -501,6 +559,8 @@ function Initialize()
 	-- and the chat panel's show/hide handler is not triggered as expected.
 	LuaEvents.MapPinPopup_RequestChatPlayerTarget();
 		
+	-- XXX debug
+	LuaEvents.MapTacksTestPattern.Add(MapTacksTestPattern);
 end
 Initialize();
 

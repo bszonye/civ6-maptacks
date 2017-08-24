@@ -150,9 +150,11 @@ function BuildMapPinList()
 	Controls.MapPinEntryStack:CalculateSize();
 	Controls.MapPinEntryStack:ReprocessAnchoring();
 	-- Dynamically resize scroll panel
-	local scrollSize = Controls.MapPinEntryStack:GetSizeY();
-	Controls.MapPinScrollPanel:SetSizeX(scrollSize <= 299 and 280 or 260);
-	Controls.MapPinScrollPanel:SetSizeY(math.min(scrollSize, 299));
+	local maxY = 15 * 25 - 1;  -- show up to 15 pins without a scrollbar
+	local stackY = Controls.MapPinEntryStack:GetSizeY();
+	local panelX = maxY < stackY and 260 or 280;  -- make room for scrollbar
+	local panelY = math.min(maxY, stackY);
+	Controls.MapPinScrollPanel:SetSizeVal(panelX, panelY);
 	Controls.MapPinScrollPanel:ReprocessAnchoring();
 	Controls.MapPinStack:CalculateSize();
 	Controls.MapPinStack:ReprocessAnchoring();
@@ -233,7 +235,18 @@ ContextPtr:SetShowHideHandler( ShowHideHandler );
 
 
 -- ===========================================================================
+-- XXX debug
+function OnMapTacksTestPattern()
+	-- Creates a test pattern of map pins
+	-- print("Creating test pattern");
+	LuaEvents.MapTacksTestPattern();
+end
+
+-- ===========================================================================
 function Initialize()
+	-- XXX debug
+	Controls.AddPinButton:RegisterCallback( Mouse.eRClick, OnMapTacksTestPattern );
+
 	Controls.AddPinButton:RegisterCallback( Mouse.eLClick, OnAddPinButton );
     Controls.AddPinButton:RegisterCallback( Mouse.eMouseEnter, function() UI.PlaySound("Main_Menu_Mouse_Over"); end);
 	Events.PlayerInfoChanged.Add(OnPlayerInfoChanged);
