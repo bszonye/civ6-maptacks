@@ -2,6 +2,8 @@
 -- Map Pin List Panel
 ----------------------------------------------------------------  
 
+include( "MapTacks" );
+
 
 local m_playerMapPins	:table = {};
 local m_MapPinListButtonToPinEntry :table = {}; -- map pin entries keyed to their MapPinListButton object string names.  This is currently just used for sorting, please becareful if you use it for anything else as it is cleared after use.
@@ -238,15 +240,12 @@ ContextPtr:SetShowHideHandler( ShowHideHandler );
 -- XXX debug
 function OnMapTacksTestPattern()
 	-- Creates a test pattern of map pins
-	-- print("Creating test pattern");
-	LuaEvents.MapTacksTestPattern();
+	print("Creating test pattern");
+	MapTacksTestPattern();
 end
 
 -- ===========================================================================
 function Initialize()
-	-- XXX debug
-	Controls.AddPinButton:RegisterCallback( Mouse.eRClick, OnMapTacksTestPattern );
-
 	Controls.AddPinButton:RegisterCallback( Mouse.eLClick, OnAddPinButton );
     Controls.AddPinButton:RegisterCallback( Mouse.eMouseEnter, function() UI.PlaySound("Main_Menu_Mouse_Over"); end);
 	Events.PlayerInfoChanged.Add(OnPlayerInfoChanged);
@@ -255,6 +254,10 @@ function Initialize()
 
 
 	BuildMapPinList();
+
+	-- XXX debug
+	Controls.AddPinButton:RegisterCallback( Mouse.eRClick, OnMapTacksTestPattern );
+	MapTacksDebug("mappinlistpanel");
 end
 Initialize()
 

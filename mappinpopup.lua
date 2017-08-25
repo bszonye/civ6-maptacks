@@ -5,6 +5,7 @@
 ----------------------------------------------------------------  
 include( "PlayerTargetLogic" );
 include( "ToolTipHelper" );
+include( "MapTacks" );
 
 
 ----------------------------------------------------------------  
@@ -131,129 +132,9 @@ function SetMapPinIcon(imageControl :table, mapPinIconName :string)
 end
 
 -- ===========================================================================
-function AddIcon(name, tooltip)
-	table.insert(g_iconPulldownOptions, { name=name, tooltip=tooltip });
-	-- print(name, tooltip);
-end
-
--- ===========================================================================
 function PopulateIconOptions()
 	-- build icon table with default pins + extensions
-	g_iconPulldownOptions = {};
-
-	local activePlayerID = Game.GetLocalPlayer();
-	g_uniqueIconsPlayer = activePlayerID;
-	local pPlayerCfg = PlayerConfigurations[activePlayerID];
-	local civ = pPlayerCfg:GetCivilizationTypeName();
-	-- civ = 'CIVILIZATION_GREECE';
-	-- civ = 'CIVILIZATION_ROME';
-	-- civ = 'CIVILIZATION_GERMANY';
-	-- civ = 'CIVILIZATION_RUSSIA';
-	-- civ = 'CIVILIZATION_KONGO';
-	-- civ = 'CIVILIZATION_BRAZIL';
-	-- civ = 'CIVILIZATION_ENGLAND';
-	-- civ = 'CIVILIZATION_CHINA';
-	-- print(civ);
-
-	-- Table of special/indirect traits
-	local extra_traits = {
-		IMPROVEMENT_ROMAN_FORT="TRAIT_CIVILIZATION_UNIT_ROMAN_LEGION",
-	}
-	-- Get unique traits for the player civilization
-	local traits = {};
-	for item in GameInfo.CivilizationTraits() do
-		if item.CivilizationType == civ then
-			-- print(item.TraitType);
-			traits[item.TraitType] = true;
-		end
-	end
-	-- Get unique district replacement info
-	local districts = {};
-	for item in GameInfo.Districts() do
-		if item.TraitType and traits[item.TraitType] then
-			local swap = GameInfo.DistrictReplaces[item.DistrictType];
-			districts[swap.ReplacesDistrictType] = item.DistrictType;
-			-- print(item.DistrictType, "replaces", base);
-		end
-	end
-	-- for i, item in pairs(traits) do print(i, item); end
-
-	-- Standard map pins
-	for i, item in ipairs(g_standardIcons) do
-		AddIcon(item.name);
-	end
-
-	-- Districts
-	for item in GameInfo.Districts() do
-		local itype = item.DistrictType;
-		if districts[itype] then
-			-- unique district replacements for this civ
-			itype = districts[itype]
-			AddIcon("ICON_"..itype, itype);
-		elseif item.TraitType then
-			-- skip other unique districts
-		elseif item.InternalOnly then
-			-- these districts have icons but not tooltips
-			AddIcon("ICON_"..itype);
-		else
-			AddIcon("ICON_"..itype, itype);
-		end
-	end
-
-	-- Improvements
-	local minor_civ_improvements = {};
-	local unique_improvements = {};
-	for item in GameInfo.Improvements() do
-		local itype = item.ImprovementType;
-		if item.BarbarianCamp or item.Goody then
-			-- skip
-		elseif item.TraitType then
-			-- organize unique & city state improvements
-			if item.TraitType:find("^TRAIT_CIVILIZATION_") then
-				if traits[item.TraitType] then
-					table.insert(unique_improvements, item);
-				end
-			elseif item.TraitType:find("^MINOR_CIV_") then
-				table.insert(minor_civ_improvements, item);
-			end
-		elseif extra_traits[itype] then
-			-- handle special cases like the Roman Fort
-			if traits[extra_traits[itype]] then
-				table.insert(unique_improvements, item);
-			end
-		else
-			AddIcon(item.Icon, itype);
-		end
-	end
-	-- Unique improvements
-	for i, item in ipairs(unique_improvements) do
-		AddIcon(item.Icon, item.ImprovementType);
-	end
-	-- Minor civ improvements
-	for i, item in ipairs(minor_civ_improvements) do
-		AddIcon(item.Icon, item.ImprovementType);
-	end
-
-	-- Great people
-	for item in GameInfo.GreatPersonClasses() do
-		AddIcon(item.ActionIcon, item.Name);
-	end
-
-	-- Unit commands
-	-- TODO: these mostly make poor map pins
-	for item in GameInfo.UnitCommands() do
-		if item.VisibleInUI then
-			AddIcon(item.Icon, item.Description);
-		end
-	end
-
-	-- Unit operations
-	-- TODO: only some of these make good map pins
-	for item in GameInfo.UnitOperations() do
-		if item.VisibleInUI then
-			AddIcon(item.Icon, item.Description);
-		end
-	end
+	g_iconPulldownOptions = MapTacksIconOptions(g_standardIcons);
 
 	g_iconOptionEntries = {};
 	Controls.IconOptionStack:DestroyAllChildren();
@@ -275,6 +156,8 @@ function PopulateIconOptions()
 		newIconEntry.IconName = pair.name;
 		newIconEntry.Instance = controlTable;
 		g_iconOptionEntries[i] = newIconEntry;
+		-- XXX debug
+		print(pair.name);
 
 		UpdateIconOptionColor(i);
 	end
@@ -308,60 +191,6 @@ function UpdateIconOptionColor(iconEntryIndex :number)
 			iconEntry.Instance.IconOptionButton:SetSelected(false);
 		end
 	end
-end
-
--- ===========================================================================
--- XXX debug
-local g_civs = {  -- max luma
-	"RUSSIA",     --  20   20
-	"GERMANY",    --  63   61
-	"NUBIA",      -- 108   74
-	"ARABIA",     -- 118   99
-	"PERSIA",     -- 164   69
-	"JAPAN",      -- 166   64
-	"AZTEC",      -- 181   98
-	"SCYTHIA",    -- 184   67
-	"KONGO",      -- 207   74
-	"INDIA",      -- 239  216
-	"SPARTA",     -- 239  232
-	"SPAIN",      -- 241  214
-	"BRAZIL",     -- 245  221
-	"SUMERIA",    -- 246  171
-	"NORWAY",     -- 254  104
-	"ROME",       -- 255  212
-	"MACEDON",    -- 255  238
-	"EGYPT",      -- 255  244
-	"FRANCE",     -- 255  248
-	"POLAND",     -- 255  251
-	"AMERICA",    -- 255  255
-	"AUSTRALIA",  -- 255  255
-	"CHINA",      -- 255  255
-	"ENGLAND",    -- 255  255
-	"GREECE",     -- 255  255
-};
-function MapTacksTestPattern()
-	local civs = {};
-	for item in GameInfo.PlayerColors() do
-		if item.Type:find("^LEADER_") then
-			local civ = item.PrimaryColor:match("^COLOR_PLAYER_(.*)_[^_]+");
-			table.insert(civs, civ);
-		end
-	end
-	table.sort(civs);
-	local activePlayerID = Game.GetLocalPlayer();
-	local pPlayerCfg = PlayerConfigurations[activePlayerID];
-	local pMapPin = pPlayerCfg:GetMapPin(hexX, hexY);
-	for i, leaderName in ipairs(g_civs) do
-		for j, icon in ipairs({17, 14, 109, 29, 30, 31, 33, 34, 52, 81}) do
-			local pMapPin = pPlayerCfg:GetMapPin(j-1, #civs-i);
-			local iconName = g_iconPulldownOptions[icon].name;
-			-- print(string.format("i=%d, j=%d %s %s", i, j, leaderName, iconName));
-			pMapPin:SetName(leaderName);
-			pMapPin:SetIconName(iconName);
-		end
-	end
-	Network.BroadcastPlayerInfo();
-	UI.PlaySound("Map_Pin_Add");
 end
 
 -- ===========================================================================
@@ -560,7 +389,7 @@ function Initialize()
 	LuaEvents.MapPinPopup_RequestChatPlayerTarget();
 		
 	-- XXX debug
-	LuaEvents.MapTacksTestPattern.Add(MapTacksTestPattern);
+	MapTacksDebug("mappinpopup");
 end
 Initialize();
 
