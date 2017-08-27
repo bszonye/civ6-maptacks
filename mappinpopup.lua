@@ -148,7 +148,7 @@ function PopulateIconOptions()
 		SetMapPinIcon(controlTable.Icon, pair.name);
 	    controlTable.IconOptionButton:RegisterCallback(Mouse.eLClick, OnIconOption);
 		controlTable.IconOptionButton:SetVoids(i, -1);
-		if pair.tooltip ~= nil then
+		if pair.tooltip then
 			local tooltip = ToolTipHelper.GetToolTip(pair.tooltip, Game.GetLocalPlayer()) or Locale.Lookup(pair.tooltip);
 			controlTable.IconOptionButton:SetToolTipString(tooltip);
 		end
@@ -157,7 +157,7 @@ function PopulateIconOptions()
 		newIconEntry.Instance = controlTable;
 		g_iconOptionEntries[i] = newIconEntry;
 		-- XXX debug
-		print(pair.name);
+		-- print(pair.name, pair.tooltip);
 
 		UpdateIconOptionColor(i);
 	end
@@ -387,9 +387,6 @@ function Initialize()
 	-- We have to do this because the map pin's context is loaded after the chat panel's 
 	-- and the chat panel's show/hide handler is not triggered as expected.
 	LuaEvents.MapPinPopup_RequestChatPlayerTarget();
-		
-	-- XXX debug
-	MapTacksDebug("mappinpopup");
 end
 Initialize();
 

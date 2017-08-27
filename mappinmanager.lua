@@ -234,52 +234,23 @@ function MapPinFlag.SetColor( self : MapPinFlag )
 	-- XXX debug
 	primaryColor, secondaryColor = CivColors(self:GetMapPin():GetName(), primaryColor, secondaryColor);
 	-- primaryColor, secondaryColor = CivColors("AUSTRALIA");
-	-- primaryColor, secondaryColor = CivColors("AZTEC");
-	-- primaryColor, secondaryColor = CivColors("POLAND");
-	-- primaryColor, secondaryColor = CivColors("MACEDON");
-	-- primaryColor, secondaryColor = CivColors("NUBIA");
-	-- primaryColor, secondaryColor = CivColors("PERSIA");
-	-- primaryColor, secondaryColor = CivColors("AMERICA");
-	-- primaryColor, secondaryColor = CivColors("BRAZIL");
-	-- primaryColor, secondaryColor = CivColors("CHINA");
-	-- primaryColor, secondaryColor = CivColors("EGYPT");
-	-- primaryColor, secondaryColor = CivColors("ENGLAND");
-	-- primaryColor, secondaryColor = CivColors("FRANCE");
-	-- primaryColor, secondaryColor = CivColors("GERMANY");
-	-- primaryColor, secondaryColor = CivColors("GREECE");
-	-- primaryColor, secondaryColor = CivColors("SPARTA");
-	-- primaryColor, secondaryColor = CivColors("INDIA");
-	-- primaryColor, secondaryColor = CivColors("JAPAN");
-	-- primaryColor, secondaryColor = CivColors("KONGO");
-	-- primaryColor, secondaryColor = CivColors("NORWAY");
-	-- primaryColor, secondaryColor = CivColors("ROME");
-	-- primaryColor, secondaryColor = CivColors("RUSSIA");
-	-- primaryColor, secondaryColor = CivColors("ARABIA");
-	-- primaryColor, secondaryColor = CivColors("SPAIN");
-	-- primaryColor, secondaryColor = CivColors("SCYTHIA");
-	-- primaryColor, secondaryColor = CivColors("SUMERIA");
 
-	local darkerFlagColor	:number = DarkenLightenColor(primaryColor,(-85),255);
-	local brighterFlagColor :number = DarkenLightenColor(primaryColor,90,255);
-	local brighterIconColor :number = DarkenLightenColor(secondaryColor,20,255);
-	local darkerIconColor	:number = DarkenLightenColor(secondaryColor,-30,255);
+	local darkerFlagColor   :number = MapTacksTint(primaryColor, -85);
+	local brighterFlagColor :number = MapTacksTint(primaryColor, 90);
+	local brighterIconColor :number = MapTacksTint(secondaryColor, 20);
+	-- local darkerIconColor   :number = MapTacksTint(secondaryColor, -30);
         
-	local pMapPin = self:GetMapPin();
-	local iconName :string = pMapPin and pMapPin:GetIconName() or nil;
+	local iconType = MapTacksType(self:GetMapPin()) or "M";
 	-- print(iconName);
 	-- set icon tint appropriate for the icon color
-	if not iconName or iconName:find("^ICON_MAP_PIN_") or iconName:find("^ICON_UNITOPERATION_SPY_") then
-		-- standard white map pins
+	if iconType == "M" then
+		-- standard map pins
 		self.m_Instance.UnitIcon:SetColor( brighterIconColor );
-	elseif pMapPin:GetIconName():find("^ICON_DISTRICT_") then
-		-- district icons: white
-		self.m_Instance.UnitIcon:SetColor( -1 );
-	else
+	elseif iconType ~= "D" then
 		-- shaded icons: match midtones to standard pin color
-		-- if g_tintCache[brighterIconColor] == nil then print(pMapPin:GetName()); end;
 		self.m_Instance.UnitIcon:SetColor(IconTint(brighterIconColor));
 	end
-	self.m_Instance.FlagBase:SetColor(primaryColor);
+	self.m_Instance.FlagBase:SetColor( primaryColor );
 	self.m_Instance.FlagBaseOutline:SetColor( primaryColor );
 	self.m_Instance.FlagBaseDarken:SetColor( darkerFlagColor );
 	self.m_Instance.FlagBaseLighten:SetColor( primaryColor );
@@ -295,12 +266,13 @@ function MapPinFlag.SetFlagUnitEmblem( self : MapPinFlag )
 	local pMapPin = self:GetMapPin();
     if pMapPin ~= nil then
 		local iconName = pMapPin:GetIconName();
-		if iconName:find("^ICON_DISTRICT_") then
+		local iconType = MapTacksType(pMapPin);
+		if iconType == "D" then
 			self.m_Instance.DistrictIcon:SetIcon(iconName);
 			self.m_Instance.DistrictIcon:SetHide(false);
 			self.m_Instance.UnitIcon:SetHide(true);
 		else
-			local size = iconName:find("^ICON_MAP_PIN_") and 24 or 28;
+			local size = iconType == "M" and 24 or 28;
 			self.m_Instance.UnitIcon:SetSizeVal(size, size);
 			if not self.m_Instance.UnitIcon:SetIcon(iconName) then
 				self.m_Instance.UnitIcon:SetIcon("ICON_MAP_PIN_UNKNOWN_WHITE");
@@ -670,8 +642,6 @@ function Initialize()
 	Events.MultiplayerPostPlayerDisconnected.Add( OnPlayerConnectChanged );
 	Events.WorldRenderViewChanged.Add(PositionFlagsToView);
 	Events.PlayerInfoChanged.Add(OnPlayerInfoChanged);
-	-- XXX debug
-	MapTacksDebug("mappinmanager");
 end
 Initialize();
 

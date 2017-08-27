@@ -237,14 +237,6 @@ ContextPtr:SetShowHideHandler( ShowHideHandler );
 
 
 -- ===========================================================================
--- XXX debug
-function OnMapTacksTestPattern()
-	-- Creates a test pattern of map pins
-	print("Creating test pattern");
-	MapTacksTestPattern();
-end
-
--- ===========================================================================
 function Initialize()
 	Controls.AddPinButton:RegisterCallback( Mouse.eLClick, OnAddPinButton );
     Controls.AddPinButton:RegisterCallback( Mouse.eMouseEnter, function() UI.PlaySound("Main_Menu_Mouse_Over"); end);
@@ -256,8 +248,7 @@ function Initialize()
 	BuildMapPinList();
 
 	-- XXX debug
-	Controls.AddPinButton:RegisterCallback( Mouse.eRClick, OnMapTacksTestPattern );
-	MapTacksDebug("mappinlistpanel");
+	Controls.AddPinButton:RegisterCallback( Mouse.eRClick, MapTacksTestPattern );
 end
 Initialize()
 
