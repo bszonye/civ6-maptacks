@@ -38,18 +38,18 @@ local g_debugLeader = nil;
 --
 -- In practice:
 -- Light colors look best as bright as possible without distortion.
--- The darkest colors need shadow=64, light=128, max=144 for legibility.
+-- The darkest colors need shadow=56, light=112, max=128 for legibility.
 -- Other colors look good around 1.5-1.8x brightness, matching midtones.
 local g_tintCache = {};
-function IconTint( abgr : number, midtone : number )
+function IconTint( abgr : number, debug : number )
 	if g_tintCache[abgr] ~= nil then return g_tintCache[abgr]; end
 	local r = abgr % 256;
 	local g = math.floor(abgr / 256) % 256;
 	local b = math.floor(abgr / 65536) % 256;
 	local max = math.max(r, g, b, 1);  -- avoid division by zero
 	local light = 255/max;  -- maximum brightness without distortion
-	local dark = 144/max;  -- minimum brightness
-	local x = midtone or 1.6;  -- match midtones
+	local dark = 128/max;  -- minimum brightness
+	local x = 1.6;  -- match midtones
 	if light < x then x = light; elseif x < dark then x = dark; end
 
 	-- sRGB luma
