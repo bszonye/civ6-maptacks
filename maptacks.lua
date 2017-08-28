@@ -2,6 +2,34 @@
 -- MapTacks
 -- utility functions
 
+local g_debugLeader = nil;
+-- g_debugLeader = GameInfo.Leaders.LEADER_BARBAROSSA
+-- g_debugLeader = GameInfo.Leaders.LEADER_CATHERINE_DE_MEDICI
+-- g_debugLeader = GameInfo.Leaders.LEADER_CLEOPATRA
+-- g_debugLeader = GameInfo.Leaders.LEADER_GANDHI
+-- g_debugLeader = GameInfo.Leaders.LEADER_GILGAMESH
+-- g_debugLeader = GameInfo.Leaders.LEADER_GORGO
+-- g_debugLeader = GameInfo.Leaders.LEADER_HARDRADA
+-- g_debugLeader = GameInfo.Leaders.LEADER_HOJO
+-- g_debugLeader = GameInfo.Leaders.LEADER_MVEMBA
+-- g_debugLeader = GameInfo.Leaders.LEADER_PEDRO
+-- g_debugLeader = GameInfo.Leaders.LEADER_PERICLES
+-- g_debugLeader = GameInfo.Leaders.LEADER_PETER_GREAT
+-- g_debugLeader = GameInfo.Leaders.LEADER_PHILIP_II
+-- g_debugLeader = GameInfo.Leaders.LEADER_QIN
+-- g_debugLeader = GameInfo.Leaders.LEADER_SALADIN
+-- g_debugLeader = GameInfo.Leaders.LEADER_TOMYRIS
+-- g_debugLeader = GameInfo.Leaders.LEADER_TRAJAN
+-- g_debugLeader = GameInfo.Leaders.LEADER_T_ROOSEVELT
+-- g_debugLeader = GameInfo.Leaders.LEADER_VICTORIA
+-- g_debugLeader = GameInfo.Leaders.LEADER_JOHN_CURTIN
+-- g_debugLeader = GameInfo.Leaders.LEADER_MONTEZUMA
+-- g_debugLeader = GameInfo.Leaders.LEADER_ALEXANDER
+-- g_debugLeader = GameInfo.Leaders.LEADER_CYRUS
+-- g_debugLeader = GameInfo.Leaders.LEADER_AMANITORE
+-- g_debugLeader = GameInfo.Leaders.LEADER_JADWIGA
+
+
 ------------------------------------------------------------------
 -- Calculate icon tint color
 -- Icons generally have light=224, shadow=112 (out of 255).
@@ -10,17 +38,17 @@
 --
 -- In practice:
 -- Light colors look best as bright as possible without distortion.
--- The darkest colors need shadow=64, light=128, max=144 for legibility.
+-- The darkest colors need shadow=56, light=112, max=128 for legibility.
 -- Other colors look good around 1.5-1.8x brightness, matching midtones.
 local g_tintCache = {};
-function IconTint( abgr : number )
+function MapTacksIconTint( abgr : number, debug : number )
 	if g_tintCache[abgr] ~= nil then return g_tintCache[abgr]; end
 	local r = abgr % 256;
 	local g = math.floor(abgr / 256) % 256;
 	local b = math.floor(abgr / 65536) % 256;
 	local max = math.max(r, g, b, 1);  -- avoid division by zero
 	local light = 255/max;  -- maximum brightness without distortion
-	local dark = 144/max;  -- minimum brightness
+	local dark = 128/max;  -- minimum brightness
 	local x = 1.6;  -- match midtones
 	if light < x then x = light; elseif x < dark then x = dark; end
 
@@ -38,316 +66,54 @@ function IconTint( abgr : number )
 end
 
 ------------------------------------------------------------------
--- XXX debug
-
-local g_civInfo :table = nil;
-function CivInfo( civ : string )
-	if g_civInfo == nil then
-		g_civInfo = {};
-		for item in GameInfo.PlayerColors() do
-			local leader = item.Type:match("LEADER_(.+)");
-			if leader then
-				local civ = item.PrimaryColor:match("^COLOR_PLAYER_(.*)_[^_]+");
-				-- print(item.Type, civ, item.PrimaryColor, item.SecondaryColor);
-				g_civInfo[civ] = {
-					leader = leader,
-					primary = UI.GetColorValue(item.PrimaryColor),
-					secondary = UI.GetColorValue(item.SecondaryColor)
-				}
-			end
-		end
-	end
-	return g_civInfo[civ];
-end
-
-function CivColors( civ : string, primaryColor, secondaryColor )
-	local info = CivInfo(civ);
-	if info then
-		primaryColor = info.primary;
-		secondaryColor = info.secondary;
+-- Get player colors (with debug override)
+function MapTacksColors(playerID : number)
+	local primaryColor, secondaryColor = UI.GetPlayerColors(playerID);
+	if g_debugLeader then
+		local colors = GameInfo.PlayerColors[g_debugLeader.Hash];
+		primaryColor = UI.GetColorValue(colors.PrimaryColor);
+		secondaryColor = UI.GetColorValue(colors.SecondaryColor);
 	end
 	return primaryColor, secondaryColor;
 end
 
 -- ===========================================================================
 -- XXX debug
-local g_civs = {  -- max luma
-	"RUSSIA",     --  20   20
-	"GERMANY",    --  63   61
-	"NUBIA",      -- 108   74
-	"ARABIA",     -- 118   99
-	"PERSIA",     -- 164   69
-	"JAPAN",      -- 166   64
-	"AZTEC",      -- 181   98
-	"SCYTHIA",    -- 184   67
-	"KONGO",      -- 207   74
-	"INDIA",      -- 239  216
-	"SPARTA",     -- 239  232
-	"SPAIN",      -- 241  214
-	"BRAZIL",     -- 245  221
-	"SUMERIA",    -- 246  171
-	"NORWAY",     -- 254  104
-	"ROME",       -- 255  212
-	"MACEDON",    -- 255  238
-	"EGYPT",      -- 255  244
-	"FRANCE",     -- 255  248
-	"POLAND",     -- 255  251
-	"AMERICA",    -- 255  255
-	"AUSTRALIA",  -- 255  255
-	"CHINA",      -- 255  255
-	"ENGLAND",    -- 255  255
-	"GREECE",     -- 255  255
-};
-local g_icons = {
---	"ICON_MAP_PIN_STRENGTH",
---	"ICON_MAP_PIN_RANGED",
---	"ICON_MAP_PIN_BOMBARD",
---	"ICON_MAP_PIN_DISTRICT",
---	"ICON_MAP_PIN_CHARGES",
---	"ICON_MAP_PIN_DEFENSE",
---	"ICON_MAP_PIN_MOVEMENT",
---	"ICON_MAP_PIN_NO",
---	"ICON_MAP_PIN_PLUS",
---	"ICON_MAP_PIN_CIRCLE",
---	"ICON_MAP_PIN_TRIANGLE",
---	"ICON_MAP_PIN_SUN",
---	"ICON_MAP_PIN_SQUARE",
-	"ICON_MAP_PIN_DIAMOND",
---	"ICON_DISTRICT_CITY_CENTER",
---	"ICON_DISTRICT_HOLY_SITE",
-	"ICON_DISTRICT_CAMPUS",
---	"ICON_DISTRICT_ENCAMPMENT",
---	"ICON_DISTRICT_HARBOR",
---	"ICON_DISTRICT_AERODROME",
---	"ICON_DISTRICT_COMMERCIAL_HUB",
---	"ICON_DISTRICT_ENTERTAINMENT_COMPLEX",
---	"ICON_DISTRICT_THEATER",
---	"ICON_DISTRICT_INDUSTRIAL_ZONE",
---	"ICON_DISTRICT_NEIGHBORHOOD",
---	"ICON_DISTRICT_AQUEDUCT",
---	"ICON_DISTRICT_SPACEPORT",
---	"ICON_DISTRICT_WONDER",
-	"ICON_IMPROVEMENT_FARM",
---	"ICON_IMPROVEMENT_MINE",
-	"ICON_IMPROVEMENT_QUARRY",
---	"ICON_IMPROVEMENT_FISHING_BOATS",
-	"ICON_IMPROVEMENT_PASTURE",
-	"ICON_IMPROVEMENT_PLANTATION",
---	"ICON_IMPROVEMENT_CAMP",
---	"ICON_IMPROVEMENT_LUMBER_MILL",
---	"ICON_IMPROVEMENT_OIL_WELL",
---	"ICON_IMPROVEMENT_OFFSHORE_OIL_RIG",
---	"ICON_IMPROVEMENT_FORT",
---	"ICON_IMPROVEMENT_AIRSTRIP",
---	"ICON_IMPROVEMENT_BEACH_RESORT",
---	"ICON_IMPROVEMENT_MISSILE_SILO",
---	"ICON_IMPROVEMENT_COLOSSAL_HEAD",
---	"ICON_IMPROVEMENT_ALCAZAR",
---	"ICON_IMPROVEMENT_MONASTERY",
---	"ICON_UNITOPERATION_GENERAL_ACTION",
---	"ICON_UNITOPERATION_ADMIRAL_ACTION",
---	"ICON_UNITOPERATION_ENGINEER_ACTION",
---	"ICON_UNITOPERATION_MERCHANT_ACTION",
---	"ICON_UNITOPERATION_FOUND_RELIGION",
-	"ICON_UNITOPERATION_SCIENTIST_ACTION",
---	"ICON_UNITOPERATION_WRITER_ACTION",
---	"ICON_UNITOPERATION_ARTIST_ACTION",
---	"ICON_UNITOPERATION_MUSICIAN_ACTION",
---	"ICON_UNITCOMMAND_PROMOTE",
---	"ICON_UNITCOMMAND_UPGRADE",
---	"ICON_UNITCOMMAND_WAKE",
---	"ICON_UNITCOMMAND_CANCEL",
---	"ICON_UNITCOMMAND_STOP_AUTOMATION",
---	"ICON_UNITCOMMAND_DELETE",
---	"ICON_UNITCOMMAND_GIFT",
---	"ICON_UNITCOMMAND_ENTER_FORMATION",
---	"ICON_UNITCOMMAND_EXIT_FORMATION",
---	"ICON_UNITCOMMAND_ACTIVATE_GREAT_PERSON",
---	"ICON_UNITCOMMAND_DISTRICT_PRODUCTION",
---	"ICON_UNITCOMMAND_FORM_CORPS",
-	"ICON_UNITCOMMAND_FORM_ARMY",
---	"ICON_UNITCOMMAND_PLUNDER_TRADE_ROUTE",
---	"ICON_UNITCOMMAND_NAME_UNIT",
---	"ICON_UNITCOMMAND_WONDER_PRODUCTION",
---	"ICON_UNITCOMMAND_HARVEST_WONDER",
---	"ICON_UNITCOMMAND_AIRLIFT",
---	"ICON_UNITOPERATION_AIR_ATTACK",
---	"ICON_UNITOPERATION_AUTO_EXPLORE",
---	"ICON_UNITOPERATION_BUILD_IMPROVEMENT",
---	"ICON_UNITOPERATION_BUILD_ROUTE",
---	"ICON_UNITOPERATION_CLEAR_CONTAMINATION",
---	"ICON_UNITOPERATION_CONVERT_BARBARIANS",
---	"ICON_UNITOPERATION_DEPLOY",
-	"ICON_UNITOPERATION_DESIGNATE_PARK",
---	"ICON_UNITOPERATION_EVANGELIZE_BELIEF",
---	"ICON_UNITOPERATION_EXCAVATE",
---	"ICON_UNITOPERATION_FORTIFY",
---	"ICON_UNITOPERATION_HEAL",
---	"ICON_UNITOPERATION_FOUND_CITY",
---	"ICON_UNITOPERATION_FOUND_RELIGION",
---	"ICON_UNITOPERATION_HARVEST_RESOURCE",
---	"ICON_UNITOPERATION_LAUNCH_INQUISITION",
---	"ICON_UNITOPERATION_MAKE_TRADE_ROUTE",
---	"ICON_UNITOPERATION_MOVE_TO",
---	"ICON_UNITOPERATION_WMD_STRIKE",
---	"ICON_UNITOPERATION_COASTAL_RAID",
---	"ICON_UNITOPERATION_PILLAGE",
---	"ICON_UNITOPERATION_PILLAGE_ROUTE",
---	"ICON_UNITOPERATION_PLANT_FOREST",
---	"ICON_UNITOPERATION_RANGE_ATTACK",
---	"ICON_UNITOPERATION_REBASE",
---	"ICON_UNITOPERATION_REMOVE_FEATURE",
---	"ICON_UNITOPERATION_SPREAD_RELIGION",
---	"ICON_UNITOPERATION_REMOVE_IMPROVEMENT",
---	"ICON_UNITOPERATION_REPAIR",
---	"ICON_UNITOPERATION_REPAIR_ROUTE",
---	"ICON_UNITOPERATION_HEAL",
---	"ICON_UNITOPERATION_RETRAIN",
---	"ICON_UNITOPERATION_SKIP_TURN",
---	"ICON_UNITOPERATION_SLEEP",
---	"ICON_UNITOPERATION_SPREAD_RELIGION",
-	"ICON_UNITOPERATION_SPY_COUNTERSPY_ACTION",
---	"ICON_UNITOPERATION_SPY_COUNTERSPY",
---	"ICON_UNITOPERATION_SPY_DISRUPT_ROCKETRY",
---	"ICON_UNITOPERATION_SPY_GAIN_SOURCES",
---	"ICON_UNITOPERATION_SPY_GREAT_WORK_HEIST",
---	"ICON_UNITOPERATION_SPY_LISTENING_POST",
---	"ICON_UNITOPERATION_SPY_RECRUIT_PARTISANS",
---	"ICON_UNITOPERATION_SPY_SABOTAGE_PRODUCTION",
---	"ICON_UNITOPERATION_SPY_SIPHON_FUNDS",
---	"ICON_UNITOPERATION_SPY_STEAL_TECH_BOOST",
---	"ICON_UNITOPERATION_SPY_TRAVEL_NEW_CITY",
---	"ICON_UNITOPERATION_TELEPORT_TO_CITY",
---	"ICON_UNITOPERATION_UPGRADE",
---	"ICON_UNITOPERATION_ALERT",
---	"ICON_UNIT_GREAT_SCIENTIST",
---	"ICON_UNIT_SETTLER",
---	"ICON_UNIT_SPY",
-};
 
 function MapTacksTestPattern()
-	print("MapTacksTestPattern: start");
+	-- print("MapTacksTestPattern: start");
 	local activePlayerID = Game.GetLocalPlayer();
 	local pPlayerCfg = PlayerConfigurations[activePlayerID];
 	local pMapPin = pPlayerCfg:GetMapPin(hexX, hexY);
-	for i, leaderName in ipairs(g_civs) do
-		for j, iconName in ipairs(g_icons) do
-			local pMapPin = pPlayerCfg:GetMapPin(j-1, #g_civs-i);
-			-- local iconName = g_icons[icon];
-			-- print(string.format("i=%d, j=%d %s %s", i, j, leaderName, iconName));
-			pMapPin:SetName(leaderName);
-			pMapPin:SetIconName(iconName);
-		end
+	for i, item in ipairs(MapTacksIconOptions()) do
+		local row = math.floor((i-1) / 14);
+		local col = (i-1) % 14;
+		-- print(row, col, item.name);
+		local pMapPin = pPlayerCfg:GetMapPin(col, 4-row);
+		pMapPin:SetName(nil);
+		pMapPin:SetIconName(item.name);
 	end
 	Network.BroadcastPlayerInfo();
 	UI.PlaySound("Map_Pin_Add");
 end
 
--- ===========================================================================
-local g_ops = {
-	ATTACK={
-		"UNITOPERATION_AIR_ATTACK",
-		"UNITOPERATION_WMD_STRIKE",
-		"UNITOPERATION_COASTAL_RAID",
-		"UNITOPERATION_PILLAGE",
-		"UNITOPERATION_PILLAGE_ROUTE",
-		"UNITOPERATION_RANGE_ATTACK",
-	},
-	BUILD={
-		"UNITOPERATION_BUILD_IMPROVEMENT",
-		"UNITOPERATION_BUILD_ROUTE",
-		"UNITOPERATION_DESIGNATE_PARK",
-		"UNITOPERATION_PLANT_FOREST",
-		"UNITOPERATION_REMOVE_FEATURE",
-		"UNITOPERATION_REMOVE_IMPROVEMENT",
-	},
-	INPLACE={
-		"UNITOPERATION_FORTIFY",
-		"UNITOPERATION_HEAL",
-		"UNITOPERATION_REST_REPAIR",
-		"UNITOPERATION_SKIP_TURN",
-		"UNITOPERATION_SLEEP",
-		"UNITOPERATION_ALERT",
-	},
-	MOVE={
-		"UNITOPERATION_DEPLOY",
-		-- "UNITOPERATION_DISEMBARK",  -- not VisibleInUI
-		-- "UNITOPERATION_EMBARK",  -- not VisibleInUI
-		"UNITOPERATION_MOVE_TO",
-		-- "UNITOPERATION_MOVE_TO_UNIT",  -- not VisibleInUI
-		"UNITOPERATION_REBASE",
-		-- "UNITOPERATION_ROUTE_TO",  -- not VisibleInUI
-		"UNITOPERATION_TELEPORT_TO_CITY",
-	},
-	MOVESPY={  -- CategoryInUI MOVE but needs special handling
-		"UNITOPERATION_SPY_COUNTERSPY",
-		"UNITOPERATION_SPY_TRAVEL_NEW_CITY",
-	},
-	OFFENSIVESPY={
-		"UNITOPERATION_SPY_DISRUPT_ROCKETRY",
-		"UNITOPERATION_SPY_GAIN_SOURCES",
-		"UNITOPERATION_SPY_GREAT_WORK_HEIST",
-		"UNITOPERATION_SPY_LISTENING_POST",
-		"UNITOPERATION_SPY_RECRUIT_PARTISANS",
-		"UNITOPERATION_SPY_SABOTAGE_PRODUCTION",
-		"UNITOPERATION_SPY_SIPHON_FUNDS",
-		"UNITOPERATION_SPY_STEAL_TECH_BOOST",
-	},
-	SECONDARY={
-		"UNITOPERATION_AUTOMATE_EXPLORE",
-	},
-	SPECIFIC={
-		"UNITOPERATION_CLEAR_CONTAMINATION",
-		"UNITOPERATION_CONVERT_BARBARIANS",
-		"UNITOPERATION_EVANGELIZE_BELIEF",
-		"UNITOPERATION_EXCAVATE",
-		"UNITOPERATION_FOUND_CITY",
-		"UNITOPERATION_FOUND_RELIGION",
-		"UNITOPERATION_HARVEST_RESOURCE",
-		"UNITOPERATION_LAUNCH_INQUISITION",
-		"UNITOPERATION_MAKE_TRADE_ROUTE",
-		"UNITOPERATION_REMOVE_HERESY",
-		"UNITOPERATION_REPAIR",
-		"UNITOPERATION_REPAIR_ROUTE",
-		"UNITOPERATION_RETRAIN",
-		"UNITOPERATION_SPREAD_RELIGION",
-		-- "UNITOPERATION_SWAP_UNITS",  -- not VisibleInUI
-		"UNITOPERATION_UPGRADE",
-		-- "UNITOPERATION_WAIT_FOR",  -- not VisibleInUI
-	},
+local g_stockIcons = {
+	{ name="ICON_MAP_PIN_STRENGTH" },
+	{ name="ICON_MAP_PIN_RANGED"   },
+	{ name="ICON_MAP_PIN_BOMBARD"  },
+	{ name="ICON_MAP_PIN_DISTRICT" },
+	{ name="ICON_MAP_PIN_CHARGES"  },
+	{ name="ICON_MAP_PIN_DEFENSE"  },
+	{ name="ICON_MAP_PIN_MOVEMENT" },
+	{ name="ICON_MAP_PIN_NO"       },
+	{ name="ICON_MAP_PIN_PLUS"     },
+	{ name="ICON_MAP_PIN_CIRCLE"   },
+	{ name="ICON_MAP_PIN_TRIANGLE" },
+	{ name="ICON_MAP_PIN_SUN"      },
+	{ name="ICON_MAP_PIN_SQUARE"   },
+	{ name="ICON_MAP_PIN_DIAMOND"  },
 };
-
-local g_commands = {
-	INPLACE={
-		"UNITCOMMAND_WAKE",
-		"UNITCOMMAND_CANCEL",
-		"UNITCOMMAND_STOP_AUTOMATION",
-		"UNITCOMMAND_GIFT",
-	},
-	MOVE={
-		"UNITCOMMAND_AIRLIFT",
-	},
-	SECONDARY={
---		"UNITCOMMAND_DELETE",
-	},
-	SPECIFIC={
-		"UNITCOMMAND_PROMOTE",
-		"UNITCOMMAND_UPGRADE",
---		"UNITCOMMAND_AUTOMATE",  -- not VisibleInUI
-		"UNITCOMMAND_ENTER_FORMATION",
-		"UNITCOMMAND_EXIT_FORMATION",
-		"UNITCOMMAND_ACTIVATE_GREAT_PERSON",
-		"UNITCOMMAND_DISTRICT_PRODUCTION",
-		"UNITCOMMAND_FORM_CORPS",
-		"UNITCOMMAND_FORM_ARMY",
-		"UNITCOMMAND_PLUNDER_TRADE_ROUTE",
-		"UNITCOMMAND_NAME_UNIT",
-		"UNITCOMMAND_WONDER_PRODUCTION",
-		"UNITCOMMAND_HARVEST_WONDER",
-	},
-};
-
-local g_builderOps = {
+local g_buildOps = {
 	GameInfo.UnitOperations.UNITOPERATION_PLANT_FOREST,
 	GameInfo.UnitOperations.UNITOPERATION_REMOVE_FEATURE,
 	GameInfo.UnitOperations.UNITOPERATION_HARVEST_RESOURCE,
@@ -356,7 +122,7 @@ local g_repairOps = {
 	GameInfo.UnitOperations.UNITOPERATION_CLEAR_CONTAMINATION,
 	GameInfo.UnitOperations.UNITOPERATION_REPAIR,
 };
-local g_miscActions = {
+local g_miscOps = {
 	GameInfo.UnitOperations.UNITOPERATION_BUILD_ROUTE,
 	GameInfo.UnitOperations.UNITOPERATION_DESIGNATE_PARK,
 	GameInfo.UnitOperations.UNITOPERATION_EXCAVATE,
@@ -364,50 +130,49 @@ local g_miscActions = {
 	GameInfo.Units.UNIT_SPY,
 	GameInfo.UnitCommands.UNITCOMMAND_ACTIVATE_GREAT_PERSON,
 };
-local g_attackActions={
+local g_attackOps = {
 	GameInfo.UnitCommands.UNITCOMMAND_FORM_ARMY,
-	GameInfo.UnitCommands.UNITCOMMAND_PLUNDER_TRADE_ROUTE,
 --	GameInfo.UnitOperations.UNITOPERATION_AIR_ATTACK,
-	GameInfo.UnitOperations.UNITOPERATION_PILLAGE,
 	GameInfo.UnitOperations.UNITOPERATION_WMD_STRIKE,
+	GameInfo.UnitOperations.UNITOPERATION_PILLAGE,
+	GameInfo.UnitCommands.UNITCOMMAND_PLUNDER_TRADE_ROUTE,
 };
 
-function MapTacksIconOptions(standardIcons : table)
+function MapTacksIconOptions(stockIcons : table)
 	local icons = {};
 	local activePlayerID = Game.GetLocalPlayer();
 	g_uniqueIconsPlayer = activePlayerID;
 	local pPlayerCfg = PlayerConfigurations[activePlayerID];
-	local civ = pPlayerCfg:GetCivilizationTypeName();
-	-- civ = 'CIVILIZATION_GREECE';
-	-- civ = 'CIVILIZATION_ROME';
-	-- civ = 'CIVILIZATION_GERMANY';
-	-- civ = 'CIVILIZATION_RUSSIA';
-	-- civ = 'CIVILIZATION_KONGO';
-	-- civ = 'CIVILIZATION_BRAZIL';
-	-- civ = 'CIVILIZATION_ENGLAND';
-	-- civ = 'CIVILIZATION_CHINA';
-	-- print(civ);
+
+	local leader = GameInfo.Leaders[pPlayerCfg:GetLeaderTypeID()];
+	if g_debugLeader then leader = g_debugLeader; end
+	local civ = leader.CivilizationCollection[1];
+	-- print(civ.CivilizationType);
 
 	-- Get unique traits for the player civilization
 	local traits = {};
-	for item in GameInfo.CivilizationTraits() do
-		if item.CivilizationType == civ then
-			-- print(item.TraitType);
-			traits[item.TraitType] = true;
-		end
+	for i, item in ipairs(leader.TraitCollection) do
+		traits[item.TraitType] = true;
+		-- print(item.TraitType);
+	end
+	for i, item in ipairs(civ.TraitCollection) do
+		traits[item.TraitType] = true;
+		-- print(item.TraitType);
 	end
 	-- Get unique district replacement info
 	local districts = {};
 	for item in GameInfo.Districts() do
 		if traits[item.TraitType] then
-			local swap = GameInfo.DistrictReplaces[item.DistrictType];
-			districts[swap.ReplacesDistrictType] = item;
-			-- print(item.DistrictType, "replaces", base);
+			for i, swap in ipairs(item.ReplacesCollection) do
+				local base = swap.ReplacesDistrictType;
+				districts[base] = item;
+				-- print(item.DistrictType, "replaces", base);
+			end
 		end
 	end
 
 	-- Standard map pins
-	for i, item in ipairs(standardIcons) do
+	for i, item in ipairs(stockIcons or g_stockIcons) do
 		table.insert(icons, item);
 	end
 
@@ -454,16 +219,16 @@ function MapTacksIconOptions(standardIcons : table)
 	end
 
 	for i,v in ipairs(builderIcons) do table.insert(icons, v); end
-	MapTacksIcons(icons, g_builderOps);
+	for i,v in ipairs(g_buildOps) do table.insert(icons, MapTacksIcon(v)); end
 	if #uniqueIcons==0 then
 		table.insert(icons, MapTacksIcon(
 			GameInfo.UnitOperations.UNITOPERATION_BUILD_IMPROVEMENT))
 	end
 	for i,v in ipairs(uniqueIcons) do table.insert(icons, v); end
 	for i,v in ipairs(minorCivIcons) do table.insert(icons, v); end
-	MapTacksIcons(icons, g_repairOps);
+	for i,v in ipairs(g_repairOps) do table.insert(icons, MapTacksIcon(v)); end
 	for i,v in ipairs(miscIcons) do table.insert(icons, v); end
-	MapTacksIcons(icons, g_miscActions);
+	for i,v in ipairs(g_miscOps) do table.insert(icons, MapTacksIcon(v)); end
 
 	-- Great people
 	for item in GameInfo.GreatPersonClasses() do
@@ -471,7 +236,7 @@ function MapTacksIconOptions(standardIcons : table)
 	end
 
 	-- Unit actions
-	MapTacksIcons(icons, g_attackActions);
+	for i,v in ipairs(g_attackOps) do table.insert(icons, MapTacksIcon(v)); end
 
 	return icons;
 end
@@ -494,6 +259,9 @@ function MapTacksIcon(item)
 	elseif item.UnitType == "UNIT_SPY" then
 		name="ICON_UNITOPERATION_SPY_COUNTERSPY_ACTION";
 		tooltip=item.Name;
+	elseif item.UnitType then
+		name = "ICON_"..item.UnitType;
+		tooltip=item.Name;
 	else
 		name = item.Icon;
 		tooltip = item.Description;
@@ -501,24 +269,25 @@ function MapTacksIcon(item)
 	return { name=name, tooltip=tooltip };
 end
 
-function MapTacksIcons(icons, list)
-	for i, item in ipairs(list) do
-		table.insert(icons, MapTacksIcon(item));
-	end
-end
+MAPTACKS_STOCK = 0;
+MAPTACKS_WHITE = 1;
+MAPTACKS_GRAY = 2;
+MAPTACKS_COLOR = 3;
 
 function MapTacksType(pin : table)
 	if not pin then return nil; end
 	local iconName = pin:GetIconName();
 	if iconName:sub(1,5) ~= "ICON_" then return nil; end
-	-- M = map pin
-	-- D = district
-	-- I = improvement
-	-- U = unit action
-	-- A = unit action
-	local iconType = iconName:sub(6, 6);
-	-- print(iconName, iconType);
-	return iconType;
+	local iconType = iconName:sub(6, 10);
+	if iconType == "MAP_P" then
+		return MAPTACKS_STOCK;
+	elseif iconType == "UNIT_" then
+		return MAPTACKS_WHITE;
+	elseif iconType == "DISTR" then
+		return MAPTACKS_COLOR;
+	else
+		return MAPTACKS_GRAY;
+	end
 end
 
 -- Simpler version of DarkenLightenColor
@@ -531,5 +300,127 @@ function MapTacksTint( abgr : number, tint : number )
 	b = math.min(math.max(0, b + tint), 255);
 	return ((-256 + b) * 256 + g) * 256 + r;
 end
+
+-- ===========================================================================
+-- Reference info
+
+-- ===========================================================================
+-- Civilization color values
+--         maxrgb luma
+-- RUSSIA      20   20
+-- GERMANY     63   61
+-- NUBIA      108   74
+-- ARABIA     118   99
+-- PERSIA     164   69
+-- JAPAN      166   64
+-- AZTEC      181   98
+-- SCYTHIA    184   67
+-- KONGO      207   74
+-- INDIA      239  216
+-- SPARTA     239  232
+-- SPAIN      241  214
+-- BRAZIL     245  221
+-- SUMERIA    246  171
+-- NORWAY     254  104
+-- ROME       255  212
+-- MACEDON    255  238
+-- EGYPT      255  244
+-- FRANCE     255  248
+-- POLAND     255  251
+-- AMERICA    255  255
+-- AUSTRALIA  255  255
+-- CHINA      255  255
+-- ENGLAND    255  255
+-- GREECE     255  255
+
+-- ===========================================================================
+-- Unit commands
+-- INPLACE:
+--   UNITCOMMAND_WAKE
+--   UNITCOMMAND_CANCEL
+--   UNITCOMMAND_STOP_AUTOMATION
+--   UNITCOMMAND_GIFT
+-- MOVE:
+--   UNITCOMMAND_AIRLIFT
+-- SECONDARY:
+--   UNITCOMMAND_DELETE
+-- SPECIFIC:
+--   UNITCOMMAND_PROMOTE
+--   UNITCOMMAND_UPGRADE
+--   UNITCOMMAND_AUTOMATE  -- not VisibleInUI
+--   UNITCOMMAND_ENTER_FORMATION
+--   UNITCOMMAND_EXIT_FORMATION
+--   UNITCOMMAND_ACTIVATE_GREAT_PERSON
+--   UNITCOMMAND_DISTRICT_PRODUCTION
+--   UNITCOMMAND_FORM_CORPS
+--   UNITCOMMAND_FORM_ARMY
+--   UNITCOMMAND_PLUNDER_TRADE_ROUTE
+--   UNITCOMMAND_NAME_UNIT
+--   UNITCOMMAND_WONDER_PRODUCTION
+--   UNITCOMMAND_HARVEST_WONDER
+
+-- ===========================================================================
+-- Unit operations
+-- ATTACK:
+--   UNITOPERATION_AIR_ATTACK
+--   UNITOPERATION_WMD_STRIKE
+--   UNITOPERATION_COASTAL_RAID
+--   UNITOPERATION_PILLAGE
+--   UNITOPERATION_PILLAGE_ROUTE
+--   UNITOPERATION_RANGE_ATTACK
+-- BUILD:
+--   UNITOPERATION_BUILD_IMPROVEMENT
+--   UNITOPERATION_BUILD_ROUTE
+--   UNITOPERATION_DESIGNATE_PARK
+--   UNITOPERATION_PLANT_FOREST
+--   UNITOPERATION_REMOVE_FEATURE
+--   UNITOPERATION_REMOVE_IMPROVEMENT
+-- INPLACE:
+--   UNITOPERATION_FORTIFY
+--   UNITOPERATION_HEAL
+--   UNITOPERATION_REST_REPAIR
+--   UNITOPERATION_SKIP_TURN
+--   UNITOPERATION_SLEEP
+--   UNITOPERATION_ALERT
+-- MOVE:
+--   UNITOPERATION_DEPLOY
+--   UNITOPERATION_DISEMBARK  -- not VisibleInUI
+--   UNITOPERATION_EMBARK  -- not VisibleInUI
+--   UNITOPERATION_MOVE_TO
+--   UNITOPERATION_MOVE_TO_UNIT  -- not VisibleInUI
+--   UNITOPERATION_REBASE
+--   UNITOPERATION_ROUTE_TO  -- not VisibleInUI
+--   UNITOPERATION_SPY_COUNTERSPY  -- special handling in unit panel
+--   UNITOPERATION_SPY_TRAVEL_NEW_CITY
+--   UNITOPERATION_TELEPORT_TO_CITY
+-- OFFENSIVESPY:  -- these do not appear in unit panel
+--   UNITOPERATION_SPY_DISRUPT_ROCKETRY
+--   UNITOPERATION_SPY_GAIN_SOURCES
+--   UNITOPERATION_SPY_GREAT_WORK_HEIST
+--   UNITOPERATION_SPY_LISTENING_POST
+--   UNITOPERATION_SPY_RECRUIT_PARTISANS
+--   UNITOPERATION_SPY_SABOTAGE_PRODUCTION
+--   UNITOPERATION_SPY_SIPHON_FUNDS
+--   UNITOPERATION_SPY_STEAL_TECH_BOOST
+-- SECONDARY:
+--   UNITOPERATION_AUTOMATE_EXPLORE
+-- SPECIFIC:
+--   UNITOPERATION_CLEAR_CONTAMINATION
+--   UNITOPERATION_CONVERT_BARBARIANS
+--   UNITOPERATION_EVANGELIZE_BELIEF
+--   UNITOPERATION_EXCAVATE
+--   UNITOPERATION_FOUND_CITY
+--   UNITOPERATION_FOUND_RELIGION
+--   UNITOPERATION_HARVEST_RESOURCE
+--   UNITOPERATION_LAUNCH_INQUISITION
+--   UNITOPERATION_MAKE_TRADE_ROUTE
+--   UNITOPERATION_REMOVE_HERESY
+--   UNITOPERATION_REPAIR
+--   UNITOPERATION_REPAIR_ROUTE
+--   UNITOPERATION_RETRAIN
+--   UNITOPERATION_SPREAD_RELIGION
+--   UNITOPERATION_SWAP_UNITS  -- not VisibleInUI
+--   UNITOPERATION_UPGRADE
+--   UNITOPERATION_WAIT_FOR  -- not VisibleInUI
 
 -- vim: sw=4 ts=4

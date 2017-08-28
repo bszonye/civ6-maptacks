@@ -229,26 +229,23 @@ end
 ------------------------------------------------------------------
 -- Set the flag color based on the player colors.
 function MapPinFlag.SetColor( self : MapPinFlag )
-	local primaryColor, secondaryColor  = UI.GetPlayerColors( self.m_Player:GetID() );
-
-	-- XXX debug
-	primaryColor, secondaryColor = CivColors(self:GetMapPin():GetName(), primaryColor, secondaryColor);
-	-- primaryColor, secondaryColor = CivColors("AUSTRALIA");
+	local primaryColor, secondaryColor = MapTacksColors(self.m_Player:GetID());
 
 	local darkerFlagColor   :number = MapTacksTint(primaryColor, -85);
 	local brighterFlagColor :number = MapTacksTint(primaryColor, 90);
 	local brighterIconColor :number = MapTacksTint(secondaryColor, 20);
 	-- local darkerIconColor   :number = MapTacksTint(secondaryColor, -30);
         
-	local iconType = MapTacksType(self:GetMapPin()) or "M";
+	local iconType = MapTacksType(self:GetMapPin()) or MAPTACKS_STOCK;
 	-- print(iconName);
 	-- set icon tint appropriate for the icon color
-	if iconType == "M" then
-		-- standard map pins
+	if iconType <= MAPTACKS_WHITE then
+		-- stock & white map pins
 		self.m_Instance.UnitIcon:SetColor( brighterIconColor );
-	elseif iconType ~= "D" then
-		-- shaded icons: match midtones to standard pin color
-		self.m_Instance.UnitIcon:SetColor(IconTint(brighterIconColor));
+	elseif iconType == MAPTACKS_GRAY then
+		-- shaded icons: match midtones to stock pin color
+		local tintedIconColor = MapTacksIconTint(brighterIconColor);
+		self.m_Instance.UnitIcon:SetColor(tintedIconColor);
 	end
 	self.m_Instance.FlagBase:SetColor( primaryColor );
 	self.m_Instance.FlagBaseOutline:SetColor( primaryColor );
@@ -267,12 +264,12 @@ function MapPinFlag.SetFlagUnitEmblem( self : MapPinFlag )
     if pMapPin ~= nil then
 		local iconName = pMapPin:GetIconName();
 		local iconType = MapTacksType(pMapPin);
-		if iconType == "D" then
+		if iconType == MAPTACKS_COLOR then
 			self.m_Instance.DistrictIcon:SetIcon(iconName);
 			self.m_Instance.DistrictIcon:SetHide(false);
 			self.m_Instance.UnitIcon:SetHide(true);
 		else
-			local size = iconType == "M" and 24 or 28;
+			local size = (iconType == MAPTACKS_STOCK and 24) or 26;
 			self.m_Instance.UnitIcon:SetSizeVal(size, size);
 			if not self.m_Instance.UnitIcon:SetIcon(iconName) then
 				self.m_Instance.UnitIcon:SetIcon("ICON_MAP_PIN_UNKNOWN_WHITE");
@@ -370,14 +367,6 @@ function MapPinFlag.UpdateName( self : MapPinFlag )
 	local pMapPin = self:GetMapPin();
 	if(pMapPin ~= nil) then
 		local nameString = pMapPin:GetName();
-		-- XXX debug
-		local civ = CivInfo(nameString);
-		if civ then
-			local leader = Locale.Lookup("LOC_LEADER_"..civ.leader.."_NAME");
-			self.m_Instance.NameContainer:SetHide( true );
-			self.m_Instance.NormalButton:SetToolTipString( leader );
-			return;
-		end
 		self.m_Instance.NormalButton:SetToolTipString( nameString );
 		self.m_Instance.NameLabel:SetText( nameString );
 		self.m_Instance.NameContainer:SetHide( nameString == nil );

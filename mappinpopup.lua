@@ -27,9 +27,9 @@ local g_cachedChatPanelTarget = nil; -- Cached player target for ingame chat pan
 
 -- When we aren't quite so crunched on time, it would be good to add the map pins table to the database
 local g_iconPulldownOptions = {};
-local g_standardIcons =
+local g_stockIcons =
 {	
--- standard icons
+-- stock icons
 	{ name = "ICON_MAP_PIN_STRENGTH" },
 	{ name = "ICON_MAP_PIN_RANGED"   },
 	{ name = "ICON_MAP_PIN_BOMBARD"  },
@@ -134,7 +134,7 @@ end
 -- ===========================================================================
 function PopulateIconOptions()
 	-- build icon table with default pins + extensions
-	g_iconPulldownOptions = MapTacksIconOptions(g_standardIcons);
+	g_iconPulldownOptions = MapTacksIconOptions(g_stockIcons);
 
 	g_iconOptionEntries = {};
 	Controls.IconOptionStack:DestroyAllChildren();
@@ -156,8 +156,6 @@ function PopulateIconOptions()
 		newIconEntry.IconName = pair.name;
 		newIconEntry.Instance = controlTable;
 		g_iconOptionEntries[i] = newIconEntry;
-		-- XXX debug
-		-- print(pair.name, pair.tooltip);
 
 		UpdateIconOptionColor(i);
 	end
