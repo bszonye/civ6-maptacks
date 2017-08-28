@@ -1,4 +1,4 @@
-------------------------------------------------------------------
+-- ===========================================================================
 -- MapTacks
 -- utility functions
 
@@ -29,8 +29,7 @@ local g_debugLeader = nil;
 -- g_debugLeader = GameInfo.Leaders.LEADER_AMANITORE
 -- g_debugLeader = GameInfo.Leaders.LEADER_JADWIGA
 
-
-------------------------------------------------------------------
+-- ===========================================================================
 -- Calculate icon tint color
 -- Icons generally have light=224, shadow=112 (out of 255).
 -- So, to match icons to civ colors, ideally brighten the original color:
@@ -65,7 +64,7 @@ function MapTacksIconTint( abgr : number, debug : number )
 	return tint;
 end
 
-------------------------------------------------------------------
+-- ===========================================================================
 -- Get player colors (with debug override)
 function MapTacksColors(playerID : number)
 	local primaryColor, secondaryColor = UI.GetPlayerColors(playerID);
@@ -78,25 +77,6 @@ function MapTacksColors(playerID : number)
 end
 
 -- ===========================================================================
--- XXX debug
-
-function MapTacksTestPattern()
-	-- print("MapTacksTestPattern: start");
-	local activePlayerID = Game.GetLocalPlayer();
-	local pPlayerCfg = PlayerConfigurations[activePlayerID];
-	local pMapPin = pPlayerCfg:GetMapPin(hexX, hexY);
-	for i, item in ipairs(MapTacksIconOptions()) do
-		local row = math.floor((i-1) / 14);
-		local col = (i-1) % 14;
-		-- print(row, col, item.name);
-		local pMapPin = pPlayerCfg:GetMapPin(col, 4-row);
-		pMapPin:SetName(nil);
-		pMapPin:SetIconName(item.name);
-	end
-	Network.BroadcastPlayerInfo();
-	UI.PlaySound("Map_Pin_Add");
-end
-
 local g_stockIcons = {
 	{ name="ICON_MAP_PIN_STRENGTH" },
 	{ name="ICON_MAP_PIN_RANGED"   },
@@ -138,6 +118,8 @@ local g_attackOps = {
 	GameInfo.UnitCommands.UNITCOMMAND_PLUNDER_TRADE_ROUTE,
 };
 
+-- ===========================================================================
+-- Build the grid of map pin icon options
 function MapTacksIconOptions(stockIcons : table)
 	local icons = {};
 	local activePlayerID = Game.GetLocalPlayer();
@@ -241,6 +223,8 @@ function MapTacksIconOptions(stockIcons : table)
 	return icons;
 end
 
+-- ===========================================================================
+-- Given a GameInfo object, determine its icon and tooltip
 function MapTacksIcon(item)
 	local name :string = nil;
 	local tooltip :string = nil;
@@ -269,11 +253,12 @@ function MapTacksIcon(item)
 	return { name=name, tooltip=tooltip };
 end
 
-MAPTACKS_STOCK = 0;
-MAPTACKS_WHITE = 1;
-MAPTACKS_GRAY = 2;
-MAPTACKS_COLOR = 3;
-
+-- ===========================================================================
+-- Given an icon name, determine its color and size profile
+MAPTACKS_STOCK = 0;  -- stock icons
+MAPTACKS_WHITE = 1;  -- white icons (units, spy ops)
+MAPTACKS_GRAY = 2;   -- gray shaded icons (improvements, commands)
+MAPTACKS_COLOR = 3;  -- full color icons (districts, wonders)
 function MapTacksType(pin : table)
 	if not pin then return nil; end
 	local iconName = pin:GetIconName();
@@ -290,6 +275,7 @@ function MapTacksType(pin : table)
 	end
 end
 
+-- ===========================================================================
 -- Simpler version of DarkenLightenColor
 function MapTacksTint( abgr : number, tint : number )
 	local r = abgr % 256;
@@ -299,6 +285,25 @@ function MapTacksTint( abgr : number, tint : number )
 	g = math.min(math.max(0, g + tint), 255);
 	b = math.min(math.max(0, b + tint), 255);
 	return ((-256 + b) * 256 + g) * 256 + r;
+end
+
+-- ===========================================================================
+-- XXX: Create a test pattern of icons on the map
+function MapTacksTestPattern()
+	-- print("MapTacksTestPattern: start");
+	local activePlayerID = Game.GetLocalPlayer();
+	local pPlayerCfg = PlayerConfigurations[activePlayerID];
+	local pMapPin = pPlayerCfg:GetMapPin(hexX, hexY);
+	for i, item in ipairs(MapTacksIconOptions()) do
+		local row = math.floor((i-1) / 14);
+		local col = (i-1) % 14;
+		-- print(row, col, item.name);
+		local pMapPin = pPlayerCfg:GetMapPin(col, 4-row);
+		pMapPin:SetName(nil);
+		pMapPin:SetIconName(item.name);
+	end
+	Network.BroadcastPlayerInfo();
+	UI.PlaySound("Map_Pin_Add");
 end
 
 -- ===========================================================================
