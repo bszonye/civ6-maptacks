@@ -30,53 +30,6 @@ local g_debugLeader = nil;
 -- g_debugLeader = GameInfo.Leaders.LEADER_JADWIGA
 
 -- ===========================================================================
--- Calculate icon tint color
--- Icons generally have light=224, shadow=112 (out of 255).
--- So, to match icons to civ colors, ideally brighten the original color:
--- by 255/224 to match light areas, or by 255/112 to match shadows.
---
--- In practice:
--- Light colors look best as bright as possible without distortion.
--- The darkest colors need shadow=56, light=112, max=128 for legibility.
--- Other colors look good around 1.5-1.8x brightness, matching midtones.
-local g_tintCache = {};
-function MapTacksIconTint( abgr : number, debug : number )
-	if g_tintCache[abgr] ~= nil then return g_tintCache[abgr]; end
-	local r = abgr % 256;
-	local g = math.floor(abgr / 256) % 256;
-	local b = math.floor(abgr / 65536) % 256;
-	local max = math.max(r, g, b, 1);  -- avoid division by zero
-	local light = 255/max;  -- maximum brightness without distortion
-	local dark = 128/max;  -- minimum brightness
-	local x = 1.6;  -- match midtones
-	if light < x then x = light; elseif x < dark then x = dark; end
-
-	-- sRGB luma
-	-- local v = 0.2126 * r + 0.7152 * g + 0.0722 * b;
-	-- print(string.format("m%d r%d g%d b%d", max, r, g, b));
-	-- print(string.format("%0.3f %0.3f", x, 255/max));
-	r = math.min(255, math.floor(x * r + 0.5));
-	g = math.min(255, math.floor(x * g + 0.5));
-	b = math.min(255, math.floor(x * b + 0.5));
-	local tint = ((-256 + b) * 256 + g) * 256 + r;
-	g_tintCache[abgr] = tint;
-	-- print(string.format("saved %d = tint %d", abgr, tint));
-	return tint;
-end
-
--- ===========================================================================
--- Get player colors (with debug override)
-function MapTacksColors(playerID : number)
-	local primaryColor, secondaryColor = UI.GetPlayerColors(playerID);
-	if g_debugLeader then
-		local colors = GameInfo.PlayerColors[g_debugLeader.Hash];
-		primaryColor = UI.GetColorValue(colors.PrimaryColor);
-		secondaryColor = UI.GetColorValue(colors.SecondaryColor);
-	end
-	return primaryColor, secondaryColor;
-end
-
--- ===========================================================================
 local g_stockIcons = {
 	{ name="ICON_MAP_PIN_STRENGTH" },
 	{ name="ICON_MAP_PIN_RANGED"   },
@@ -273,6 +226,53 @@ function MapTacksType(pin : table)
 	else
 		return MAPTACKS_GRAY;
 	end
+end
+
+-- ===========================================================================
+-- Get player colors (with debug override)
+function MapTacksColors(playerID : number)
+	local primaryColor, secondaryColor = UI.GetPlayerColors(playerID);
+	if g_debugLeader then
+		local colors = GameInfo.PlayerColors[g_debugLeader.Hash];
+		primaryColor = UI.GetColorValue(colors.PrimaryColor);
+		secondaryColor = UI.GetColorValue(colors.SecondaryColor);
+	end
+	return primaryColor, secondaryColor;
+end
+
+-- ===========================================================================
+-- Calculate icon tint color
+-- Icons generally have light=224, shadow=112 (out of 255).
+-- So, to match icons to civ colors, ideally brighten the original color:
+-- by 255/224 to match light areas, or by 255/112 to match shadows.
+--
+-- In practice:
+-- Light colors look best as bright as possible without distortion.
+-- The darkest colors need shadow=56, light=112, max=128 for legibility.
+-- Other colors look good around 1.5-1.8x brightness, matching midtones.
+local g_tintCache = {};
+function MapTacksIconTint( abgr : number, debug : number )
+	if g_tintCache[abgr] ~= nil then return g_tintCache[abgr]; end
+	local r = abgr % 256;
+	local g = math.floor(abgr / 256) % 256;
+	local b = math.floor(abgr / 65536) % 256;
+	local max = math.max(r, g, b, 1);  -- avoid division by zero
+	local light = 255/max;  -- maximum brightness without distortion
+	local dark = 128/max;  -- minimum brightness
+	local x = 1.6;  -- match midtones
+	if light < x then x = light; elseif x < dark then x = dark; end
+
+	-- sRGB luma
+	-- local v = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+	-- print(string.format("m%d r%d g%d b%d", max, r, g, b));
+	-- print(string.format("%0.3f %0.3f", x, 255/max));
+	r = math.min(255, math.floor(x * r + 0.5));
+	g = math.min(255, math.floor(x * g + 0.5));
+	b = math.min(255, math.floor(x * b + 0.5));
+	local tint = ((-256 + b) * 256 + g) * 256 + r;
+	g_tintCache[abgr] = tint;
+	-- print(string.format("saved %d = tint %d", abgr, tint));
+	return tint;
 end
 
 -- ===========================================================================
