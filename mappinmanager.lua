@@ -370,14 +370,6 @@ function MapPinFlag.UpdateName( self : MapPinFlag )
 	local pMapPin = self:GetMapPin();
 	if(pMapPin ~= nil) then
 		local nameString = pMapPin:GetName();
-		-- XXX debug
-		local civ = CivInfo(nameString);
-		if civ then
-			local leader = Locale.Lookup("LOC_LEADER_"..civ.leader.."_NAME");
-			self.m_Instance.NameContainer:SetHide( true );
-			self.m_Instance.NormalButton:SetToolTipString( leader );
-			return;
-		end
 		self.m_Instance.NormalButton:SetToolTipString( nameString );
 		self.m_Instance.NameLabel:SetText( nameString );
 		self.m_Instance.NameContainer:SetHide( nameString == nil );
