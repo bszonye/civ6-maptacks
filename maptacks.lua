@@ -41,7 +41,7 @@ local g_debugLeader = nil;
 -- The darkest colors need shadow=56, light=112, max=128 for legibility.
 -- Other colors look good around 1.5-1.8x brightness, matching midtones.
 local g_tintCache = {};
-function IconTint( abgr : number, debug : number )
+function MapTacksIconTint( abgr : number, debug : number )
 	if g_tintCache[abgr] ~= nil then return g_tintCache[abgr]; end
 	local r = abgr % 256;
 	local g = math.floor(abgr / 256) % 256;
@@ -80,25 +80,6 @@ end
 -- ===========================================================================
 -- XXX debug
 
-local g_icons = {};
-local g_standardIcons =
-{
-	{ name="ICON_MAP_PIN_STRENGTH" },
-	{ name="ICON_MAP_PIN_RANGED"   },
-	{ name="ICON_MAP_PIN_BOMBARD"  },
-	{ name="ICON_MAP_PIN_DISTRICT" },
-	{ name="ICON_MAP_PIN_CHARGES"  },
-	{ name="ICON_MAP_PIN_DEFENSE"  },
-	{ name="ICON_MAP_PIN_MOVEMENT" },
-	{ name="ICON_MAP_PIN_NO"       },
-	{ name="ICON_MAP_PIN_PLUS"     },
-	{ name="ICON_MAP_PIN_CIRCLE"   },
-	{ name="ICON_MAP_PIN_TRIANGLE" },
-	{ name="ICON_MAP_PIN_SUN"      },
-	{ name="ICON_MAP_PIN_SQUARE"   },
-	{ name="ICON_MAP_PIN_DIAMOND"  },
-};
-
 function MapTacksTestPattern()
 	-- print("MapTacksTestPattern: start");
 	local activePlayerID = Game.GetLocalPlayer();
@@ -116,6 +97,22 @@ function MapTacksTestPattern()
 	UI.PlaySound("Map_Pin_Add");
 end
 
+local g_stockIcons = {
+	{ name="ICON_MAP_PIN_STRENGTH" },
+	{ name="ICON_MAP_PIN_RANGED"   },
+	{ name="ICON_MAP_PIN_BOMBARD"  },
+	{ name="ICON_MAP_PIN_DISTRICT" },
+	{ name="ICON_MAP_PIN_CHARGES"  },
+	{ name="ICON_MAP_PIN_DEFENSE"  },
+	{ name="ICON_MAP_PIN_MOVEMENT" },
+	{ name="ICON_MAP_PIN_NO"       },
+	{ name="ICON_MAP_PIN_PLUS"     },
+	{ name="ICON_MAP_PIN_CIRCLE"   },
+	{ name="ICON_MAP_PIN_TRIANGLE" },
+	{ name="ICON_MAP_PIN_SUN"      },
+	{ name="ICON_MAP_PIN_SQUARE"   },
+	{ name="ICON_MAP_PIN_DIAMOND"  },
+};
 local g_buildOps = {
 	GameInfo.UnitOperations.UNITOPERATION_PLANT_FOREST,
 	GameInfo.UnitOperations.UNITOPERATION_REMOVE_FEATURE,
@@ -139,9 +136,11 @@ local g_attackOps = {
 --	GameInfo.UnitOperations.UNITOPERATION_AIR_ATTACK,
 	GameInfo.UnitOperations.UNITOPERATION_PILLAGE,
 	GameInfo.UnitOperations.UNITOPERATION_WMD_STRIKE,
+--	GameInfo.Units.UNIT_MISSIONARY,
+--	GameInfo.Units.UNIT_INQUISITOR,
 };
 
-function MapTacksIconOptions(standardIcons : table)
+function MapTacksIconOptions(stockIcons : table)
 	local icons = {};
 	local activePlayerID = Game.GetLocalPlayer();
 	g_uniqueIconsPlayer = activePlayerID;
@@ -175,7 +174,7 @@ function MapTacksIconOptions(standardIcons : table)
 	end
 
 	-- Standard map pins
-	for i, item in ipairs(standardIcons or g_standardIcons) do
+	for i, item in ipairs(stockIcons or g_stockIcons) do
 		table.insert(icons, item);
 	end
 
@@ -262,6 +261,9 @@ function MapTacksIcon(item)
 	elseif item.UnitType == "UNIT_SPY" then
 		name="ICON_UNITOPERATION_SPY_COUNTERSPY_ACTION";
 		tooltip=item.Name;
+	elseif item.UnitType then
+		name = "ICON_"..item.UnitType;
+		tooltip=item.Name;
 	else
 		name = item.Icon;
 		tooltip = item.Description;
@@ -269,18 +271,25 @@ function MapTacksIcon(item)
 	return { name=name, tooltip=tooltip };
 end
 
+MAPTACKS_STOCK = 0;
+MAPTACKS_WHITE = 1;
+MAPTACKS_GRAY = 2;
+MAPTACKS_COLOR = 3;
+
 function MapTacksType(pin : table)
 	if not pin then return nil; end
 	local iconName = pin:GetIconName();
 	if iconName:sub(1,5) ~= "ICON_" then return nil; end
-	-- M = map pin
-	-- D = district
-	-- I = improvement
-	-- U = unit action
-	-- A = unit action
-	local iconType = iconName:sub(6, 6);
-	-- print(iconName, iconType);
-	return iconType;
+	local iconType = iconName:sub(6, 10);
+	if iconType == "MAP_P" then
+		return MAPTACKS_STOCK;
+	elseif iconType == "UNIT_" then
+		return MAPTACKS_WHITE;
+	elseif iconType == "DISTR" then
+		return MAPTACKS_COLOR;
+	else
+		return MAPTACKS_GRAY;
+	end
 end
 
 -- Simpler version of DarkenLightenColor
