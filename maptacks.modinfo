@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<Mod id="0a1c826c-0f43-4876-b096-23e1292eee3c" version="1">
+<Mod id="0a1c826c-0f43-4876-b096-23e1292eee3c" version="0.9.0">
   <Properties>
     <Name>Map Tacks</Name>
     <Description>Map pin improvements</Description>

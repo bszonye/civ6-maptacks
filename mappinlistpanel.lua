@@ -254,7 +254,7 @@ function Initialize()
 	BuildMapPinList();
 
 	-- XXX debug
-	Controls.AddPinButton:RegisterCallback( Mouse.eRClick, MapTacksTestPattern );
+	-- Controls.AddPinButton:RegisterCallback( Mouse.eRClick, MapTacksTestPattern );
 end
 Initialize()
 
