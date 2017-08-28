@@ -43,7 +43,11 @@ function SortMapPinEntryStack(a, b)
 	local controlStringB = tostring(b);
 	local pinEntryA = m_MapPinListButtonToPinEntry[controlStringA];
 	local pinEntryB = m_MapPinListButtonToPinEntry[controlStringB];
-	if (pinEntryA ~= nil and pinEntryB ~= nil) then
+	if (pinEntryA and pinEntryB) then
+		if pinEntryA.unnamedID ~= pinEntryB.unnamedID then
+			-- sort unnamed pins at the end, in ID order
+			return (pinEntryA.unnamedID or -1) < (pinEntryB.unnamedID or -1);
+		end
 		local pinNameA :string = Locale.ToLower(pinEntryA.MapPinName:GetText());
 		local pinNameB :string = Locale.ToLower(pinEntryB.MapPinName:GetText());
 
@@ -63,7 +67,9 @@ function UpdateMapPinListEntry(iPlayerID :number, mapPinID :number)
 		-- Determine map pin display name.
 		local pinName :string = mapPinCfg:GetName();
 		if(pinName == nil) then
-			pinName = Locale.Lookup( "LOC_MAP_PIN_DEFAULT_NAME", mapPinCfg:GetID() );
+			local id = mapPinCfg:GetID();
+			pinName = Locale.Lookup( "LOC_MAP_PIN_DEFAULT_NAME", id+1 );
+			mapPinEntry.unnamedID = id;  -- for sorting
 		end
 		mapPinEntry.MapPinName:SetText(pinName);
 
