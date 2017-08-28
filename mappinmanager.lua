@@ -229,11 +229,7 @@ end
 ------------------------------------------------------------------
 -- Set the flag color based on the player colors.
 function MapPinFlag.SetColor( self : MapPinFlag )
-	local primaryColor, secondaryColor  = UI.GetPlayerColors( self.m_Player:GetID() );
-
-	-- XXX debug
-	primaryColor, secondaryColor = CivColors(self:GetMapPin():GetName(), primaryColor, secondaryColor);
-	-- primaryColor, secondaryColor = CivColors("AUSTRALIA");
+	local primaryColor, secondaryColor = MapTacksColors(self.m_Player:GetID());
 
 	local darkerFlagColor   :number = MapTacksTint(primaryColor, -85);
 	local brighterFlagColor :number = MapTacksTint(primaryColor, 90);

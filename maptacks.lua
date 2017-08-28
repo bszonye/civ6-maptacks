@@ -2,6 +2,34 @@
 -- MapTacks
 -- utility functions
 
+local g_debugLeader = nil;
+-- g_debugLeader = GameInfo.Leaders.LEADER_BARBAROSSA
+-- g_debugLeader = GameInfo.Leaders.LEADER_CATHERINE_DE_MEDICI
+-- g_debugLeader = GameInfo.Leaders.LEADER_CLEOPATRA
+-- g_debugLeader = GameInfo.Leaders.LEADER_GANDHI
+-- g_debugLeader = GameInfo.Leaders.LEADER_GILGAMESH
+-- g_debugLeader = GameInfo.Leaders.LEADER_GORGO
+-- g_debugLeader = GameInfo.Leaders.LEADER_HARDRADA
+-- g_debugLeader = GameInfo.Leaders.LEADER_HOJO
+-- g_debugLeader = GameInfo.Leaders.LEADER_MVEMBA
+-- g_debugLeader = GameInfo.Leaders.LEADER_PEDRO
+-- g_debugLeader = GameInfo.Leaders.LEADER_PERICLES
+-- g_debugLeader = GameInfo.Leaders.LEADER_PETER_GREAT
+-- g_debugLeader = GameInfo.Leaders.LEADER_PHILIP_II
+-- g_debugLeader = GameInfo.Leaders.LEADER_QIN
+-- g_debugLeader = GameInfo.Leaders.LEADER_SALADIN
+-- g_debugLeader = GameInfo.Leaders.LEADER_TOMYRIS
+-- g_debugLeader = GameInfo.Leaders.LEADER_TRAJAN
+-- g_debugLeader = GameInfo.Leaders.LEADER_T_ROOSEVELT
+-- g_debugLeader = GameInfo.Leaders.LEADER_VICTORIA
+-- g_debugLeader = GameInfo.Leaders.LEADER_JOHN_CURTIN
+-- g_debugLeader = GameInfo.Leaders.LEADER_MONTEZUMA
+-- g_debugLeader = GameInfo.Leaders.LEADER_ALEXANDER
+-- g_debugLeader = GameInfo.Leaders.LEADER_CYRUS
+-- g_debugLeader = GameInfo.Leaders.LEADER_AMANITORE
+-- g_debugLeader = GameInfo.Leaders.LEADER_JADWIGA
+
+
 ------------------------------------------------------------------
 -- Calculate icon tint color
 -- Icons generally have light=224, shadow=112 (out of 255).
@@ -38,33 +66,13 @@ function IconTint( abgr : number, midtone : number )
 end
 
 ------------------------------------------------------------------
--- XXX debug
-
-local g_civInfo :table = nil;
-function CivInfo( civ : string )
-	if g_civInfo == nil then
-		g_civInfo = {};
-		for item in GameInfo.PlayerColors() do
-			local leader = item.Type:match("LEADER_(.+)");
-			if leader then
-				local civ = item.PrimaryColor:match("^COLOR_PLAYER_(.*)_[^_]+");
-				-- print(item.Type, civ, item.PrimaryColor, item.SecondaryColor);
-				g_civInfo[civ] = {
-					leader = leader,
-					primary = UI.GetColorValue(item.PrimaryColor),
-					secondary = UI.GetColorValue(item.SecondaryColor)
-				}
-			end
-		end
-	end
-	return g_civInfo[civ];
-end
-
-function CivColors( civ : string, primaryColor, secondaryColor )
-	local info = CivInfo(civ);
-	if info then
-		primaryColor = info.primary;
-		secondaryColor = info.secondary;
+-- Get player colors (with debug override)
+function MapTacksColors(playerID : number)
+	local primaryColor, secondaryColor = UI.GetPlayerColors(playerID);
+	if g_debugLeader then
+		local colors = GameInfo.PlayerColors[g_debugLeader.Hash];
+		primaryColor = UI.GetColorValue(colors.PrimaryColor);
+		secondaryColor = UI.GetColorValue(colors.SecondaryColor);
 	end
 	return primaryColor, secondaryColor;
 end
@@ -92,14 +100,14 @@ local g_standardIcons =
 };
 
 function MapTacksTestPattern()
-	print("MapTacksTestPattern: start");
+	-- print("MapTacksTestPattern: start");
 	local activePlayerID = Game.GetLocalPlayer();
 	local pPlayerCfg = PlayerConfigurations[activePlayerID];
 	local pMapPin = pPlayerCfg:GetMapPin(hexX, hexY);
 	for i, item in ipairs(MapTacksIconOptions()) do
 		local row = math.floor((i-1) / 14);
 		local col = (i-1) % 14;
-		print(row, col, item.name);
+		-- print(row, col, item.name);
 		local pMapPin = pPlayerCfg:GetMapPin(col, 4-row);
 		pMapPin:SetName(nil);
 		pMapPin:SetIconName(item.name);
@@ -138,19 +146,18 @@ function MapTacksIconOptions(standardIcons : table)
 	local activePlayerID = Game.GetLocalPlayer();
 	g_uniqueIconsPlayer = activePlayerID;
 	local pPlayerCfg = PlayerConfigurations[activePlayerID];
-	local civ = GameInfo.Civilizations[pPlayerCfg:GetCivilizationTypeID()];
-	-- civ = GameInfo.Civilizations.CIVILIZATION_GREECE;
-	-- civ = GameInfo.Civilizations.CIVILIZATION_ROME;
-	-- civ = GameInfo.Civilizations.CIVILIZATION_GERMANY;
-	-- civ = GameInfo.Civilizations.CIVILIZATION_RUSSIA;
-	-- civ = GameInfo.Civilizations.CIVILIZATION_KONGO;
-	-- civ = GameInfo.Civilizations.CIVILIZATION_BRAZIL;
-	-- civ = GameInfo.Civilizations.CIVILIZATION_ENGLAND;
-	-- civ = GameInfo.Civilizations.CIVILIZATION_CHINA;
+
+	local leader = GameInfo.Leaders[pPlayerCfg:GetLeaderTypeID()];
+	if g_debugLeader then leader = g_debugLeader; end
+	local civ = leader.CivilizationCollection[1];
 	-- print(civ.CivilizationType);
 
 	-- Get unique traits for the player civilization
 	local traits = {};
+	for i, item in ipairs(leader.TraitCollection) do
+		traits[item.TraitType] = true;
+		-- print(item.TraitType);
+	end
 	for i, item in ipairs(civ.TraitCollection) do
 		traits[item.TraitType] = true;
 		-- print(item.TraitType);
