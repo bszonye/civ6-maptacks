@@ -132,12 +132,10 @@ local g_miscOps = {
 };
 local g_attackOps = {
 	GameInfo.UnitCommands.UNITCOMMAND_FORM_ARMY,
-	GameInfo.UnitCommands.UNITCOMMAND_PLUNDER_TRADE_ROUTE,
 --	GameInfo.UnitOperations.UNITOPERATION_AIR_ATTACK,
-	GameInfo.UnitOperations.UNITOPERATION_PILLAGE,
 	GameInfo.UnitOperations.UNITOPERATION_WMD_STRIKE,
---	GameInfo.Units.UNIT_MISSIONARY,
---	GameInfo.Units.UNIT_INQUISITOR,
+	GameInfo.UnitOperations.UNITOPERATION_PILLAGE,
+	GameInfo.UnitCommands.UNITCOMMAND_PLUNDER_TRADE_ROUTE,
 };
 
 function MapTacksIconOptions(stockIcons : table)
