@@ -9,6 +9,9 @@
   </Properties>
   <InGameActions>
     <ImportFiles id="MAPTACKS_FILES">
+      <Properties>
+        <LoadOrder>12000</LoadOrder>
+      </Properties>
       <File>mappinlistpanel.lua</File>
       <File>mappinlistpanel.xml</File>
       <File>mappinmanager.lua</File>
