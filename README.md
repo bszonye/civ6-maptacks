@@ -1,4 +1,5 @@
 # Map Tacks 0.9.1
+<img align="right" src="maptacks.png">
 Enhances map pin list  
 Adds new icon options  
 Fixes base-game bugs  
