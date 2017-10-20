@@ -36,7 +36,7 @@
             <Image ID="UnitIcon" Anchor="C,C" Size="24,24" Texture="MapPins24"/>
           </AlphaAnim>
 
-          <Image   ID="NameContainer" Texture="Controls_DropShadow4" Color="0,0,0,150" Size="200,20" Anchor="C,T" AnchorSide="I,O" AutoSize="H" StretchMode="Fill" AutoSizePadding="15,8" Offset="0,-8">
+          <Image   ID="NameContainer" Texture="Controls_DropShadow4" Color="0,0,0,150" Size="auto,20" Anchor="C,T" AnchorSide="I,O" StretchMode="Fill" AutoSizePadding="15,8" Offset="0,-8">
 					  <Label ID="NameLabel" Anchor="C,C" String="UNKNOWN_MAP_PIN_NAME" Style="FontNormal14" FontStyle="Glow" ColorSet="BodyTextBright"/>
           </Image>
           
