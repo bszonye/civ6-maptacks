@@ -76,7 +76,6 @@ local g_attackOps = {
 function MapTacksIconOptions(stockIcons : table)
 	local icons = {};
 	local activePlayerID = Game.GetLocalPlayer();
-	g_uniqueIconsPlayer = activePlayerID;
 	local pPlayerCfg = PlayerConfigurations[activePlayerID];
 
 	local leader = GameInfo.Leaders[pPlayerCfg:GetLeaderTypeID()];

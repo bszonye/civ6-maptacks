@@ -134,6 +134,8 @@ end
 
 -- ===========================================================================
 function PopulateIconOptions()
+	-- unique icons are specific to the current player
+	g_uniqueIconsPlayer = Game.GetLocalPlayer();
 	-- build icon table with default pins + extensions
 	g_iconPulldownOptions = MapTacksIconOptions(g_stockIcons);
 
