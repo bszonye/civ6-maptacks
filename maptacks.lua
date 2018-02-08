@@ -60,15 +60,12 @@ local g_miscOps = {
 	GameInfo.UnitOperations.UNITOPERATION_DESIGNATE_PARK,
 	GameInfo.UnitOperations.UNITOPERATION_EXCAVATE,
 	GameInfo.UnitOperations.UNITOPERATION_MAKE_TRADE_ROUTE,
-	GameInfo.Units.UNIT_SPY,
-	GameInfo.UnitCommands.UNITCOMMAND_ACTIVATE_GREAT_PERSON,
-};
-local g_attackOps = {
-	GameInfo.UnitCommands.UNITCOMMAND_FORM_ARMY,
---	GameInfo.UnitOperations.UNITOPERATION_AIR_ATTACK,
 	GameInfo.UnitOperations.UNITOPERATION_WMD_STRIKE,
 	GameInfo.UnitOperations.UNITOPERATION_PILLAGE,
 	GameInfo.UnitCommands.UNITCOMMAND_PLUNDER_TRADE_ROUTE,
+	GameInfo.UnitCommands.UNITCOMMAND_FORM_ARMY,
+	GameInfo.Units.UNIT_SPY,
+	GameInfo.UnitCommands.UNITCOMMAND_ACTIVATE_GREAT_PERSON,
 };
 
 -- ===========================================================================
@@ -76,7 +73,6 @@ local g_attackOps = {
 function MapTacksIconOptions(stockIcons : table)
 	local icons = {};
 	local activePlayerID = Game.GetLocalPlayer();
-	g_uniqueIconsPlayer = activePlayerID;
 	local pPlayerCfg = PlayerConfigurations[activePlayerID];
 
 	local leader = GameInfo.Leaders[pPlayerCfg:GetLeaderTypeID()];
@@ -112,6 +108,7 @@ function MapTacksIconOptions(stockIcons : table)
 	end
 
 	-- Districts
+	table.insert(icons, MapTacksIcon(GameInfo.Districts.DISTRICT_WONDER, "DistrictType"));
 	for item in GameInfo.Districts() do
 		local itype = item.DistrictType;
 		if districts[itype] then
@@ -119,7 +116,7 @@ function MapTacksIconOptions(stockIcons : table)
 			table.insert(icons, MapTacksIcon(districts[itype], "DistrictType"));
 		elseif item.TraitType then
 			-- skip other unique districts
-		else
+		elseif itype ~= "DISTRICT_WONDER" then
 			table.insert(icons, MapTacksIcon(item, "DistrictType"));
 		end
 	end
@@ -153,13 +150,13 @@ function MapTacksIconOptions(stockIcons : table)
 		end
 	end
 
-	for i,v in ipairs(builderIcons) do table.insert(icons, v); end
-	for i,v in ipairs(g_buildOps) do table.insert(icons, MapTacksIcon(v)); end
 	if #uniqueIcons==0 then
 		table.insert(icons, MapTacksIcon(
 			GameInfo.UnitOperations.UNITOPERATION_BUILD_IMPROVEMENT))
 	end
 	for i,v in ipairs(uniqueIcons) do table.insert(icons, v); end
+	for i,v in ipairs(builderIcons) do table.insert(icons, v); end
+	for i,v in ipairs(g_buildOps) do table.insert(icons, MapTacksIcon(v)); end
 	for i,v in ipairs(minorCivIcons) do table.insert(icons, v); end
 	for i,v in ipairs(g_repairOps) do table.insert(icons, MapTacksIcon(v)); end
 	for i,v in ipairs(miscIcons) do table.insert(icons, v); end
@@ -169,9 +166,6 @@ function MapTacksIconOptions(stockIcons : table)
 	for item in GameInfo.GreatPersonClasses() do
 		table.insert(icons, MapTacksIcon(item));
 	end
-
-	-- Unit actions
-	for i,v in ipairs(g_attackOps) do table.insert(icons, MapTacksIcon(v)); end
 
 	return icons;
 end

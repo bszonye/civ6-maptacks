@@ -1,4 +1,4 @@
-# Map Tacks 0.9.1 [<img align="right" src="maptacks.png" height="256" width="256">](https://steamcommunity.com/sharedfiles/filedetails/?id=1122081356)
+# Map Tacks 0.9.2 [<img align="right" src="maptacks.png" height="256" width="256">](https://steamcommunity.com/sharedfiles/filedetails/?id=1122081356)
 Enhances map pin list  
 Adds new icon options  
 Fixes base-game bugs  
@@ -17,13 +17,12 @@ for all builder and engineer actions, great people, and several common unit
 operations, plus a golden hexagon to mark wonder sites.
 
 ## Bug fixes and restyling
-The mod fixes a few base-game bugs and styling problems: Deleting and re-adding
-a pin no longer scrambles the pins. The pin list cannot grow past the top of
-the screen. Unnamed pins sort correctly when there are more than ten. Labels
-and controls have more consistent alignment and spacing.
+The mod fixes a few base-game bugs and styling problems: The pin list cannot
+grow past the top of the screen. Unnamed pins sort correctly when there are
+more than ten. Labels and controls have more consistent alignment and spacing.
 
 ## Compatibility
 The Map Tacks mod does not affect saved games. You can add it to a game in
 progress or disable it without breaking your game. Enabling or disabling the
 mod will not remove any pins that are already on your map, but some may change
-color. This mod layers on top of NQ/CQUI, replacing their map pin features.
+color. This mod layers on top of CQUI, replacing its map pin features.
