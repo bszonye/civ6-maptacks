@@ -14,7 +14,8 @@ include( "MapTacks" );
 local COLOR_YELLOW				:number = 0xFF2DFFF8;
 local COLOR_WHITE				:number = 0xFFFFFFFF;
  
-local g_editMapPinID :number = nil;
+local NO_EDIT_PIN_ID :number = -1;
+local g_editPinID :number = NO_EDIT_PIN_ID;
 local g_uniqueIconsPlayer :number = nil;  -- tailor UAs to the player
 local g_iconOptionEntries = {};
 local g_visibilityTargetEntries = {};
@@ -192,14 +193,6 @@ function UpdateIconOptionColor(iconEntryIndex :number)
 end
 
 -- ===========================================================================
-function GetMapPinID(id :number)
-	if id == nil then return nil; end
-	local activePlayerID = Game.GetLocalPlayer();
-	local pPlayerCfg = PlayerConfigurations[activePlayerID];
-	return pPlayerCfg:GetMapPinID(id);
-end
-
--- ===========================================================================
 function RequestMapPin(hexX :number, hexY :number)
 	local activePlayerID = Game.GetLocalPlayer();
 	-- update UA icons if the active player has changed
@@ -207,8 +200,7 @@ function RequestMapPin(hexX :number, hexY :number)
 	local pPlayerCfg = PlayerConfigurations[activePlayerID];
 	local pMapPin = pPlayerCfg:GetMapPin(hexX, hexY);
 	if(pMapPin ~= nil) then
-		g_editMapPinID = pMapPin:GetID()
-
+		g_editPinID = pMapPin:GetID();
 		g_desiredIconName = pMapPin:GetIconName();
 		if GameConfiguration.IsAnyMultiplayer() then
 			MapPinVisibilityToPlayerTarget(pMapPin:GetVisibility(), g_playerTarget);
@@ -245,6 +237,20 @@ function RequestMapPin(hexX :number, hexY :number)
 end
 
 -- ===========================================================================
+-- Returns the map pin configuration for the pin we are currently editing.
+-- Do not cache the map pin configuration because it will get destroyed by other processes.  Use it and get out!
+function GetEditPinConfig()
+	if(g_editPinID ~= NO_EDIT_PIN_ID) then
+		local activePlayerID = Game.GetLocalPlayer();
+		local pPlayerCfg = PlayerConfigurations[activePlayerID];
+		local pMapPin = pPlayerCfg:GetMapPinID(g_editPinID);
+		return pMapPin;
+	end
+
+	return nil;
+end
+
+-- ===========================================================================
 function OnChatPanel_PlayerTargetChanged(playerTargetTable)
 	g_cachedChatPanelTarget = playerTargetTable;
 	if( not ContextPtr:IsHidden() ) then
@@ -254,8 +260,13 @@ end
 
 -- ===========================================================================
 function ShowHideSendToChatButton()
-	local pMapPin = GetMapPinID(g_editMapPinID);
-	local showSendButton = pMapPin ~= nil and not pMapPin:IsPrivate() and GameConfiguration.IsNetworkMultiplayer();
+	local editPin = GetEditPinConfig();
+	if(editPin == nil) then
+		return;
+	end
+
+	local privatePin = editPin:IsPrivate();
+	local showSendButton = GameConfiguration.IsNetworkMultiplayer() and not privatePin;
 	-- XXX debug
 	-- showSendButton = true;
 
@@ -263,7 +274,7 @@ function ShowHideSendToChatButton()
 
 	-- Send To Chat disables itself if the current chat panel target is not visible to the map pin.
 	if(showSendButton) then
-		local chatVisible = MapPinIsVisibleToChatTarget(pMapPin:GetVisibility(), g_cachedChatPanelTarget);
+		local chatVisible = MapPinIsVisibleToChatTarget(editPin:GetVisibility(), g_cachedChatPanelTarget);
 		Controls.SendToChatButton:SetDisabled(not chatVisible);
 		if(chatVisible) then
 			Controls.SendToChatButton:SetToolTipString(sendToChatTTStr);
@@ -286,13 +297,13 @@ end
 -- ===========================================================================
 function OnOk()
 	if( not ContextPtr:IsHidden() ) then
-		local pMapPin = GetMapPinID(g_editMapPinID);
-		if(pMapPin ~= nil) then
-			pMapPin:SetName(Controls.PinName:GetText());
-			pMapPin:SetIconName(g_desiredIconName);
+		local editPin = GetEditPinConfig();
+		if(editPin ~= nil) then
+			editPin:SetName(Controls.PinName:GetText());
+			editPin:SetIconName(g_desiredIconName);
 
 			local newMapPinVisibility = PlayerTargetToMapPinVisibility(g_playerTarget);
-			pMapPin:SetVisibility(newMapPinVisibility);
+			editPin:SetVisibility(newMapPinVisibility);
 
 			Network.BroadcastPlayerInfo();
 			UI.PlaySound("Map_Pin_Add");
@@ -305,19 +316,23 @@ end
 
 -- ===========================================================================
 function OnSendToChatButton()
-	local pMapPin = GetMapPinID(g_editMapPinID);
-	if(pMapPin ~= nil) then
-		pMapPin:SetName(Controls.PinName:GetText());
-		LuaEvents.MapPinPopup_SendPinToChat(pMapPin:GetPlayerID(), pMapPin:GetID());
+	local editPinCfg = GetEditPinConfig();
+	if(editPinCfg ~= nil) then
+		editPinCfg:SetName(Controls.PinName:GetText());
+		LuaEvents.MapPinPopup_SendPinToChat(editPinCfg:GetPlayerID(), editPinCfg:GetID());
 	end
 end
 
 -- ===========================================================================
 function OnDelete()
-	if(g_editMapPinID ~= nil) then
+	local editPinCfg = GetEditPinConfig();
+	if(editPinCfg ~= nil) then
 		local activePlayerID = Game.GetLocalPlayer();
 		local pPlayerCfg = PlayerConfigurations[activePlayerID];
-		pPlayerCfg:DeleteMapPin(g_editMapPinID);
+		local deletePinID = editPinCfg:GetID();
+
+		g_editPinID = NO_EDIT_PIN_ID;
+		pPlayerCfg:DeleteMapPin(deletePinID);
 		Network.BroadcastPlayerInfo();
 		UI.PlaySound("Map_Pin_Remove");
 	end
@@ -331,12 +346,12 @@ end
 -- Event Handlers
 ---------------------------------------------------------------- 
 function OnMapPinPlayerInfoChanged( playerID :number )
-	PlayerTarget_OnPlayerInfoChanged( playerID, Controls.VisibilityPull, nil, g_visibilityTargetEntries, g_playerTarget, true);
+	PlayerTarget_OnPlayerInfoChanged( playerID, Controls.VisibilityPull, nil, nil, g_visibilityTargetEntries, g_playerTarget, true);
 end
 
 function OnLocalPlayerChanged()
 	g_playerTarget.targetID = Game.GetLocalPlayer();
-	PopulateTargetPull(Controls.VisibilityPull, nil, g_visibilityTargetEntries, g_playerTarget, true, OnVisibilityPull);
+	PopulateTargetPull(Controls.VisibilityPull, nil, nil, g_visibilityTargetEntries, g_playerTarget, true, OnVisibilityPull);
 
 	if( not ContextPtr:IsHidden() ) then
 		UIManager:DequeuePopup( ContextPtr );
@@ -365,7 +380,7 @@ function Initialize()
 	ContextPtr:SetInputHandler( OnInputHandler, true );
 
 	PopulateIconOptions();
-	PopulateTargetPull(Controls.VisibilityPull, nil, g_visibilityTargetEntries, g_playerTarget, true, OnVisibilityPull);
+	PopulateTargetPull(Controls.VisibilityPull, nil, nil, g_visibilityTargetEntries, g_playerTarget, true, OnVisibilityPull);
 	Controls.DeleteButton:RegisterCallback(Mouse.eLClick, OnDelete);
 	Controls.DeleteButton:RegisterCallback( Mouse.eMouseEnter, function() UI.PlaySound("Main_Menu_Mouse_Over"); end);
 	Controls.SendToChatButton:RegisterCallback(Mouse.eLClick, OnSendToChatButton);
@@ -385,6 +400,12 @@ function Initialize()
 	-- We have to do this because the map pin's context is loaded after the chat panel's 
 	-- and the chat panel's show/hide handler is not triggered as expected.
 	LuaEvents.MapPinPopup_RequestChatPlayerTarget();
+
+	local canChangeName = GameCapabilities.HasCapability("CAPABILITY_RENAME");
+	if(not canChangeName) then
+		Controls.PinFrame:SetHide(true);
+	end
+
 end
 Initialize();
 
