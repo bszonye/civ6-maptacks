@@ -208,8 +208,6 @@ function RequestMapPin(hexX :number, hexY :number)
 			Controls.VisibilityContainer:SetHide(false);
 		else
 			Controls.VisibilityContainer:SetHide(true);
-			-- XXX debug
-			-- Controls.VisibilityContainer:SetHide(false);
 		end
 
 		Controls.PinName:SetText(pMapPin:GetName());
@@ -267,8 +265,6 @@ function ShowHideSendToChatButton()
 
 	local privatePin = editPin:IsPrivate();
 	local showSendButton = GameConfiguration.IsNetworkMultiplayer() and not privatePin;
-	-- XXX debug
-	-- showSendButton = true;
 
 	Controls.SendToChatButton:SetHide(not showSendButton);
 
