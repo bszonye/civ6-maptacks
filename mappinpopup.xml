@@ -8,7 +8,7 @@
       <SlideAnim      ID="PopupSlideIn" Start="0,-20" End="0,0" Speed="3" Function="Root" Cycle="Once" Size="parent,parent">
 
         <Grid           ID="WindowContainer" Size="auto,auto" Anchor="C,C" Offset="0,0" Style="DropShadow2"     Color="255,255,255,200" AutoSizePadding="25,25" ConsumeMouse="1">
-          <Grid         ID="Window"      Size="650,auto" Anchor="C,C" Offset="0,0" Style="WindowFrameTitle" AutoSizePadding="0,12">
+          <Grid         ID="Window"      Size="690,auto" Anchor="C,C" Offset="0,0" Style="WindowFrameTitle" AutoSizePadding="0,12">
             <Stack      ID="WindowStack" StackGrowth="Down" Padding="10" Anchor="C,T">
               <Container                 Size="330,42" Anchor="C,T">
                 <Label  ID="TitleText"   Style="WindowHeader"        Anchor="C,C" String="{LOC_MAP_PIN_POPUP_TITLE:upper}" />
@@ -20,7 +20,7 @@
                     <EditBox ID="PinName" Style="EditTextArea" Size="parent-34,22" Anchor="R,C" Offset="4,0" MaxLength="20" EditMode="0" KeepFocus="1"/>
                   </Grid>
                   <!-- Icons -->
-                  <Stack ID="IconOptionStack" Anchor="C,T" StackGrowth="Right" Padding="4" WrapWidth="616" WrapGrowth="Down"/>
+                  <Stack ID="IconOptionStack" Anchor="C,T" StackGrowth="Right" Padding="4" WrapWidth="660" WrapGrowth="Down"/>
                   <!-- Visible to.. -->
 									<Container ID="VisibilityContainer" Anchor="C,T" Size="1,26" Hidden="1">
 										<PullDown ID="VisibilityPull" Anchor="C,T" Size="150,26" Style="WBPullDown"/>
