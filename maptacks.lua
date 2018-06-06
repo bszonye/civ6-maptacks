@@ -2,6 +2,8 @@
 -- MapTacks
 -- utility functions
 
+local g_enableWonders = false;
+
 local g_debugLeader = nil;
 -- g_debugLeader = GameInfo.Leaders.LEADER_BARBAROSSA
 -- g_debugLeader = GameInfo.Leaders.LEADER_CATHERINE_DE_MEDICI
@@ -51,20 +53,33 @@ local g_buildOps = {
 	GameInfo.UnitOperations.UNITOPERATION_REMOVE_FEATURE,
 	GameInfo.UnitOperations.UNITOPERATION_HARVEST_RESOURCE,
 };
-local g_repairOps = {
+local g_miscIcons = {
+	GameInfo.UnitOperations.UNITOPERATION_BUILD_ROUTE,
 	GameInfo.UnitOperations.UNITOPERATION_CLEAR_CONTAMINATION,
 	GameInfo.UnitOperations.UNITOPERATION_REPAIR,
-};
-local g_miscOps = {
-	GameInfo.UnitOperations.UNITOPERATION_BUILD_ROUTE,
 	GameInfo.UnitOperations.UNITOPERATION_DESIGNATE_PARK,
 	GameInfo.UnitOperations.UNITOPERATION_EXCAVATE,
 	GameInfo.UnitOperations.UNITOPERATION_MAKE_TRADE_ROUTE,
-	GameInfo.UnitOperations.UNITOPERATION_WMD_STRIKE,
+	{
+		Icon="ICON_UNITOPERATION_SPY_COUNTERSPY_ACTION",
+		-- Description="LOC_UNIT_SPY_NAME",
+		Description="LOC_PROMOTION_CLASS_SPY_NAME",
+	},
+	{
+		Icon="ICON_NOTIFICATION_BARBARIANS_SIGHTED",
+		Description="LOC_IMPROVEMENT_BARBARIAN_CAMP_NAME",
+	},
+	{
+		Icon="ICON_NOTIFICATION_DISCOVER_GOODY_HUT",
+		Description="LOC_IMPROVEMENT_GOODY_HUT_NAME",
+	},
+	-- GameInfo.Notifications.NOTIFICATION_CITY_RANGE_ATTACK,
+	-- GameInfo.Notifications.NOTIFICATION_BARBARIANS_SIGHTED,
+	-- GameInfo.Notifications.NOTIFICATION_DISCOVER_GOODY_HUT,
 	GameInfo.UnitOperations.UNITOPERATION_PILLAGE,
-	GameInfo.UnitCommands.UNITCOMMAND_PLUNDER_TRADE_ROUTE,
+	GameInfo.UnitOperations.UNITOPERATION_WMD_STRIKE,
+	-- GameInfo.UnitCommands.UNITCOMMAND_PLUNDER_TRADE_ROUTE,
 	GameInfo.UnitCommands.UNITCOMMAND_FORM_ARMY,
-	GameInfo.Units.UNIT_SPY,
 	GameInfo.UnitCommands.UNITCOMMAND_ACTIVATE_GREAT_PERSON,
 };
 
@@ -108,30 +123,31 @@ function MapTacksIconOptions(stockIcons : table)
 	end
 
 	-- Districts
-	table.insert(icons, MapTacksIcon(GameInfo.Districts.DISTRICT_WONDER, "DistrictType"));
+	table.insert(icons, MapTacksIcon(GameInfo.Districts.DISTRICT_WONDER));
 	for item in GameInfo.Districts() do
 		local itype = item.DistrictType;
 		if districts[itype] then
 			-- unique district replacements for this civ
-			table.insert(icons, MapTacksIcon(districts[itype], "DistrictType"));
+			table.insert(icons, MapTacksIcon(districts[itype]));
 		elseif item.TraitType then
 			-- skip other unique districts
 		elseif itype ~= "DISTRICT_WONDER" then
-			table.insert(icons, MapTacksIcon(item, "DistrictType"));
+			table.insert(icons, MapTacksIcon(item));
 		end
 	end
 
 	-- Improvements
 	local builderIcons = {};
 	local uniqueIcons = {};
+	local governorIcons = {};
 	local minorCivIcons = {};
-	local miscIcons = {};
+	local engineerIcons = {};
 	for item in GameInfo.Improvements() do
 		-- does this improvement have a valid build unit?
-		local valid = item.ValidBuildUnits[1];
-		if valid then
-			local entry = MapTacksIcon(item, "ImprovementType");
-			local unit = GameInfo.Units[valid.UnitType];
+		local units = item.ValidBuildUnits;
+		if #units ~= 0 then
+			local entry = MapTacksIcon(item);
+			local unit = GameInfo.Units[units[1].UnitType];
 			local trait = item.TraitType or unit.TraitType;
 			-- print(valid.UnitType, trait);
 			if trait then
@@ -139,32 +155,45 @@ function MapTacksIconOptions(stockIcons : table)
 				if traits[trait] then
 					-- separate unique improvements
 					table.insert(uniqueIcons, entry);
+				elseif trait == "TRAIT_CIVILIZATION_NO_PLAYER" then
+					-- governor improvements
+					table.insert(governorIcons, entry);
 				elseif trait:sub(1, 10) == "MINOR_CIV_" then
 					table.insert(minorCivIcons, entry);
 				end
 			elseif unit.UnitType == "UNIT_BUILDER" then
 				table.insert(builderIcons, entry);
 			else
-				table.insert(miscIcons, entry);
+				table.insert(engineerIcons, entry);
 			end
 		end
 	end
-
-	if #uniqueIcons==0 then
-		table.insert(icons, MapTacksIcon(
+	if #uniqueIcons == 0 then
+		-- if no unique improvement, use a generic icon
+		table.insert(uniqueIcons, MapTacksIcon(
 			GameInfo.UnitOperations.UNITOPERATION_BUILD_IMPROVEMENT))
 	end
+
 	for i,v in ipairs(uniqueIcons) do table.insert(icons, v); end
 	for i,v in ipairs(builderIcons) do table.insert(icons, v); end
 	for i,v in ipairs(g_buildOps) do table.insert(icons, MapTacksIcon(v)); end
+	for i,v in ipairs(governorIcons) do table.insert(icons, v); end
 	for i,v in ipairs(minorCivIcons) do table.insert(icons, v); end
-	for i,v in ipairs(g_repairOps) do table.insert(icons, MapTacksIcon(v)); end
-	for i,v in ipairs(miscIcons) do table.insert(icons, v); end
-	for i,v in ipairs(g_miscOps) do table.insert(icons, MapTacksIcon(v)); end
+	for i,v in ipairs(engineerIcons) do table.insert(icons, v); end
+	for i,v in ipairs(g_miscIcons) do table.insert(icons, MapTacksIcon(v)); end
 
 	-- Great people
 	for item in GameInfo.GreatPersonClasses() do
 		table.insert(icons, MapTacksIcon(item));
+	end
+
+	-- Wonders
+	if g_enableWonders then
+		for item in GameInfo.Buildings() do
+			if item.IsWonder then
+				table.insert(icons, MapTacksIcon(item));
+			end
+		end
 	end
 
 	return icons;
@@ -175,24 +204,28 @@ end
 function MapTacksIcon(item)
 	local name :string = nil;
 	local tooltip :string = nil;
-	if item.GreatPersonClassType then
+	if item.GreatPersonClassType then  -- note, districts also have this field
 		name = item.ActionIcon;
 		tooltip = item.Name;
+	elseif item.BuildingType then
+		name = "ICON_"..item.BuildingType;
+		tooltip = item.BuildingType;
 	elseif item.DistrictType then
 		name = "ICON_"..item.DistrictType;
-		tooltip = item.DistrictType;
-		if tooltip=="DISTRICT_WONDER" then
-			tooltip = "LOC_CIVICS_KEY_WONDER";
+		if item.CityCenter or item.InternalOnly then
+			tooltip = item.Name
+		else
+			tooltip = item.DistrictType;
 		end
 	elseif item.ImprovementType then
 		name = item.Icon;
 		tooltip = item.ImprovementType;
-	elseif item.UnitType == "UNIT_SPY" then
-		name="ICON_UNITOPERATION_SPY_COUNTERSPY_ACTION";
-		tooltip=item.Name;
+	elseif item.NotificationType then
+		name = "ICON_"..item.NotificationType;
+		tooltip = item.Message;
 	elseif item.UnitType then
 		name = "ICON_"..item.UnitType;
-		tooltip=item.Name;
+		tooltip = item.Name;
 	else
 		name = item.Icon;
 		tooltip = item.Description;
@@ -216,6 +249,8 @@ function MapTacksType(pin : table)
 	elseif iconType == "UNIT_" then
 		return MAPTACKS_WHITE;
 	elseif iconType == "DISTR" then
+		return MAPTACKS_COLOR;
+	elseif iconType == "BUILD" then  -- wonders
 		return MAPTACKS_COLOR;
 	else
 		return MAPTACKS_GRAY;
