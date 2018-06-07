@@ -10,14 +10,18 @@
   <LocalizedText>
     <Text id="MAP_TACKS_DESCRIPTION">
       <en_US>Improve the user interface for map pins.</en_US>
-      <de_DE>Verbessere die Benutzerschnittstelle für Landkarte Pinnadeln.</de_DE>
-      <es_ES>Mejore la interfaz de usuario para chinchetas de mapa.</es_ES>
-      <fr_FR>Améliorer l'interface utilisateur pour les épingles de carte.</fr_FR>
-      <it_IT>Migliora l'interfaccia utente per i puntine della mappa.</it_IT>
-      <!-- <ko_KR>TODO</ko_KR> -->
-      <pl_PL>Ulepsz interfejs użytkownika dla szpilki mapy.</pl_PL>
-      <ru_RU>Улучшите интерфейс пользователя для булавки карты.</ru_RU>
-      <!-- <zh_Hans_CN>TODO</zh_Hans_CN> -->
+      <de_DE>Verbessere die Benutzerschnittstelle für Landkartennadeln.</de_DE>
+      <es_ES>Mejore la interfaz de usuario para los marcadores del mapa.</es_ES>
+      <fr_FR>Améliorer l'interface utilisateur pour les marqueurs.</fr_FR>
+      <it_IT>Migliora l'interfaccia utente per i spilli mappa.</it_IT>
+      <pl_PL>Ulepsz interfejs użytkownika dla znaczniki na mapie.</pl_PL>
+      <pt_BR>Melhore a interface do usuário para os marcadores de mapa.</pt_BR>
+      <ru_RU>Улучшите интерфейс пользователя для отметки на карте.</ru_RU>
+      <!-- borrow the in-game localization for map pins -->
+      <ja_JP>LOC_HUD_MAP_PIN_LIST</ja_JP>
+      <ko_KR>LOC_HUD_MAP_PIN_LIST</ko_KR>
+      <zh_Hans_CN>LOC_HUD_MAP_PIN_LIST</zh_Hans_CN>
+      <zh_Hant_HK>LOC_HUD_MAP_PIN_LIST</zh_Hant_HK>
     </Text>
   </LocalizedText>
   <InGameActions>
