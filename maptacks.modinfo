@@ -2,11 +2,24 @@
 <Mod id="0a1c826c-0f43-4876-b096-23e1292eee3c" version="0.9.2">
   <Properties>
     <Name>Map Tacks</Name>
-    <Description>Map pin improvements</Description>
-    <Teaser>Map pin improvements</Teaser>
+    <Description>MAP_TACKS_DESCRIPTION</Description>
+    <Teaser>MAP_TACKS_DESCRIPTION</Teaser>
     <Authors>Bradd Szonye</Authors>
     <AffectsSavedGames>0</AffectsSavedGames>
   </Properties>
+  <LocalizedText>
+    <Text id="MAP_TACKS_DESCRIPTION">
+      <en_US>Improve the user interface for map pins.</en_US>
+      <de_DE>Verbessere die Benutzerschnittstelle für Landkarte Pinnadeln.</de_DE>
+      <es_ES>Mejore la interfaz de usuario para chinchetas de mapa.</es_ES>
+      <fr_FR>Améliorer l'interface utilisateur pour les épingles de carte.</fr_FR>
+      <it_IT>Migliora l'interfaccia utente per i puntine della mappa.</it_IT>
+      <!-- <ko_KR>TODO</ko_KR> -->
+      <pl_PL>Ulepsz interfejs użytkownika dla szpilki mapy.</pl_PL>
+      <ru_RU>Улучшите интерфейс пользователя для булавки карты.</ru_RU>
+      <!-- <zh_Hans_CN>TODO</zh_Hans_CN> -->
+    </Text>
+  </LocalizedText>
   <InGameActions>
     <ImportFiles id="MAPTACKS_FILES">
       <Properties>
@@ -20,6 +33,9 @@
       <File>mappinpopup.xml</File>
       <File>maptacks.lua</File>
     </ImportFiles>
+    <UpdateText id="MAPTACKS_TEXT">
+      <File>maptacks-text.xml</File>
+    </UpdateText>
   </InGameActions>
   <Files>
     <File>mappinlistpanel.lua</File>
@@ -29,5 +45,6 @@
     <File>mappinpopup.lua</File>
     <File>mappinpopup.xml</File>
     <File>maptacks.lua</File>
+    <File>maptacks-text.xml</File>
   </Files>
 </Mod>

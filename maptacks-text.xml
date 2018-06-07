@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<GameData>
+  <LocalizedText>
+    <Replace Tag="LOC_HUD_MAP_PIN_LIST" Language="en_US">
+      <Text>Map Tacks</Text>
+    </Row>
+    <Replace Tag="LOC_HUD_MAP_PIN_LIST" Language="de_DE">
+      <Text>Landkarte Pinnadeln</Text>
+    </Replace>
+    <Replace Tag="LOC_HUD_MAP_PIN_LIST" Language="es_ES">
+      <Text>chinchetas de mapa</Text>
+    </Replace>
+    <Replace Tag="LOC_HUD_MAP_PIN_LIST" Language="fr_FR">
+      <Text>épingles de carte</Text>
+    </Replace>
+    <Replace Tag="LOC_HUD_MAP_PIN_LIST" Language="it_IT">
+      <Text>puntine della mappa</Text>
+    </Replace>
+    <Replace Tag="LOC_HUD_MAP_PIN_LIST" Language="ko_KR">
+      <Text>지도 압정 (TODO)</Text>
+    </Replace>
+    <Replace Tag="LOC_HUD_MAP_PIN_LIST" Language="pl_PL">
+      <Text>szpilki mapy</Text>
+    </Replace>
+    <Replace Tag="LOC_HUD_MAP_PIN_LIST" Language="ru_RU">
+      <Text>булавки карты</Text>
+    </Replace>
+    <Replace Tag="LOC_HUD_MAP_PIN_LIST" Language="zh_Hans_CN">
+      <Text>地图大头钉 (TODO)</Text>
+    </Replace>
+  </LocalizedText>
+</GameData>
