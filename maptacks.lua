@@ -319,17 +319,17 @@ end
 -- ===========================================================================
 -- XXX: Create a test pattern of icons on the map
 function MapTacksTestPattern()
-	-- print("MapTacksTestPattern: start");
+	print("MapTacksTestPattern: start");
 	local activePlayerID = Game.GetLocalPlayer();
 	local pPlayerCfg = PlayerConfigurations[activePlayerID];
-	local pMapPin = pPlayerCfg:GetMapPin(hexX, hexY);
 	for i, item in ipairs(MapTacksIconOptions()) do
-		local row = math.floor((i-1) / 14);
-		local col = (i-1) % 14;
+		local row = math.floor((i-1) / 15);
+		local col = (i-1) % 15;
 		-- print(row, col, item.name);
 		local pMapPin = pPlayerCfg:GetMapPin(col, 4-row);
 		pMapPin:SetName(nil);
 		pMapPin:SetIconName(item.name);
+		pMapPin:SetVisibility(ChatTargetTypes.CHATTARGET_ALL);
 	end
 	Network.BroadcastPlayerInfo();
 	UI.PlaySound("Map_Pin_Add");
