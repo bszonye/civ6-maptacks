@@ -16,19 +16,20 @@ The map tack editor adds many new icons:
 
 All new icons have tooltips, with game effects for districts and improvements.
 
-## Scrollable map pin list
+## Scrollable map tack list
 The list dynamically resizes to show up to 15 map tacks, with a scrollbar to
-manage longer lists. It groups all named locations at the top, followed by all
+manage longer lists.  It groups all named locations at the top, followed by all
 unnamed locations in numerical order.
 
 ## Bug fixes and restyling
-The mod fixes a few base-game bugs and styling problems: The pin list will no
-longer grow past the top of the screen. Unnamed pins now sort correctly when
-there are more than ten. Labels and controls have more consistent alignment and
-spacing.
+The mod fixes a few base-game bugs and styling problems.  It handles large
+numbers of map tacks without breaking the list popup or causing performance
+problems.  Unnamed markers now sort correctly when there are more than ten.
+Labels and controls have more consistent alignment and spacing, and overlapping
+icons will consistently appear in correct front-to-back order.
 
 ## Compatibility
 The Map Tacks mod does not affect saved games, so you can add it to a game in
-progress or disable it without breaking your game. It overrides any map pin
-features in other UI mods. Map Tacks is compatible with Unique District Icons,
+progress or disable it without breaking your game.  It overrides any map pin
+features in other UI mods.  Map Tacks is compatible with Unique District Icons,
 and uses the unique icons for districts.
