@@ -550,14 +550,15 @@ function Refresh()
 		m_MapPinStacks[y] = {};
 	end
 	for i, player in ipairs(players) do
-		local playerID :number = player:GetID();
-		local playerPins :table = PlayerConfigurations[playerID]:GetMapPins();
-		for i, pMapPin in pairs(playerPins) do
-			StackMapPin(pMapPin);
+		local playerID		:number = player:GetID();
+		local playerCfg		:table  = PlayerConfigurations[playerID];
+		local playerPins	:table  = playerCfg:GetMapPins();
+		for ii, mapPinCfg in pairs(playerPins) do
+			StackMapPin(mapPinCfg);
 		end
 	end
 
-	-- Calculate maximum stack depth
+	-- Sort pin stacks and calculate maximum depth
 	local maxdepth = 0;
 	for i, row in pairs(m_MapPinStacks) do
 		for j, stack in pairs(row) do
