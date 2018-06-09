@@ -320,13 +320,14 @@ end
 -- XXX: Create a test pattern of icons on the map
 function MapTacksTestPattern()
 	print("MapTacksTestPattern: start");
+	local iW, iH = Map.GetGridSize();
 	local activePlayerID = Game.GetLocalPlayer();
 	local pPlayerCfg = PlayerConfigurations[activePlayerID];
 	for i, item in ipairs(MapTacksIconOptions()) do
-		local row = math.floor((i-1) / 15);
-		local col = (i-1) % 15;
-		-- print(row, col, item.name);
-		local pMapPin = pPlayerCfg:GetMapPin(col, 4-row);
+		local row = 4 - math.floor((i-1) / 15);
+		local col = ((i-1) % 15 - 7) % iW;
+		print(string.format("%d %d %s", row, col, tostring(item.name)));
+		local pMapPin = pPlayerCfg:GetMapPin(col, row);
 		pMapPin:SetName(nil);
 		pMapPin:SetIconName(item.name);
 		pMapPin:SetVisibility(ChatTargetTypes.CHATTARGET_ALL);

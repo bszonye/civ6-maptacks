@@ -540,6 +540,7 @@ end
 function Refresh()
 	local players :table = Game.GetPlayers{Alive = true, Human = true};
 	local activePlayerID = Game.GetLocalPlayer();
+	local iW, iH = Map.GetGridSize();
 
 	-- Reset all flags.
 	m_InstanceManager:ResetInstances();
@@ -547,6 +548,9 @@ function Refresh()
 
 	-- Build stacks of pins, with the active player on top of the stacks.
 	m_MapPinStacks = {};  -- indexed by [y][x] coordinates
+	for y = 0, iH-1 do  -- create empty rows
+		m_MapPinStacks[y] = {};
+	end
 	for i, player in ipairs(players) do
 		local playerID :number = player:GetID();
 		if playerID ~= activePlayerID then
@@ -555,13 +559,24 @@ function Refresh()
 	end
 	StackPlayerPins(activePlayerID);
 
-	-- Refresh pins, top to bottom, right to left, for best z-order.
-	iW, iH = Map.GetGridSize();
-	for y = iH, 1, -1 do
-		if m_MapPinStacks[y] then
-			for x = iW, 1, -1 do
-				for i, mapPinCfg in ipairs(m_MapPinStacks[y][x] or {}) do
-					CreateMapPinFlag(mapPinCfg);
+	-- Calculate maximum stack depth
+	local maxdepth = 0;
+	for i, row in pairs(m_MapPinStacks) do
+		for j, stack in pairs(row) do
+			maxdepth = math.max(maxdepth, #stack);
+		end
+	end
+
+	-- Refresh pins north to south, bottom to top, for best z-order
+	-- Note: invisible pins can still cause odd overlapping
+	for y = iH-1, 0, -1 do
+		local row = m_MapPinStacks[y];
+		if next(row) ~= nil then  -- skip empty rows
+			for depth = 1, maxdepth do
+				for x, stack in pairs(row) do
+					if depth <= #stack then
+						CreateMapPinFlag(stack[depth]);
+					end
 				end
 			end
 		end
@@ -576,20 +591,27 @@ function StackPlayerPins(playerID :number)
 end
 
 function StackMapPin(pMapPin :table)
-	local x = pMapPin:GetHexX() + 1;
-	local y = pMapPin:GetHexY() + 1;
-	if m_MapPinStacks[y] == nil then
-		m_MapPinStacks[y] = {};
+	-- Constrain pin coordinates to map coordinates, in case of generated pins
+	-- outside the normal bounds. This works well for wraparound maps, where
+	-- pins stack up modulo the world size. It works less well for bounded
+	-- maps, but standard map pins will not go outside the bounds anyway.
+	local iW, iH = Map.GetGridSize();
+	local y = pMapPin:GetHexY() % iH;
+	local x = pMapPin:GetHexX() % iW;
+	-- print(string.format('%d %d', x, y));
+	local stack = m_MapPinStacks[y][x];
+	if stack then
+		stack[#stack + 1] = pMapPin;
+	else
+		m_MapPinStacks[y][x] = { pMapPin };
 	end
-	if m_MapPinStacks[y][x] == nil then
-		m_MapPinStacks[y][x] = {};
-	end
-	table.insert(m_MapPinStacks[y][x], pMapPin);
 end
 
 function GetPinStack(pMapPin :table)
-	row = m_MapPinStacks[pMapPin:GetHexY() + 1] or {}
-	return row[pMapPin:GetHexX() + 1] or {}
+	-- constrain pin coordinates to map coordinates
+	local iW, iH = Map.GetGridSize();
+	row = m_MapPinStacks[pMapPin:GetHexY() % iH] or {}
+	return row[pMapPin:GetHexX() % iW] or {}
 end
 
 ------------------------------------------------------------------
