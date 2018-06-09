@@ -321,19 +321,27 @@ end
 function MapTacksTestPattern()
 	print("MapTacksTestPattern: start");
 	local iW, iH = Map.GetGridSize();
-	local activePlayerID = Game.GetLocalPlayer();
-	local pPlayerCfg = PlayerConfigurations[activePlayerID];
-	for i, item in ipairs(MapTacksIconOptions()) do
-		local row = 4 - math.floor((i-1) / 15);
-		local col = ((i-1) % 15 - 7) % iW;
-		print(string.format("%d %d %s", row, col, tostring(item.name)));
-		local pMapPin = pPlayerCfg:GetMapPin(col, row);
-		pMapPin:SetName(nil);
-		pMapPin:SetIconName(item.name);
-		pMapPin:SetVisibility(ChatTargetTypes.CHATTARGET_ALL);
+	items = MapTacksIconOptions();
+	for i, item in ipairs(items) do
+		local x = ((i-1) % 15 - 7) % iW;
+		local y = 4 - math.floor((i-1) / 15);
+		MapTacksTestPin(x, y, item);
 	end
 	Network.BroadcastPlayerInfo();
 	UI.PlaySound("Map_Pin_Add");
+	print("MapTacksTestPattern: end");
+end
+
+function MapTacksTestPin(x, y, item)
+	local name = item and item.name;
+	print(string.format("%d %d %s", x, y, tostring(name)));
+	local activePlayerID = Game.GetLocalPlayer();
+	local pPlayerCfg = PlayerConfigurations[activePlayerID];
+	local pMapPin = pPlayerCfg:GetMapPin(x, y);
+	pMapPin:SetName("");
+	pMapPin:SetIconName(name);
+	pMapPin:SetVisibility(ChatTargetTypes.CHATTARGET_ALL);
+	pPlayerCfg:GetMapPins();
 end
 
 -- ===========================================================================
