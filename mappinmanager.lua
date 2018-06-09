@@ -406,7 +406,6 @@ end
 -- Set the position of the flag.
 function MapPinFlag.SetPosition( self : MapPinFlag, worldX : number, worldY : number, worldZ : number )
 
-	local activePlayerID = Game.GetLocalPlayer();
 	local mapPinStackXOffset = 0;
 	if (self ~= nil ) then
 		local pMapPin : table = self:GetMapPin();
@@ -418,14 +417,14 @@ function MapPinFlag.SetPosition( self : MapPinFlag, worldX : number, worldY : nu
 			for i, pin in ipairs(stack) do
 				if pin == pMapPin then
 					found = true;
-				elseif not found and pin:IsVisible(activePlayerID) then
+				elseif not found then
 					depth = depth + 1;
 				end
 			end
 			if not found then
 				StackMapPin(pMapPin);
 			end
-			mapPinStackXOffset = 5.5 * depth;
+			mapPinStackXOffset = 5.0 * depth;
 		end
 	end
 
@@ -539,7 +538,6 @@ end
 -- ===========================================================================
 function Refresh()
 	local players :table = Game.GetPlayers{Alive = true, Human = true};
-	local activePlayerID = Game.GetLocalPlayer();
 	local iW, iH = Map.GetGridSize();
 
 	-- Reset all flags.
@@ -553,17 +551,18 @@ function Refresh()
 	end
 	for i, player in ipairs(players) do
 		local playerID :number = player:GetID();
-		if playerID ~= activePlayerID then
-			StackPlayerPins(playerID);
+		local playerPins :table = PlayerConfigurations[playerID]:GetMapPins();
+		for i, pMapPin in pairs(playerPins) do
+			StackMapPin(pMapPin);
 		end
 	end
-	StackPlayerPins(activePlayerID);
 
 	-- Calculate maximum stack depth
 	local maxdepth = 0;
 	for i, row in pairs(m_MapPinStacks) do
 		for j, stack in pairs(row) do
 			maxdepth = math.max(maxdepth, #stack);
+			SortPinStack(stack);
 		end
 	end
 
@@ -583,10 +582,32 @@ function Refresh()
 	end
 end
 
-function StackPlayerPins(playerID :number)
-	local playerPins :table = PlayerConfigurations[playerID]:GetMapPins();
-	for i, pMapPin in pairs(playerPins) do
-		StackMapPin(pMapPin);
+function SortPinStack(stack :table)
+	-- put active player on top of visible pins, invisible pins after that
+	local activePlayerID = Game.GetLocalPlayer();
+	local activeStack = {};
+	local invisibleStack = {};
+	local i = 1;
+	-- sort out active-player and invisible pins
+	while i <= #stack do
+		local pin = stack[i];
+		if pin:GetPlayerID() == activePlayerID then
+			activeStack[#activeStack + 1] = pin;
+			table.remove(stack, i);
+		elseif pin:IsVisible(activePlayerID) then
+			i = i + 1;
+		else
+			invisibleStack[#invisibleStack + 1] = pin;
+			table.remove(stack, i);
+		end
+	end
+	-- stack pins for the active player on top
+	for i, pin in ipairs(activeStack) do
+		stack[#stack + 1] = pin
+	end
+	-- stack invisible pins at the end
+	for i, pin in ipairs(invisibleStack) do
+		stack[#stack + 1] = pin
 	end
 end
 
