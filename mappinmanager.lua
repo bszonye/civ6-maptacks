@@ -41,6 +41,7 @@ local m_cameraFocusX				:number = -1;
 local m_cameraFocusY				:number = -1;
 local m_zoomMultiplier				:number = 1;
 local m_MapPinInstances				:table  = {};
+local m_MapPinStacks				:table  = {};
 
 -- The meta table definition that holds the function pointers
 hstructure MapPinFlagMeta
@@ -409,24 +410,21 @@ function MapPinFlag.SetPosition( self : MapPinFlag, worldX : number, worldY : nu
 	if (self ~= nil ) then
 		local pMapPin : table = self:GetMapPin();
 		if (pMapPin ~= nil) then
-			local pMapPinLocX = pMapPin:GetHexX();
-			local pMapPinLocY = pMapPin:GetHexY();
-	
 			-- If there are multiple map pins sharing a hex, recenter them
-			local pinHexCount = 1;
-			for pinInstancePlayerID, playerPinInstances in pairs(m_MapPinInstances) do
-				for mapPinInstanceID, mapPinInstance in pairs(playerPinInstances) do
-					local pCurMapPin : table = mapPinInstance:GetMapPin();
-					if(pCurMapPin ~= nil and pCurMapPin ~= pMapPin) then
-						if(pCurMapPin:GetHexX() == pMapPinLocX and pCurMapPin:GetHexY() == pMapPinLocY) then
-							pinHexCount = pinHexCount + 1;
-						end
-					end
+			local stack = GetPinStack(pMapPin);
+			local found = false;
+			local depth = 0;
+			for i, pin in ipairs(stack) do
+				if pin == pMapPin then
+					found = true;
+				elseif not found then
+					depth = depth + 1;
 				end
 			end
-			if (pinHexCount > 1) then
-				mapPinStackXOffset = 5.5*pinHexCount;
-			end;
+			if not found then
+				StackMapPin(pMapPin);
+			end
+			mapPinStackXOffset = 5.0 * depth;
 		end
 	end
 
@@ -539,26 +537,103 @@ end
 --	updated on another event.
 -- ===========================================================================
 function Refresh()
-	local plotsToUpdate	:table = {};
-	local players		:table = Game.GetPlayers{Alive = true, Human = true};
+	local players :table = Game.GetPlayers{Alive = true, Human = true};
+	local iW, iH = Map.GetGridSize();
 
 	-- Reset all flags.
 	m_InstanceManager:ResetInstances();
 	m_MapPinInstances = {};
 
+	-- Build stacks of pins, with the active player on top of the stacks.
+	m_MapPinStacks = {};  -- indexed by [y][x] coordinates
+	for y = 0, iH-1 do  -- create empty rows
+		m_MapPinStacks[y] = {};
+	end
 	for i, player in ipairs(players) do
 		local playerID		:number = player:GetID();
 		local playerCfg		:table  = PlayerConfigurations[playerID];
 		local playerPins	:table  = playerCfg:GetMapPins();
 		for ii, mapPinCfg in pairs(playerPins) do
-			local pinID		:number = mapPinCfg:GetID();
-
-			-- If flag doesn't exist for this combo, create it:
-			if ( m_MapPinInstances[ playerID ] == nil or m_MapPinInstances[ playerID ][ pinID ] == nil) then
-					CreateMapPinFlag(mapPinCfg);
-			end			
+			StackMapPin(mapPinCfg);
 		end
 	end
+
+	-- Sort pin stacks and calculate maximum depth
+	local maxdepth = 0;
+	for i, row in pairs(m_MapPinStacks) do
+		for j, stack in pairs(row) do
+			maxdepth = math.max(maxdepth, #stack);
+			SortPinStack(stack);
+		end
+	end
+
+	-- Refresh pins north to south, bottom to top, for best z-order
+	-- Note: invisible pins can still cause odd overlapping
+	for y = iH-1, 0, -1 do
+		local row = m_MapPinStacks[y];
+		if next(row) ~= nil then  -- skip empty rows
+			for depth = 1, maxdepth do
+				for x, stack in pairs(row) do
+					if depth <= #stack then
+						CreateMapPinFlag(stack[depth]);
+					end
+				end
+			end
+		end
+	end
+end
+
+function SortPinStack(stack :table)
+	-- put active player on top of visible pins, invisible pins after that
+	local activePlayerID = Game.GetLocalPlayer();
+	local activeStack = {};
+	local invisibleStack = {};
+	local i = 1;
+	-- sort out active-player and invisible pins
+	while i <= #stack do
+		local pin = stack[i];
+		if pin:GetPlayerID() == activePlayerID then
+			activeStack[#activeStack + 1] = pin;
+			table.remove(stack, i);
+		elseif pin:IsVisible(activePlayerID) then
+			i = i + 1;
+		else
+			invisibleStack[#invisibleStack + 1] = pin;
+			table.remove(stack, i);
+		end
+	end
+	-- stack pins for the active player on top
+	for i, pin in ipairs(activeStack) do
+		stack[#stack + 1] = pin
+	end
+	-- stack invisible pins at the end
+	for i, pin in ipairs(invisibleStack) do
+		stack[#stack + 1] = pin
+	end
+end
+
+function StackMapPin(pMapPin :table)
+	-- Constrain pin coordinates to map coordinates, in case of generated pins
+	-- outside the normal bounds. This works well for wraparound maps, where
+	-- pins stack up modulo the world size. It works less well for bounded
+	-- maps, but standard map pins will not go outside the bounds anyway.
+	local iW, iH = Map.GetGridSize();
+	local y = pMapPin:GetHexY() % iH;
+	local x = pMapPin:GetHexX() % iW;
+	-- print(string.format('%d %d', x, y));
+	local stack = m_MapPinStacks[y][x];
+	if stack then
+		stack[#stack + 1] = pMapPin;
+	else
+		m_MapPinStacks[y][x] = { pMapPin };
+	end
+end
+
+function GetPinStack(pMapPin :table)
+	-- constrain pin coordinates to map coordinates
+	local iW, iH = Map.GetGridSize();
+	row = m_MapPinStacks[pMapPin:GetHexY() % iH] or {}
+	return row[pMapPin:GetHexX() % iW] or {}
 end
 
 ------------------------------------------------------------------

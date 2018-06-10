@@ -319,20 +319,29 @@ end
 -- ===========================================================================
 -- XXX: Create a test pattern of icons on the map
 function MapTacksTestPattern()
-	-- print("MapTacksTestPattern: start");
-	local activePlayerID = Game.GetLocalPlayer();
-	local pPlayerCfg = PlayerConfigurations[activePlayerID];
-	local pMapPin = pPlayerCfg:GetMapPin(hexX, hexY);
-	for i, item in ipairs(MapTacksIconOptions()) do
-		local row = math.floor((i-1) / 14);
-		local col = (i-1) % 14;
-		-- print(row, col, item.name);
-		local pMapPin = pPlayerCfg:GetMapPin(col, 4-row);
-		pMapPin:SetName(nil);
-		pMapPin:SetIconName(item.name);
+	print("MapTacksTestPattern: start");
+	local iW, iH = Map.GetGridSize();
+	items = MapTacksIconOptions();
+	for i, item in ipairs(items) do
+		local x = ((i-1) % 15 - 7) % iW;
+		local y = 4 - math.floor((i-1) / 15);
+		MapTacksTestPin(x, y, item);
 	end
 	Network.BroadcastPlayerInfo();
 	UI.PlaySound("Map_Pin_Add");
+	print("MapTacksTestPattern: end");
+end
+
+function MapTacksTestPin(x, y, item)
+	local name = item and item.name;
+	print(string.format("%d %d %s", x, y, tostring(name)));
+	local activePlayerID = Game.GetLocalPlayer();
+	local pPlayerCfg = PlayerConfigurations[activePlayerID];
+	local pMapPin = pPlayerCfg:GetMapPin(x, y);
+	pMapPin:SetName("");
+	pMapPin:SetIconName(name);
+	pMapPin:SetVisibility(ChatTargetTypes.CHATTARGET_ALL);
+	pPlayerCfg:GetMapPins();
 end
 
 -- ===========================================================================
