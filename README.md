@@ -1,4 +1,4 @@
-# Map Tacks 1.0.0 [<img align="right" src="maptacks.png" height="256" width="256">](https://steamcommunity.com/sharedfiles/filedetails/?id=1122081356)
+# Map Tacks 1.1.0 [<img align="right" src="maptacks.png" height="256" width="256">](https://steamcommunity.com/sharedfiles/filedetails/?id=1122081356)
 Adds new map icons  
 Enhances list interface  
 Fixes bugs and styling  
@@ -23,10 +23,11 @@ unnamed locations in numerical order.
 
 ## Bug fixes and restyling
 The mod fixes a few base-game bugs and styling problems.  It handles large
-numbers of map tacks without breaking the list popup or causing performance
+numbers of map tacks without breaking the popup list or causing performance
 problems.  Unnamed markers now sort correctly when there are more than ten.
-Labels and controls have more consistent alignment and spacing, and overlapping
-icons will consistently appear in correct front-to-back order.
+Labels and controls have more consistent alignment and spacing.  The mod
+improves overlapping and stacked icons, so that closer tacks always look
+closer, and the current player always appears on top in multiplayer.
 
 ## Compatibility
 The Map Tacks mod does not affect saved games, so you can add it to a game in
