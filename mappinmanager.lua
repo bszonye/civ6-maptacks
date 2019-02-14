@@ -5,6 +5,7 @@
 
 include( "InstanceManager" );
 include( "SupportFunctions" );
+include( "Colors" );
 include( "MapTacks" );
 
 
