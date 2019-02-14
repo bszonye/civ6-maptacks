@@ -18,19 +18,6 @@
   <!-- ==================================================================== -->
   <!--	INSTANCES																														-->
   <!-- ==================================================================== -->
-  <!--
-  
-      <Stack Anchor="C,T" Offset="0,32" StackGrowth="Bottom">
-      <ScrollPanel Anchor="C,T" ID="MapPinLogPanel" Offset="0,0" Size="260,130" Style="ScrollPanelWithLeftBar" HideScrollBar="0" >
-        <Stack Anchor="C,T"	ID="MapPinEntryStack"										 StackGrowth="Bottom" Offset="0,0" StackPadding="1" />
-      </ScrollPanel>
-
-    </Stack>
-  
-        <Container Size="200,auto">
-        <CheckBox	ID="ChatCheck"				Anchor="R,T"	Style="WorldTrackerCheckBox" TextOffset="-5" String="LOC_HIDE_CHAT_PANEL" WrapWidth="180" Align="Right"/>
-      </Container>
-      -->
 	<Instance			Name="MapPinListEntry">
     <Container ID="Root" Size="280,24">
       <GridButton ID="MapPinListButton" Anchor="L,C"  Size="parent-26,24" ConsumeAllMouse="1" Style="ButtonControlBrown">

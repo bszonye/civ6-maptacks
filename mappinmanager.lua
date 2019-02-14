@@ -5,7 +5,7 @@
 
 include( "InstanceManager" );
 include( "SupportFunctions" );
-
+include( "Colors") ;
 
 -- ===========================================================================
 --	CONSTANTS
