@@ -23,7 +23,7 @@
                   <Stack ID="IconOptionStack" Anchor="C,T" StackGrowth="Right" Padding="4" WrapWidth="660" WrapGrowth="Down"/>
                   <!-- Visible to.. -->
 									<Container ID="VisibilityContainer" Anchor="C,T" Size="1,26" Hidden="1">
-										<PullDown ID="VisibilityPull" Anchor="C,T" Size="150,26" Style="WBPullDown"/>
+										<PullDown ID="VisibilityPull" Anchor="C,T" Size="166,26" Offset="0,-30" Style="MainPullDown"/>
 									</Container>
 
                   <!-- Buttons -->

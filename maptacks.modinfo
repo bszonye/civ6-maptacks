@@ -1,11 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
-<Mod id="0a1c826c-0f43-4876-b096-23e1292eee3c" version="1.1.0">
+<Mod id="0a1c826c-0f43-4876-b096-23e1292eee3c" version="1.1.1">
   <Properties>
     <Name>Map Tacks</Name>
     <Description>MAP_TACKS_DESCRIPTION</Description>
     <Teaser>MAP_TACKS_DESCRIPTION</Teaser>
     <Authors>Bradd Szonye</Authors>
     <AffectsSavedGames>0</AffectsSavedGames>
+    <CompatibleVersions>2.0</CompatibleVersions>
   </Properties>
   <LocalizedText>
     <Text id="MAP_TACKS_DESCRIPTION">

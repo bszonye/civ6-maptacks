@@ -8,8 +8,6 @@
     <WorldAnchor ID="Anchor">
       <Container ID="FlagRoot" Anchor="C,B"	Size="48,48">
         <Container    Anchor="C,C" Size="50,50">
-          <Container ID="AirAnchor" Anchor="c,c" Size="50,50"/>
-
           <Image Size="59,79" Texture="MapPin" Anchor="C,T" Offset="1,-16"/>
           <!-- Black Border & Actual flag -->
           <Image ID="FlagBaseOutline" Size="50,50" TextureOffset="0,0"			Texture="MapPinFlag"  Anchor="C,T" />
