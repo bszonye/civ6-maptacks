@@ -160,9 +160,8 @@ function BuildMapPinList()
 	-- Dynamically resize scroll panel
 	local maxY = 15 * 25 - 1;  -- show up to 15 pins without a scrollbar
 	local stackY = Controls.MapPinEntryStack:GetSizeY();
-	local panelX = maxY < stackY and 264 or 280;  -- make room for scrollbar
 	local panelY = math.min(maxY, stackY);
-	Controls.MapPinScrollPanel:SetSizeVal(panelX, panelY);
+	Controls.MapPinScrollPanel:SetSizeY(panelY);
 	Controls.MapPinScrollPanel:ReprocessAnchoring();
 	Controls.MapPinStack:CalculateSize();
 	Controls.MapPinStack:ReprocessAnchoring();
