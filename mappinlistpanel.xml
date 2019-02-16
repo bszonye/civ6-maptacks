@@ -30,7 +30,7 @@
   <!-- ==================================================================== -->
   <Instance     Name="MapPinListEntry">
     <Container ID="Root" Size="parent,24">
-      <GridButton ID="MapPinListButton" Anchor="L,C"  Size="parent-26,24" ConsumeAllMouse="1" Style="ButtonControlBrown">
+      <GridButton ID="MapPinListButton" Anchor="L,C"  Size="parent-26,24" Style="ButtonControlBrown">
         <Image ID="IconImage"  Texture="MapPins24" Size="24,24" Anchor="L,C" Color="254,254,230" Offset="2,0"/>
         <Label  ID="MapPinName" Anchor="L,C" Offset="28,0" String="" WrapWidth="parent-24" Style="FontNormal14" TruncateWidth="210" FontStyle="Glow" Color0="154,137,108,255" Color1="21,18,12,100" />
       </GridButton>
