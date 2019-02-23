@@ -87,8 +87,8 @@ local g_miscIcons = {
 };
 
 -- ===========================================================================
--- Sort objects by tech/civic cost
-function MapTacksTechCivicCost(a)
+-- Timeline value based on tech/civic cost
+function MapTacksTimeline(a)
 	local tech_cost = 0;
 	if a.PrereqTech ~= nil then
 		tech = GameInfo.Technologies[a.PrereqTech];
@@ -104,15 +104,19 @@ function MapTacksTechCivicCost(a)
 end
 
 function MapTacksTechCivicSort(a, b)
-	local acost = MapTacksTechCivicCost(a);
-	local bcost = MapTacksTechCivicCost(b);
-	-- primary sort: tech/civic cost
-	if acost < bcost then
-		return true;
-	elseif bcost < acost then
-		return false;
+	local atime = MapTacksTimeline(a);
+	local btime = MapTacksTimeline(b);
+	-- primary sort: tech/civic timeline
+	if atime ~= btime then
+		return atime < btime;
 	end
-	-- secondary sort: localized icon name
+	-- secondary sort: build cost
+	acost = a.Cost or 0;
+	bcost = b.Cost or 0;
+	if acost ~= bcost then
+		return acost < bcost;
+	end
+	-- tertiary sort: localized icon name
 	aname = Locale.Lookup(a.Name);
 	bname = Locale.Lookup(b.Name);
 	return Locale.Compare(aname, bname) == -1;
@@ -170,7 +174,7 @@ function MapTacksIconOptions(stockIcons : table)
 		else
 			table.insert(districtIcons, item);
 		end
-		-- print(item.Name, MapTacksTechCivicCost(item));
+		-- print(item.Name, MapTacksTimeline(item));
 	end
 	table.sort(districtIcons, MapTacksTechCivicSort);
 	for i,v in ipairs(districtIcons) do table.insert(icons, MapTacksIcon(v)); end
@@ -205,7 +209,7 @@ function MapTacksIconOptions(stockIcons : table)
 			else
 				table.insert(engineerIcons, item);
 			end
-			-- print(item.Name, MapTacksTechCivicCost(item));
+			-- print(item.Name, MapTacksTimeline(item));
 		end
 	end
 	-- sort icons according to tech cost
