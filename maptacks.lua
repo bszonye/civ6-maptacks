@@ -233,11 +233,14 @@ function MapTacksIconOptions(stockIcons : table)
 
 	-- Wonders
 	if g_enableWonders then
+		local wonderIcons = {};
 		for item in GameInfo.Buildings() do
 			if item.IsWonder then
-				table.insert(icons, MapTacksIcon(item));
+				table.insert(wonderIcons, item);
 			end
 		end
+		table.sort(wonderIcons, MapTacksTechCivicSort);
+		for i,v in ipairs(wonderIcons) do table.insert(icons, MapTacksIcon(v)); end
 	end
 
 	return icons;
