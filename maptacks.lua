@@ -106,12 +106,16 @@ end
 function MapTacksTechCivicSort(a, b)
 	local acost = MapTacksTechCivicCost(a);
 	local bcost = MapTacksTechCivicCost(b);
+	-- primary sort: tech/civic cost
 	if acost < bcost then
 		return true;
 	elseif bcost < acost then
 		return false;
 	end
-	return a.Name < b.Name;
+	-- secondary sort: localized icon name
+	aname = Locale.Lookup(a.Name);
+	bname = Locale.Lookup(b.Name);
+	return Locale.Compare(aname, bname) == -1;
 end
 
 -- ===========================================================================
