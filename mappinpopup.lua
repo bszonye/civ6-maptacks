@@ -163,10 +163,18 @@ function PopulateIconOptions()
 		UpdateIconOptionColor(i);
 	end
 
+	-- XXX experimental
+	-- TODO determine columns dynamically from widest row <= 20
+	local columns = 18
+	Controls.Window:SetSizeX(44 * columns + 30);
+	Controls.IconOptionStack:SetWrapWidth(44 * columns);
+	-- XXX experimental
 	Controls.IconOptionStack:CalculateSize();
 	Controls.IconOptionStack:ReprocessAnchoring();
 	Controls.OptionsStack:CalculateSize();
 	Controls.OptionsStack:ReprocessAnchoring();
+	-- Controls.EditOptions:CalculateSize();
+	Controls.EditOptions:ReprocessAnchoring();
 	Controls.WindowContentsStack:CalculateSize();
 	Controls.WindowContentsStack:ReprocessAnchoring();
 	Controls.WindowStack:CalculateSize();
@@ -210,6 +218,7 @@ function RequestMapPin(hexX :number, hexY :number)
 			Controls.VisibilityContainer:SetHide(false);
 		else
 			Controls.VisibilityContainer:SetHide(true);
+			-- Controls.VisibilityContainer:SetHide(false);  -- XXX debug
 		end
 
 		Controls.PinName:SetText(pMapPin:GetName());
@@ -222,6 +231,8 @@ function RequestMapPin(hexX :number, hexY :number)
 		Controls.IconOptionStack:ReprocessAnchoring();
 		Controls.OptionsStack:CalculateSize();
 		Controls.OptionsStack:ReprocessAnchoring();
+		-- Controls.EditOptions:CalculateSize();
+		Controls.EditOptions:ReprocessAnchoring();
 		Controls.WindowContentsStack:CalculateSize();
 		Controls.WindowContentsStack:ReprocessAnchoring();
 		Controls.WindowStack:CalculateSize();

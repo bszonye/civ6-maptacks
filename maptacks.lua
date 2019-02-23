@@ -2,7 +2,7 @@
 -- MapTacks
 -- utility functions
 
-local g_enableWonders = false;
+local g_enableWonders = true;
 
 local g_debugLeader = nil;
 -- g_debugLeader = GameInfo.Leaders.LEADER_BARBAROSSA
@@ -53,18 +53,12 @@ local g_buildOps = {
 	GameInfo.UnitOperations.UNITOPERATION_REMOVE_FEATURE,
 	GameInfo.UnitOperations.UNITOPERATION_HARVEST_RESOURCE,
 };
-local g_miscIcons = {
+local g_engineerOps = {
 	GameInfo.UnitOperations.UNITOPERATION_BUILD_ROUTE,
 	GameInfo.UnitOperations.UNITOPERATION_CLEAR_CONTAMINATION,
 	GameInfo.UnitOperations.UNITOPERATION_REPAIR,
-	GameInfo.UnitOperations.UNITOPERATION_DESIGNATE_PARK,
-	GameInfo.UnitOperations.UNITOPERATION_EXCAVATE,
-	GameInfo.UnitOperations.UNITOPERATION_MAKE_TRADE_ROUTE,
-	{
-		Icon="ICON_UNITOPERATION_SPY_COUNTERSPY_ACTION",
-		-- Description="LOC_UNIT_SPY_NAME",
-		Description="LOC_PROMOTION_CLASS_SPY_NAME",
-	},
+};
+local g_basicIcons = {
 	{
 		Icon="ICON_NOTIFICATION_BARBARIANS_SIGHTED",
 		Description="LOC_IMPROVEMENT_BARBARIAN_CAMP_NAME",
@@ -73,15 +67,52 @@ local g_miscIcons = {
 		Icon="ICON_NOTIFICATION_DISCOVER_GOODY_HUT",
 		Description="LOC_IMPROVEMENT_GOODY_HUT_NAME",
 	},
-	-- GameInfo.Notifications.NOTIFICATION_CITY_RANGE_ATTACK,
-	-- GameInfo.Notifications.NOTIFICATION_BARBARIANS_SIGHTED,
-	-- GameInfo.Notifications.NOTIFICATION_DISCOVER_GOODY_HUT,
 	GameInfo.UnitOperations.UNITOPERATION_PILLAGE,
-	GameInfo.UnitOperations.UNITOPERATION_WMD_STRIKE,
-	-- GameInfo.UnitCommands.UNITCOMMAND_PLUNDER_TRADE_ROUTE,
 	GameInfo.UnitCommands.UNITCOMMAND_FORM_ARMY,
+};
+local g_miscIcons = {
+	{
+		Icon="ICON_UNITOPERATION_SPY_COUNTERSPY_ACTION",
+		-- Description="LOC_UNIT_SPY_NAME",
+		Description="LOC_PROMOTION_CLASS_SPY_NAME",
+	},
+	GameInfo.UnitOperations.UNITOPERATION_DESIGNATE_PARK,
+	GameInfo.UnitOperations.UNITOPERATION_EXCAVATE,
+	GameInfo.UnitOperations.UNITOPERATION_MAKE_TRADE_ROUTE,
+	-- GameInfo.Notifications.NOTIFICATION_CITY_RANGE_ATTACK,
+	GameInfo.UnitOperations.UNITOPERATION_RANGE_ATTACK,
+	GameInfo.UnitOperations.UNITOPERATION_WMD_STRIKE,
+	GameInfo.UnitCommands.UNITCOMMAND_PLUNDER_TRADE_ROUTE,
 	GameInfo.UnitCommands.UNITCOMMAND_ACTIVATE_GREAT_PERSON,
 };
+
+-- ===========================================================================
+-- Sort objects by tech/civic cost
+function MapTacksTechCivicCost(a)
+	local tech_cost = 0;
+	if a.PrereqTech ~= nil then
+		tech = GameInfo.Technologies[a.PrereqTech];
+		tech_cost = tech.Cost;
+	end
+	local civic_cost = 0;
+	if a.PrereqCivic ~= nil then
+		civic = GameInfo.Civics[a.PrereqCivic];
+		civic_cost = civic.Cost;
+	end
+	local cost = math.max(tech_cost, civic_cost);
+	return cost;
+end
+
+function MapTacksTechCivicSort(a, b)
+	local acost = MapTacksTechCivicCost(a);
+	local bcost = MapTacksTechCivicCost(b);
+	if acost < bcost then
+		return true;
+	elseif bcost < acost then
+		return false;
+	end
+	return a.Name < b.Name;
+end
 
 -- ===========================================================================
 -- Build the grid of map pin icon options
@@ -117,24 +148,28 @@ function MapTacksIconOptions(stockIcons : table)
 		end
 	end
 
-	-- Standard map pins
+	-- Basic map pins
+	for i,v in ipairs(g_basicIcons) do table.insert(icons, MapTacksIcon(v)); end
 	for i, item in ipairs(stockIcons or g_stockIcons) do
 		table.insert(icons, item);
 	end
 
 	-- Districts
-	table.insert(icons, MapTacksIcon(GameInfo.Districts.DISTRICT_WONDER));
+	local districtIcons = {};
 	for item in GameInfo.Districts() do
 		local itype = item.DistrictType;
 		if districts[itype] then
 			-- unique district replacements for this civ
-			table.insert(icons, MapTacksIcon(districts[itype]));
+			table.insert(districtIcons, districts[itype]);
 		elseif item.TraitType then
 			-- skip other unique districts
-		elseif itype ~= "DISTRICT_WONDER" then
-			table.insert(icons, MapTacksIcon(item));
+		else
+			table.insert(districtIcons, item);
 		end
+		-- print(item.Name, MapTacksTechCivicCost(item));
 	end
+	table.sort(districtIcons, MapTacksTechCivicSort);
+	for i,v in ipairs(districtIcons) do table.insert(icons, MapTacksIcon(v)); end
 
 	-- Improvements
 	local builderIcons = {};
@@ -154,32 +189,37 @@ function MapTacksIconOptions(stockIcons : table)
 				-- print(trait);
 				if traits[trait] then
 					-- separate unique improvements
-					table.insert(uniqueIcons, entry);
+					table.insert(uniqueIcons, item);
 				elseif trait == "TRAIT_CIVILIZATION_NO_PLAYER" then
 					-- governor improvements
-					table.insert(governorIcons, entry);
+					table.insert(governorIcons, item);
 				elseif trait:sub(1, 10) == "MINOR_CIV_" then
-					table.insert(minorCivIcons, entry);
+					table.insert(minorCivIcons, item);
 				end
 			elseif unit.UnitType == "UNIT_BUILDER" then
-				table.insert(builderIcons, entry);
+				table.insert(builderIcons, item);
 			else
-				table.insert(engineerIcons, entry);
+				table.insert(engineerIcons, item);
 			end
+			-- print(item.Name, MapTacksTechCivicCost(item));
 		end
 	end
-	if #uniqueIcons == 0 then
-		-- if no unique improvement, use a generic icon
-		table.insert(uniqueIcons, MapTacksIcon(
-			GameInfo.UnitOperations.UNITOPERATION_BUILD_IMPROVEMENT))
-	end
+	-- sort icons according to tech cost
+	table.sort(builderIcons, MapTacksTechCivicSort);
+	table.sort(uniqueIcons, MapTacksTechCivicSort);
+	table.sort(governorIcons, MapTacksTechCivicSort);
+	table.sort(minorCivIcons, MapTacksTechCivicSort);
+	table.sort(engineerIcons, MapTacksTechCivicSort);
 
-	for i,v in ipairs(uniqueIcons) do table.insert(icons, v); end
-	for i,v in ipairs(builderIcons) do table.insert(icons, v); end
+	table.insert(icons, MapTacksIcon(
+		GameInfo.UnitOperations.UNITOPERATION_BUILD_IMPROVEMENT))
+	for i,v in ipairs(builderIcons) do table.insert(icons, MapTacksIcon(v)); end
+	for i,v in ipairs(uniqueIcons) do table.insert(icons, MapTacksIcon(v)); end
+	for i,v in ipairs(governorIcons) do table.insert(icons, MapTacksIcon(v)); end
+	for i,v in ipairs(minorCivIcons) do table.insert(icons, MapTacksIcon(v)); end
+	for i,v in ipairs(engineerIcons) do table.insert(icons, MapTacksIcon(v)); end
+	for i,v in ipairs(g_engineerOps) do table.insert(icons, MapTacksIcon(v)); end
 	for i,v in ipairs(g_buildOps) do table.insert(icons, MapTacksIcon(v)); end
-	for i,v in ipairs(governorIcons) do table.insert(icons, v); end
-	for i,v in ipairs(minorCivIcons) do table.insert(icons, v); end
-	for i,v in ipairs(engineerIcons) do table.insert(icons, v); end
 	for i,v in ipairs(g_miscIcons) do table.insert(icons, MapTacksIcon(v)); end
 
 	-- Great people
