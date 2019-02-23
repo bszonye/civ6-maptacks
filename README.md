@@ -1,4 +1,4 @@
-# Map Tacks 1.2.0 [<img align="right" src="maptacks.png" height="256" width="256">](https://steamcommunity.com/sharedfiles/filedetails/?id=1122081356)
+# Map Tacks 2.0.0 [<img align="right" src="maptacks.png" height="256" width="256">](https://steamcommunity.com/sharedfiles/filedetails/?id=1122081356)
 Adds new map icons  
 Enhances list interface  
 Fixes bugs and styling  
