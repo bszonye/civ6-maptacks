@@ -149,6 +149,11 @@ function PopulateIconOptions()
 	for j, section in ipairs(g_iconPulldownOptions) do
 		g_iconOptionEntries[j] = {};
 		ContextPtr:BuildInstanceForControl( "IconOptionRowInstance", sectionTable, Controls.IconOptionStack );
+		-- dynamically determine section spacing
+		local ht = math.floor((#section + 19) / 20);
+		local wd = math.floor((#section + ht - 1) / ht);
+		sectionTable.IconOptionRowStack:SetWrapWidth(40 * ht);
+		if columns < wd then columns = wd; end
 		for i, pair in ipairs(section) do
 			controlTable = {};
 			newIconEntry = {};
@@ -156,13 +161,6 @@ function PopulateIconOptions()
 			SetMapPinIcon(controlTable.Icon, pair.name);
 			controlTable.IconOptionButton:RegisterCallback(Mouse.eLClick, OnIconOption);
 			controlTable.IconOptionButton:SetVoids(i, j);
-			-- dynamically determine section spacing
-			local section_height = math.floor((#section + 19) / 20);
-			local section_width = math.floor((#section + section_height - 1) / section_height);
-			sectionTable.IconOptionRowStack:SetWrapWidth(40 * section_height);
-			if columns < section_width then
-				columns = section_width;
-			end
 			if pair.tooltip then
 				local tooltip = ToolTipHelper.GetToolTip(pair.tooltip, Game.GetLocalPlayer()) or Locale.Lookup(pair.tooltip);
 				controlTable.IconOptionButton:SetToolTipString(tooltip);
@@ -173,6 +171,13 @@ function PopulateIconOptions()
 			g_iconOptionEntries[j][i] = newIconEntry;
 
 			UpdateIconOptionColor(i, j);
+		end
+		for i=#section+1,ht*wd do
+			-- fill out section blocks with disabled boxes
+			controlTable = {};
+			ContextPtr:BuildInstanceForControl( "IconOptionInstance", controlTable, sectionTable.IconOptionRowStack );
+			controlTable.IconOptionButton:SetDisabled(true);
+			controlTable.Icon:SetHide(true);
 		end
 	end
 
@@ -307,12 +312,8 @@ end
 
 -- ===========================================================================
 function OnIconOption( iconPulldownIndex :number, iconPulldownRow :number )
-	print(g_iconPulldownOptions);
-	print(g_iconPulldownOptions[iconPulldownRow]);
-	print(iconPulldownIndex, iconPulldownRow);
 	local iconOptions :table = g_iconPulldownOptions[iconPulldownRow][iconPulldownIndex];
 	if(iconOptions) then
-		print(iconOptions.name);
 		local newIconName :string = iconOptions.name;
 		g_desiredIconName = newIconName;
 		UpdateIconOptionColors();
