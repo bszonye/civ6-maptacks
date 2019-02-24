@@ -142,7 +142,7 @@ function PopulateIconOptions()
 	g_iconOptionEntries = {};
 	Controls.IconOptionStack:DestroyAllChildren();
 
-	local columns = 16;
+	local columns = math.max(14, #g_iconPulldownOptions[1]);
 	local sectionTable = {};
 	local controlTable = {};
 	local newIconEntry = {};
@@ -150,10 +150,10 @@ function PopulateIconOptions()
 		g_iconOptionEntries[j] = {};
 		ContextPtr:BuildInstanceForControl( "IconOptionRowInstance", sectionTable, Controls.IconOptionStack );
 		-- dynamically determine section spacing
-		local ht = math.floor((#section + 19) / 20);
+		local ht = math.floor((#section + columns - 1) / columns);
 		local wd = math.floor((#section + ht - 1) / ht);
 		sectionTable.IconOptionRowStack:SetWrapWidth(40 * ht);
-		if columns < wd then columns = wd; end
+		-- if columns < wd then columns = wd; end
 		for i, pair in ipairs(section) do
 			controlTable = {};
 			newIconEntry = {};
@@ -177,19 +177,20 @@ function PopulateIconOptions()
 			controlTable = {};
 			ContextPtr:BuildInstanceForControl( "IconOptionInstance", controlTable, sectionTable.IconOptionRowStack );
 			controlTable.IconOptionButton:SetDisabled(true);
+			-- controlTable.Icon:SetIcon("ICON_MAP_PIN_DISTRICT");
 			controlTable.Icon:SetHide(true);
 		end
 	end
 
 	-- set width dynamically according to widest section
 	Controls.Window:SetSizeX(44 * columns + 30);
-	-- XXX experimental
+	-- Controls.PinFrame:SetSizeX(44 * (columns - 4) + 2);
 	Controls.IconOptionStack:CalculateSize();
 	Controls.IconOptionStack:ReprocessAnchoring();
 	Controls.OptionsStack:CalculateSize();
 	Controls.OptionsStack:ReprocessAnchoring();
-	-- Controls.EditOptions:CalculateSize();
-	Controls.EditOptions:ReprocessAnchoring();
+	Controls.EditOptionsStack:CalculateSize();
+	Controls.EditOptionsStack:ReprocessAnchoring();
 	Controls.WindowContentsStack:CalculateSize();
 	Controls.WindowContentsStack:ReprocessAnchoring();
 	Controls.WindowStack:CalculateSize();
@@ -248,8 +249,8 @@ function RequestMapPin(hexX :number, hexY :number)
 		Controls.IconOptionStack:ReprocessAnchoring();
 		Controls.OptionsStack:CalculateSize();
 		Controls.OptionsStack:ReprocessAnchoring();
-		-- Controls.EditOptions:CalculateSize();
-		Controls.EditOptions:ReprocessAnchoring();
+		Controls.EditOptionsStack:CalculateSize();
+		Controls.EditOptionsStack:ReprocessAnchoring();
 		Controls.WindowContentsStack:CalculateSize();
 		Controls.WindowContentsStack:ReprocessAnchoring();
 		Controls.WindowStack:CalculateSize();

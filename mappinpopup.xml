@@ -15,19 +15,16 @@
               </Container>
               <Container Size="auto,auto" Anchor="C,T">
                 <Stack		ID="WindowContentsStack"  Anchor="L,T" StackGrowth="Bottom" Padding="12">
-                    <!--
-                    <Stack ID="EditOptionsStack" StackGrowth="Right" Padding="-1" Anchor="C,T" WrapWidth="880">
-                    -->
-                    <Container ID="EditOptions" Anchor="C,T" Size="parent,26">
+                  <Stack ID="EditOptionsStack" Anchor="C,T" StackGrowth="Down" Padding="1">  <!-- Down/1 or Right/-2 -->
                       <!-- Name -->
-                      <Grid ID="PinFrame" Style="EditTextButton" Anchor="C,T" Size="266,26">
+                      <Grid ID="PinFrame" Style="EditTextButton" Anchor="C,T" Size="310,26">
                         <EditBox ID="PinName" Style="EditTextArea" Size="parent-34,22" Anchor="R,C" Offset="6,0" MaxLength="20" EditMode="0" KeepFocus="1"/>
                       </Grid>
                       <!-- Visible to.. -->
-                      <Container ID="VisibilityContainer" Anchor="R,T" Size="175,26" Offset="16,0" Hidden="0">  <!-- XXX debug: reset hidden to "1" -->
-                        <PullDown ID="VisibilityPull" Anchor="L,T" Size="175,26" Offset="0,-30" Style="MainPullDown"/>
+                      <Container ID="VisibilityContainer" Anchor="C,T" Size="222,26" Offset="0,0" Hidden="1">  <!-- XXX debug: reset hidden to "1" -->
+                        <PullDown ID="VisibilityPull" Anchor="C,T" Size="220,26" Offset="0,-30" Style="MainPullDown"/>
                       </Container>
-                  </Container>
+                  </Stack>
                   <!-- Icons -->
                   <Stack ID="IconOptionStack" Anchor="C,T" StackGrowth="Down" Padding="4"/>
 

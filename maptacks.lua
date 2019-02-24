@@ -2,8 +2,6 @@
 -- MapTacks
 -- utility functions
 
-local g_enableWonders = true;
-
 local g_debugLeader = nil;
 -- g_debugLeader = GameInfo.Leaders.LEADER_BARBAROSSA
 -- g_debugLeader = GameInfo.Leaders.LEADER_CATHERINE_DE_MEDICI
@@ -48,7 +46,7 @@ local g_stockIcons = {
 	{ name="ICON_MAP_PIN_SQUARE"   },
 	{ name="ICON_MAP_PIN_DIAMOND"  },
 };
-local g_buildOps = {
+local g_builderOps = {
 	GameInfo.UnitOperations.UNITOPERATION_PLANT_FOREST,
 	GameInfo.UnitOperations.UNITOPERATION_REMOVE_FEATURE,
 	GameInfo.UnitOperations.UNITOPERATION_HARVEST_RESOURCE,
@@ -57,6 +55,10 @@ local g_engineerOps = {
 	GameInfo.UnitOperations.UNITOPERATION_BUILD_ROUTE,
 	GameInfo.UnitOperations.UNITOPERATION_CLEAR_CONTAMINATION,
 	GameInfo.UnitOperations.UNITOPERATION_REPAIR,
+};
+local g_gsIcons = {
+	-- TODO: fit this in somewhere
+	GameInfo.UnitOperations.UNITOPERATION_TOURISM_BOMB,
 };
 local g_miscIcons = {
 	{
@@ -219,7 +221,7 @@ function MapTacksIconOptions(stockIcons : table)
 		-- print(item.TraitType);
 	end
 	-- Get unique district replacement info
-	-- TODO fix non-replacement districts
+	-- TODO: fix non-replacement districts
 	local districts = {};
 	for item in GameInfo.Districts() do
 		if traits[item.TraitType] then
@@ -247,7 +249,7 @@ function MapTacksIconOptions(stockIcons : table)
 			table.insert(districtIcons, districts[itype]);
 		elseif item.TraitType then
 			-- skip other unique districts
-		else
+		elseif itype ~= "DISTRICT_WONDER" then
 			table.insert(districtIcons, item);
 		end
 		-- print(item.Name, MapTacksTimeline(item));
@@ -296,30 +298,34 @@ function MapTacksIconOptions(stockIcons : table)
 	table.sort(engineerIcons, MapTacksTechCivicSort);
 
 	local builderSection = {};
-	if #uniqueIcons == 0 then
-		table.insert(builderSection, MapTacksIcon(GameInfo.UnitOperations.UNITOPERATION_BUILD_IMPROVEMENT));
-	end
-	for i,v in ipairs(uniqueIcons) do table.insert(builderSection, MapTacksIcon(v)); end
 	for i,v in ipairs(builderIcons) do table.insert(builderSection, MapTacksIcon(v)); end
-	local uniqueSection = {};
+	local uniqueSection = {
+		-- TODO: find a better place for this
+		MapTacksIcon(GameInfo.UnitOperations.UNITOPERATION_BUILD_IMPROVEMENT),
+	};
+	for i,v in ipairs(uniqueIcons) do table.insert(uniqueSection, MapTacksIcon(v)); end
 	for i,v in ipairs(governorIcons) do table.insert(uniqueSection, MapTacksIcon(v)); end
 	for i,v in ipairs(minorCivIcons) do table.insert(uniqueSection, MapTacksIcon(v)); end
 	for i,v in ipairs(engineerIcons) do table.insert(uniqueSection, MapTacksIcon(v)); end
-	for i,v in ipairs(g_engineerOps) do table.insert(uniqueSection, MapTacksIcon(v)); end
-	for i,v in ipairs(g_buildOps) do table.insert(uniqueSection, MapTacksIcon(v)); end
+
+	local buildopSection = {};
+	for i,v in ipairs(g_engineerOps) do table.insert(buildopSection, MapTacksIcon(v)); end
+	for i,v in ipairs(g_builderOps) do table.insert(buildopSection, MapTacksIcon(v)); end
 
 	local miscSection = {};
+	for i,v in ipairs(g_gsIcons) do table.insert(miscSection, MapTacksIcon(v)); end
 	for i,v in ipairs(g_miscIcons) do table.insert(miscSection, MapTacksIcon(v)); end
 
 	-- Great people
-	table.insert(miscSection, MapTacksIcon(GameInfo.UnitCommands.UNITCOMMAND_ACTIVATE_GREAT_PERSON));
+	local peopleSection = {};
+	table.insert(peopleSection, MapTacksIcon(GameInfo.UnitCommands.UNITCOMMAND_ACTIVATE_GREAT_PERSON));
 	for item in GameInfo.GreatPersonClasses() do
-		table.insert(miscSection, MapTacksIcon(item));
+		table.insert(peopleSection, MapTacksIcon(item));
 	end
 
 	-- Wonders
 	local wonderSection = {};
-	local wonderIcons = {};
+	local wonderIcons = { GameInfo.Districts.DISTRICT_WONDER, };
 	for item in GameInfo.Buildings() do
 		if item.IsWonder then
 			table.insert(wonderIcons, item);
@@ -331,11 +337,11 @@ function MapTacksIconOptions(stockIcons : table)
 	table.insert(icons, districtSection);
 	table.insert(icons, builderSection);
 	table.insert(icons, uniqueSection);
+	table.insert(icons, buildopSection);
 	table.insert(icons, miscSection);
+	table.insert(icons, peopleSection);
 	table.insert(icons, stockSection);
-	if g_enableWonders then
-		table.insert(icons, wonderSection);
-	end
+	table.insert(icons, wonderSection);
 
 	return icons;
 end
