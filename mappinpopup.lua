@@ -142,32 +142,42 @@ function PopulateIconOptions()
 	g_iconOptionEntries = {};
 	Controls.IconOptionStack:DestroyAllChildren();
 
+	local columns = 16;
+	local sectionTable = {};
 	local controlTable = {};
-	local  newIconEntry = {};
-	for i, pair in ipairs(g_iconPulldownOptions) do
-		controlTable = {};
-		newIconEntry = {};
-		ContextPtr:BuildInstanceForControl( "IconOptionInstance", controlTable, Controls.IconOptionStack );
-		SetMapPinIcon(controlTable.Icon, pair.name);
-	    controlTable.IconOptionButton:RegisterCallback(Mouse.eLClick, OnIconOption);
-		controlTable.IconOptionButton:SetVoids(i, -1);
-		if pair.tooltip then
-			local tooltip = ToolTipHelper.GetToolTip(pair.tooltip, Game.GetLocalPlayer()) or Locale.Lookup(pair.tooltip);
-			controlTable.IconOptionButton:SetToolTipString(tooltip);
+	local newIconEntry = {};
+	for j, section in ipairs(g_iconPulldownOptions) do
+		g_iconOptionEntries[j] = {};
+		ContextPtr:BuildInstanceForControl( "IconOptionRowInstance", sectionTable, Controls.IconOptionStack );
+		for i, pair in ipairs(section) do
+			controlTable = {};
+			newIconEntry = {};
+			ContextPtr:BuildInstanceForControl( "IconOptionInstance", controlTable, sectionTable.IconOptionRowStack );
+			SetMapPinIcon(controlTable.Icon, pair.name);
+			controlTable.IconOptionButton:RegisterCallback(Mouse.eLClick, OnIconOption);
+			controlTable.IconOptionButton:SetVoids(i, j);
+			-- dynamically determine section spacing
+			local section_height = math.floor((#section + 19) / 20);
+			local section_width = math.floor((#section + section_height - 1) / section_height);
+			sectionTable.IconOptionRowStack:SetWrapWidth(40 * section_height);
+			if columns < section_width then
+				columns = section_width;
+			end
+			if pair.tooltip then
+				local tooltip = ToolTipHelper.GetToolTip(pair.tooltip, Game.GetLocalPlayer()) or Locale.Lookup(pair.tooltip);
+				controlTable.IconOptionButton:SetToolTipString(tooltip);
+			end
+
+			newIconEntry.IconName = pair.name;
+			newIconEntry.Instance = controlTable;
+			g_iconOptionEntries[j][i] = newIconEntry;
+
+			UpdateIconOptionColor(i, j);
 		end
-
-		newIconEntry.IconName = pair.name;
-		newIconEntry.Instance = controlTable;
-		g_iconOptionEntries[i] = newIconEntry;
-
-		UpdateIconOptionColor(i);
 	end
 
-	-- XXX experimental
-	-- TODO determine columns dynamically from widest row <= 20
-	local columns = 18
+	-- set width dynamically according to widest section
 	Controls.Window:SetSizeX(44 * columns + 30);
-	Controls.IconOptionStack:SetWrapWidth(44 * columns);
 	-- XXX experimental
 	Controls.IconOptionStack:CalculateSize();
 	Controls.IconOptionStack:ReprocessAnchoring();
@@ -184,14 +194,16 @@ end
 
 -- ===========================================================================
 function UpdateIconOptionColors()
-	for iconIndex, iconEntry in pairs(g_iconOptionEntries) do
-		UpdateIconOptionColor(iconIndex);
+	for j, section in ipairs(g_iconOptionEntries) do
+		for i, entry in ipairs(section) do
+			UpdateIconOptionColor(i, j);
+		end
 	end
 end
 
 -- ===========================================================================
-function UpdateIconOptionColor(iconEntryIndex :number)
-	local iconEntry :table = g_iconOptionEntries[iconEntryIndex];
+function UpdateIconOptionColor(i :number, j :number)
+	local iconEntry :table = g_iconOptionEntries[j][i];
 	if(iconEntry ~= nil) then
 		if(iconEntry.IconName == g_desiredIconName) then
 			-- Selected icon
@@ -294,9 +306,13 @@ function ShowHideSendToChatButton()
 end
 
 -- ===========================================================================
-function OnIconOption( iconPulldownIndex :number, notUsed :number )
-	local iconOptions :table = g_iconPulldownOptions[iconPulldownIndex];
+function OnIconOption( iconPulldownIndex :number, iconPulldownRow :number )
+	print(g_iconPulldownOptions);
+	print(g_iconPulldownOptions[iconPulldownRow]);
+	print(iconPulldownIndex, iconPulldownRow);
+	local iconOptions :table = g_iconPulldownOptions[iconPulldownRow][iconPulldownIndex];
 	if(iconOptions) then
+		print(iconOptions.name);
 		local newIconName :string = iconOptions.name;
 		g_desiredIconName = newIconName;
 		UpdateIconOptionColors();

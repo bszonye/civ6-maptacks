@@ -29,7 +29,7 @@
                       </Container>
                   </Container>
                   <!-- Icons -->
-                  <Stack ID="IconOptionStack" Anchor="C,T" StackGrowth="Right" Padding="4" WrapWidth="880" WrapGrowth="Down"/>
+                  <Stack ID="IconOptionStack" Anchor="C,T" StackGrowth="Down" Padding="4"/>
 
                   <!-- Buttons -->
                   <Stack        ID="OptionsStack" StackGrowth="Right" Padding="10" Anchor="C,T"  WrapWidth="480">
@@ -46,6 +46,10 @@
       </SlideAnim>
     </AlphaAnim>
   </Box>
+
+  <Instance Name="IconOptionRowInstance">
+    <Stack ID="IconOptionRowStack" Anchor="C,T" StackGrowth="Down" Padding="4" WrapWidth="40" WrapGrowth="Right"/>
+  </Instance>
 
   <Instance Name="IconOptionInstance">
     <Container ID="IconOptionRoot" Anchor="L,T" Size="40,36">

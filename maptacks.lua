@@ -58,7 +58,7 @@ local g_engineerOps = {
 	GameInfo.UnitOperations.UNITOPERATION_CLEAR_CONTAMINATION,
 	GameInfo.UnitOperations.UNITOPERATION_REPAIR,
 };
-local g_basicIcons = {
+local g_miscIcons = {
 	{
 		Icon="ICON_NOTIFICATION_BARBARIANS_SIGHTED",
 		Description="LOC_IMPROVEMENT_BARBARIAN_CAMP_NAME",
@@ -67,23 +67,97 @@ local g_basicIcons = {
 		Icon="ICON_NOTIFICATION_DISCOVER_GOODY_HUT",
 		Description="LOC_IMPROVEMENT_GOODY_HUT_NAME",
 	},
-	GameInfo.UnitOperations.UNITOPERATION_PILLAGE,
-	GameInfo.UnitCommands.UNITCOMMAND_FORM_ARMY,
-};
-local g_miscIcons = {
 	{
 		Icon="ICON_UNITOPERATION_SPY_COUNTERSPY_ACTION",
 		-- Description="LOC_UNIT_SPY_NAME",
 		Description="LOC_PROMOTION_CLASS_SPY_NAME",
 	},
-	GameInfo.UnitOperations.UNITOPERATION_DESIGNATE_PARK,
-	GameInfo.UnitOperations.UNITOPERATION_EXCAVATE,
-	GameInfo.UnitOperations.UNITOPERATION_MAKE_TRADE_ROUTE,
-	-- GameInfo.Notifications.NOTIFICATION_CITY_RANGE_ATTACK,
+	-- Unit operations --------------------------------------------------------
+	-- ATTACK:
+	-- GameInfo.UnitOperations.UNITOPERATION_AIR_ATTACK,
+	-- GameInfo.UnitOperations.UNITOPERATION_WMD_STRIKE,
+	-- GameInfo.UnitOperations.UNITOPERATION_COASTAL_RAID,
+	GameInfo.UnitOperations.UNITOPERATION_PILLAGE,
+	-- GameInfo.UnitOperations.UNITOPERATION_PILLAGE_ROUTE,
 	GameInfo.UnitOperations.UNITOPERATION_RANGE_ATTACK,
-	GameInfo.UnitOperations.UNITOPERATION_WMD_STRIKE,
-	GameInfo.UnitCommands.UNITCOMMAND_PLUNDER_TRADE_ROUTE,
+	-- BUILD:
+	-- GameInfo.UnitOperations.UNITOPERATION_BUILD_IMPROVEMENT,
+	-- GameInfo.UnitOperations.UNITOPERATION_BUILD_ROUTE,
+	GameInfo.UnitOperations.UNITOPERATION_DESIGNATE_PARK,
+	-- GameInfo.UnitOperations.UNITOPERATION_PLANT_FOREST,
+	-- GameInfo.UnitOperations.UNITOPERATION_REMOVE_FEATURE,
+	-- GameInfo.UnitOperations.UNITOPERATION_REMOVE_IMPROVEMENT,
+	-- INPLACE:
+	-- GameInfo.UnitOperations.UNITOPERATION_FORTIFY,
+	-- GameInfo.UnitOperations.UNITOPERATION_HEAL,
+	-- GameInfo.UnitOperations.UNITOPERATION_REST_REPAIR,
+	-- GameInfo.UnitOperations.UNITOPERATION_SKIP_TURN,
+	-- GameInfo.UnitOperations.UNITOPERATION_SLEEP,
+	-- GameInfo.UnitOperations.UNITOPERATION_ALERT,
+	-- MOVE:
+	-- GameInfo.UnitOperations.UNITOPERATION_DEPLOY,
+	-- GameInfo.UnitOperations.UNITOPERATION_DISEMBARK,  -- not VisibleInUI
+	-- GameInfo.UnitOperations.UNITOPERATION_EMBARK,  -- not VisibleInUI
+	-- GameInfo.UnitOperations.UNITOPERATION_MOVE_TO,
+	-- GameInfo.UnitOperations.UNITOPERATION_MOVE_TO_UNIT,  -- not VisibleInUI
+	-- GameInfo.UnitOperations.UNITOPERATION_REBASE,
+	-- GameInfo.UnitOperations.UNITOPERATION_ROUTE_TO,  -- not VisibleInUI
+	-- GameInfo.UnitOperations.UNITOPERATION_SPY_COUNTERSPY,  -- special handling in unit panel
+	-- GameInfo.UnitOperations.UNITOPERATION_SPY_TRAVEL_NEW_CITY,
+	-- GameInfo.UnitOperations.UNITOPERATION_TELEPORT_TO_CITY,
+	-- OFFENSIVESPY:  -- these do not appear in unit panel
+	-- GameInfo.UnitOperations.UNITOPERATION_SPY_DISRUPT_ROCKETRY,
+	-- GameInfo.UnitOperations.UNITOPERATION_SPY_GAIN_SOURCES,
+	-- GameInfo.UnitOperations.UNITOPERATION_SPY_GREAT_WORK_HEIST,
+	-- GameInfo.UnitOperations.UNITOPERATION_SPY_LISTENING_POST,
+	-- GameInfo.UnitOperations.UNITOPERATION_SPY_RECRUIT_PARTISANS,
+	-- GameInfo.UnitOperations.UNITOPERATION_SPY_SABOTAGE_PRODUCTION,
+	-- GameInfo.UnitOperations.UNITOPERATION_SPY_SIPHON_FUNDS,
+	-- GameInfo.UnitOperations.UNITOPERATION_SPY_STEAL_TECH_BOOST,
+	-- SECONDARY:
+	-- GameInfo.UnitOperations.UNITOPERATION_AUTOMATE_EXPLORE,
+	-- SPECIFIC:
+	-- GameInfo.UnitOperations.UNITOPERATION_CLEAR_CONTAMINATION,
+	-- GameInfo.UnitOperations.UNITOPERATION_CONVERT_BARBARIANS,
+	-- GameInfo.UnitOperations.UNITOPERATION_EVANGELIZE_BELIEF,
+	GameInfo.UnitOperations.UNITOPERATION_EXCAVATE,
+	-- GameInfo.UnitOperations.UNITOPERATION_FOUND_CITY,
+	-- GameInfo.UnitOperations.UNITOPERATION_FOUND_RELIGION,
+	-- GameInfo.UnitOperations.UNITOPERATION_HARVEST_RESOURCE,
+	-- GameInfo.UnitOperations.UNITOPERATION_LAUNCH_INQUISITION,
+	GameInfo.UnitOperations.UNITOPERATION_MAKE_TRADE_ROUTE,
+	-- GameInfo.UnitOperations.UNITOPERATION_REMOVE_HERESY,
+	-- GameInfo.UnitOperations.UNITOPERATION_REPAIR,
+	-- GameInfo.UnitOperations.UNITOPERATION_REPAIR_ROUTE,
+	-- GameInfo.UnitOperations.UNITOPERATION_RETRAIN,
+	-- GameInfo.UnitOperations.UNITOPERATION_SPREAD_RELIGION,
+	-- GameInfo.UnitOperations.UNITOPERATION_SWAP_UNITS,  -- not VisibleInUI
+	-- GameInfo.UnitOperations.UNITOPERATION_UPGRADE,
+	-- GameInfo.UnitOperations.UNITOPERATION_WAIT_FOR,  -- not VisibleInUI
+	-- Unit commands ----------------------------------------------------------
+	-- INPLACE:
+	-- GameInfo.UnitCommands.UNITCOMMAND_WAKE,
+	-- GameInfo.UnitCommands.UNITCOMMAND_CANCEL,
+	-- GameInfo.UnitCommands.UNITCOMMAND_STOP_AUTOMATION,
+	-- GameInfo.UnitCommands.UNITCOMMAND_GIFT,
+	-- MOVE:
+	-- GameInfo.UnitCommands.UNITCOMMAND_AIRLIFT,
+	-- SECONDARY:
+	-- GameInfo.UnitCommands.UNITCOMMAND_DELETE,
+	-- SPECIFIC:
+	-- GameInfo.UnitCommands.UNITCOMMAND_PROMOTE,
+	-- GameInfo.UnitCommands.UNITCOMMAND_UPGRADE,
+	-- GameInfo.UnitCommands.UNITCOMMAND_AUTOMATE,  -- not VisibleInUI
+	-- GameInfo.UnitCommands.UNITCOMMAND_ENTER_FORMATION,
+	-- GameInfo.UnitCommands.UNITCOMMAND_EXIT_FORMATION,
 	GameInfo.UnitCommands.UNITCOMMAND_ACTIVATE_GREAT_PERSON,
+	-- GameInfo.UnitCommands.UNITCOMMAND_DISTRICT_PRODUCTION,
+	-- GameInfo.UnitCommands.UNITCOMMAND_FORM_CORPS,
+	GameInfo.UnitCommands.UNITCOMMAND_FORM_ARMY,
+	GameInfo.UnitCommands.UNITCOMMAND_PLUNDER_TRADE_ROUTE,
+	-- GameInfo.UnitCommands.UNITCOMMAND_NAME_UNIT,
+	-- GameInfo.UnitCommands.UNITCOMMAND_WONDER_PRODUCTION,
+	-- GameInfo.UnitCommands.UNITCOMMAND_HARVEST_WONDER,
 };
 
 -- ===========================================================================
@@ -156,8 +230,7 @@ function MapTacksIconOptions(stockIcons : table)
 		end
 	end
 
-	-- Basic map pins
-	for i,v in ipairs(g_basicIcons) do table.insert(icons, MapTacksIcon(v)); end
+	-- Stock map pins
 	for i, item in ipairs(stockIcons or g_stockIcons) do
 		table.insert(icons, item);
 	end
@@ -236,6 +309,7 @@ function MapTacksIconOptions(stockIcons : table)
 	end
 
 	-- Wonders
+	local wonderRow = {};
 	if g_enableWonders then
 		local wonderIcons = {};
 		for item in GameInfo.Buildings() do
@@ -244,10 +318,10 @@ function MapTacksIconOptions(stockIcons : table)
 			end
 		end
 		table.sort(wonderIcons, MapTacksTechCivicSort);
-		for i,v in ipairs(wonderIcons) do table.insert(icons, MapTacksIcon(v)); end
+		for i,v in ipairs(wonderIcons) do table.insert(wonderRow, MapTacksIcon(v)); end
 	end
 
-	return icons;
+	return { icons, wonderRow, };
 end
 
 -- ===========================================================================
