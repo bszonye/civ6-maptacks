@@ -199,15 +199,15 @@ end
 -- ===========================================================================
 function UpdateIconOptionColors()
 	for j, section in ipairs(g_iconOptionEntries) do
-		for i, entry in ipairs(section) do
+		for i, icon in ipairs(section) do
 			UpdateIconOptionColor(i, j);
 		end
 	end
 end
 
 -- ===========================================================================
-function UpdateIconOptionColor(i :number, j :number)
-	local iconEntry :table = g_iconOptionEntries[j][i];
+function UpdateIconOptionColor(index :number, section :number)
+	local iconEntry :table = g_iconOptionEntries[section][index];
 	if(iconEntry ~= nil) then
 		if(iconEntry.IconName == g_desiredIconName) then
 			-- Selected icon
@@ -308,8 +308,8 @@ function ShowHideSendToChatButton()
 end
 
 -- ===========================================================================
-function OnIconOption( iconPulldownIndex :number, iconPulldownRow :number )
-	local iconOptions :table = g_iconPulldownOptions[iconPulldownRow][iconPulldownIndex];
+function OnIconOption( index :number, section :number )
+	local iconOptions :table = g_iconPulldownOptions[section][index];
 	if(iconOptions) then
 		local newIconName :string = iconOptions.name;
 		g_desiredIconName = newIconName;
