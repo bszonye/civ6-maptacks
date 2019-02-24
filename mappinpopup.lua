@@ -189,8 +189,6 @@ function PopulateIconOptions()
 	Controls.IconOptionStack:ReprocessAnchoring();
 	Controls.OptionsStack:CalculateSize();
 	Controls.OptionsStack:ReprocessAnchoring();
-	Controls.EditOptionsStack:CalculateSize();
-	Controls.EditOptionsStack:ReprocessAnchoring();
 	Controls.WindowContentsStack:CalculateSize();
 	Controls.WindowContentsStack:ReprocessAnchoring();
 	Controls.WindowStack:CalculateSize();
@@ -249,8 +247,6 @@ function RequestMapPin(hexX :number, hexY :number)
 		Controls.IconOptionStack:ReprocessAnchoring();
 		Controls.OptionsStack:CalculateSize();
 		Controls.OptionsStack:ReprocessAnchoring();
-		Controls.EditOptionsStack:CalculateSize();
-		Controls.EditOptionsStack:ReprocessAnchoring();
 		Controls.WindowContentsStack:CalculateSize();
 		Controls.WindowContentsStack:ReprocessAnchoring();
 		Controls.WindowStack:CalculateSize();

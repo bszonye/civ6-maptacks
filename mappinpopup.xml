@@ -15,18 +15,19 @@
               </Container>
               <Container Size="auto,auto" Anchor="C,T">
                 <Stack		ID="WindowContentsStack"  Anchor="L,T" StackGrowth="Bottom" Padding="12">
-                  <Stack ID="EditOptionsStack" Anchor="C,T" StackGrowth="Down" Padding="1">  <!-- Down/1 or Right/-2 -->
-                      <!-- Name -->
-                      <Grid ID="PinFrame" Style="EditTextButton" Anchor="C,T" Size="310,26">
-                        <EditBox ID="PinName" Style="EditTextArea" Size="parent-34,22" Anchor="R,C" Offset="6,0" MaxLength="20" EditMode="0" KeepFocus="1"/>
-                      </Grid>
-                      <!-- Visible to.. -->
-                      <Container ID="VisibilityContainer" Anchor="C,T" Size="222,26" Offset="0,0" Hidden="1">  <!-- XXX debug: reset hidden to "1" -->
-                        <PullDown ID="VisibilityPull" Anchor="C,T" Size="220,26" Offset="0,-30" Style="MainPullDown"/>
-                      </Container>
-                  </Stack>
+                    <!-- Name -->
+                    <Grid ID="PinFrame" Style="EditTextButton" Anchor="C,T" Size="310,26">
+                      <EditBox ID="PinName" Style="EditTextArea" Size="parent-34,22" Anchor="R,C" Offset="6,0" MaxLength="20" EditMode="0" KeepFocus="1"/>
+                    </Grid>
+
                   <!-- Icons -->
                   <Stack ID="IconOptionStack" Anchor="C,T" StackGrowth="Down" Padding="4"/>
+
+                  <!-- Visible to ... -->
+                  <Container ID="VisibilityContainer" Anchor="C,T" Size="222,26" Offset="0,0" Hidden="0">  <!-- XXX debug: reset to Hidden="1" -->
+                    <!-- container is 2px wider to match EditTextButton whitespace -->
+                    <PullDown ID="VisibilityPull" Anchor="C,T" Size="166,26" Offset="0,-30" Style="MainPullDown"/>
+                  </Container>
 
                   <!-- Buttons -->
                   <Stack        ID="OptionsStack" StackGrowth="Right" Padding="10" Anchor="C,T"  WrapWidth="480">
