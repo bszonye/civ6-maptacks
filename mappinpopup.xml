@@ -24,8 +24,7 @@
                   <Stack ID="IconOptionStack" Anchor="C,T" StackGrowth="Down" Padding="4"/>
 
                   <!-- Visible to ... -->
-                  <Container ID="VisibilityContainer" Anchor="C,T" Size="222,26" Offset="0,0" Hidden="0">  <!-- XXX debug: reset to Hidden="1" -->
-                    <!-- container is 2px wider to match EditTextButton whitespace -->
+                  <Container ID="VisibilityContainer" Anchor="C,T" Size="222,26" Offset="0,0" Hidden="1">
                     <PullDown ID="VisibilityPull" Anchor="C,T" Size="166,26" Offset="0,-30" Style="MainPullDown"/>
                   </Container>
 
