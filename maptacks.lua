@@ -354,8 +354,11 @@ end
 MAPTACKS_STOCK = 0;  -- stock icons
 MAPTACKS_WHITE = 1;  -- white icons (units, spy ops)
 MAPTACKS_GRAY = 2;   -- gray shaded icons (improvements, commands)
-MAPTACKS_COLOR = 3;  -- full color icons (districts, wonders)
+MAPTACKS_COLOR = 3;  -- full color icons (buildings, wonders)
+MAPTACKS_HEX = 4;  -- full color icons with hex backgrounds (districts)
 function MapTacksType(pin : table)
+	-- TODO: keep an index of all full-color icons to catch corner cases like
+	-- modded districts/wonders with nonstandard names
 	if not pin then return nil; end
 	local iconName = pin:GetIconName();
 	if iconName:sub(1,5) ~= "ICON_" then return nil; end
@@ -364,10 +367,10 @@ function MapTacksType(pin : table)
 		return MAPTACKS_STOCK;
 	elseif iconType == "UNIT_" then
 		return MAPTACKS_WHITE;
-	elseif iconType == "DISTR" then
-		return MAPTACKS_COLOR;
 	elseif iconType == "BUILD" then  -- wonders
 		return MAPTACKS_COLOR;
+	elseif iconType == "DISTR" then
+		return MAPTACKS_HEX;
 	else
 		return MAPTACKS_GRAY;
 	end

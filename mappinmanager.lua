@@ -266,20 +266,28 @@ function MapPinFlag.SetFlagUnitEmblem( self : MapPinFlag )
     if pMapPin ~= nil then
 		local iconName = pMapPin:GetIconName();
 		local iconType = MapTacksType(pMapPin);
-		if iconType == MAPTACKS_COLOR then
-			if not self.m_Instance.DistrictIcon:SetIcon(iconName) then
-				self.m_Instance.DistrictIcon:SetIcon(ICON_MAP_PIN_UNKNOWN);
+		if iconType >= MAPTACKS_COLOR then
+			-- full-color icon on a hex base
+			if self.m_Instance.HexIcon:SetIcon(iconName) then
+				-- MAPTACKS_HEX has the base built in; MAPTACKS_COLOR does not
+				self.m_Instance.HexBase:SetHide(iconType == MAPTACKS_HEX);
+			else
+				-- missing icon, so show ? on a hex base
+				self.m_Instance.HexIcon:SetIcon(ICON_MAP_PIN_UNKNOWN);
+				self.m_Instance.HexBase:SetHide(false);
 			end
-			self.m_Instance.DistrictIcon:SetHide(false);
+			self.m_Instance.HexIcon:SetHide(false);
 			self.m_Instance.UnitIcon:SetHide(true);
 		else
+			-- white or gray icon on the UnitIcon layer
 			local size = (iconType == MAPTACKS_STOCK and 24) or 26;
 			self.m_Instance.UnitIcon:SetSizeVal(size, size);
 			if not self.m_Instance.UnitIcon:SetIcon(iconName) then
 				self.m_Instance.UnitIcon:SetIcon(ICON_MAP_PIN_UNKNOWN);
 			end
 			self.m_Instance.UnitIcon:SetHide(false);
-			self.m_Instance.DistrictIcon:SetHide(true);
+			self.m_Instance.HexIcon:SetHide(true);
+			self.m_Instance.HexBase:SetHide(true);
 		end
 
 	end
