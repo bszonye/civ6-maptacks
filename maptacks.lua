@@ -181,7 +181,7 @@ function MapTacksTimeline(a)
 	return cost;
 end
 
-function MapTacksTechCivicSort(a, b)
+function MapTacksTimelineSort(a, b)
 	local atime = MapTacksTimeline(a);
 	local btime = MapTacksTimeline(b);
 	-- primary sort: tech/civic timeline
@@ -197,6 +197,12 @@ function MapTacksTechCivicSort(a, b)
 	-- tertiary sort: localized icon name
 	aname = Locale.Lookup(a.Name);
 	bname = Locale.Lookup(b.Name);
+	return Locale.Compare(aname, bname) == -1;
+end
+
+function MapTacksDescriptionSort(a, b)
+	aname = Locale.Lookup(a.Description);
+	bname = Locale.Lookup(b.Description);
 	return Locale.Compare(aname, bname) == -1;
 end
 
@@ -291,13 +297,27 @@ function MapTacksIconOptions(stockIcons : table)
 		end
 	end
 
+	-- Unit Commands/Operations
+	print("COMMANDS --------------------------------------------------------");
+	for item in GameInfo.UnitCommands() do
+		if item.VisibleInUI then
+			print(item.CategoryInUI, item.CommandType);
+		end
+	end
+	print("OPERATIONS ------------------------------------------------------");
+	for item in GameInfo.UnitOperations() do
+		if item.VisibleInUI then
+			print(item.CategoryInUI, item.OperationType);
+		end
+	end
+
 	-- sort icons according to tech cost
-	table.sort(districtIcons, MapTacksTechCivicSort);
-	table.sort(builderIcons, MapTacksTechCivicSort);
-	table.sort(uniqueIcons, MapTacksTechCivicSort);
-	table.sort(governorIcons, MapTacksTechCivicSort);
-	table.sort(minorCivIcons, MapTacksTechCivicSort);
-	table.sort(engineerIcons, MapTacksTechCivicSort);
+	table.sort(districtIcons, MapTacksTimelineSort);
+	table.sort(builderIcons, MapTacksTimelineSort);
+	table.sort(uniqueIcons, MapTacksTimelineSort);
+	table.sort(governorIcons, MapTacksTimelineSort);
+	table.sort(minorCivIcons, MapTacksTimelineSort);
+	table.sort(engineerIcons, MapTacksTimelineSort);
 
 	local districtSection = {};
 	for i,v in ipairs(districtIcons) do table.insert(districtSection, MapTacksIcon(v)); end
@@ -335,7 +355,7 @@ function MapTacksIconOptions(stockIcons : table)
 			table.insert(wonderIcons, item);
 		end
 	end
-	table.sort(wonderIcons, MapTacksTechCivicSort);
+	table.sort(wonderIcons, MapTacksTimelineSort);
 	for i,v in ipairs(wonderIcons) do table.insert(wonderSection, MapTacksIcon(v)); end
 
 	table.insert(icons, districtSection);
