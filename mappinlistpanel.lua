@@ -31,7 +31,7 @@ function SetMapPinIcon(imageControl :table, mapPinIconName :string)
 	if(imageControl ~= nil and mapPinIconName ~= nil) then
 		local iconName = mapPinIconName;
 		if(not imageControl:SetIcon(iconName)) then
-			imageControl:SetIcon("ICON_MAP_PIN_SQUARE");
+			imageControl:SetIcon(ICON_MAP_PIN_UNKNOWN);
 		end
 	end
 end

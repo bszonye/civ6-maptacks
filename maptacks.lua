@@ -235,6 +235,7 @@ function MapTacksIconOptions(stockIcons : table)
 		local itype = item.DistrictType;
 		local trait = item.TraitType;
 		if itype == "DISTRICT_WONDER" then
+			-- this goes in the wonders section instead
 			skip_district[itype] = itype
 		elseif traits[trait] then
 			-- unique district for our civ
@@ -248,20 +249,13 @@ function MapTacksIconOptions(stockIcons : table)
 			skip_district[itype] = trait;
 		end
 	end
-	local districtSection = {};
 	local districtIcons = {};
 	for item in GameInfo.Districts() do
-		local itype = item.DistrictType;
-		if skip_district[itype] then
+		if not skip_district[item.DistrictType] then
 			-- our civ does not have this district
-			print(string.format("%s: skip (%s)", itype, skip_district[itype]));
-		else
 			table.insert(districtIcons, item);
-			print(string.format("%s: %d", itype, MapTacksTimeline(item)));
 		end
 	end
-	table.sort(districtIcons, MapTacksTechCivicSort);
-	for i,v in ipairs(districtIcons) do table.insert(districtSection, MapTacksIcon(v)); end
 
 	-- Improvements
 	local builderIcons = {};
@@ -296,13 +290,17 @@ function MapTacksIconOptions(stockIcons : table)
 			-- print(item.Name, MapTacksTimeline(item));
 		end
 	end
+
 	-- sort icons according to tech cost
+	table.sort(districtIcons, MapTacksTechCivicSort);
 	table.sort(builderIcons, MapTacksTechCivicSort);
 	table.sort(uniqueIcons, MapTacksTechCivicSort);
 	table.sort(governorIcons, MapTacksTechCivicSort);
 	table.sort(minorCivIcons, MapTacksTechCivicSort);
 	table.sort(engineerIcons, MapTacksTechCivicSort);
 
+	local districtSection = {};
+	for i,v in ipairs(districtIcons) do table.insert(districtSection, MapTacksIcon(v)); end
 	local builderSection = {};
 	for i,v in ipairs(builderIcons) do table.insert(builderSection, MapTacksIcon(v)); end
 	local uniqueSection = {
