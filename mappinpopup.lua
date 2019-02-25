@@ -128,7 +128,10 @@ end
 -------------------------------------------------------------------------------
 function SetMapPinIcon(imageControl :table, mapPinIconName :string)
 	if(imageControl ~= nil and mapPinIconName ~= nil) then
-		imageControl:SetIcon(mapPinIconName);
+		-- set the icon if possible, otherwise use default
+		if not imageControl:SetIcon(mapPinIconName) then
+			imageControl:SetIcon(ICON_MAP_PIN_UNKNOWN);
+		end
 	end
 end
 
@@ -177,7 +180,6 @@ function PopulateIconOptions()
 			controlTable = {};
 			ContextPtr:BuildInstanceForControl( "IconOptionInstance", controlTable, sectionTable.IconOptionRowStack );
 			controlTable.IconOptionButton:SetDisabled(true);
-			-- controlTable.Icon:SetIcon("ICON_MAP_PIN_DISTRICT");
 			controlTable.Icon:SetHide(true);
 		end
 	end

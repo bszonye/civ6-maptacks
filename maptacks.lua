@@ -2,6 +2,8 @@
 -- MapTacks
 -- utility functions
 
+ICON_MAP_PIN_UNKNOWN = "ICON_CIVILIZATION_UNKNOWN";
+
 local g_debugLeader = nil;
 -- g_debugLeader = GameInfo.Leaders.LEADER_BARBAROSSA
 -- g_debugLeader = GameInfo.Leaders.LEADER_CATHERINE_DE_MEDICI
@@ -220,18 +222,6 @@ function MapTacksIconOptions(stockIcons : table)
 		traits[item.TraitType] = true;
 		-- print(item.TraitType);
 	end
-	-- Get unique district replacement info
-	-- TODO: fix non-replacement districts
-	local districts = {};
-	for item in GameInfo.Districts() do
-		if traits[item.TraitType] then
-			for i, swap in ipairs(item.ReplacesCollection) do
-				local base = swap.ReplacesDistrictType;
-				districts[base] = item;
-				-- print(item.DistrictType, "replaces", base);
-			end
-		end
-	end
 
 	-- Stock map pins
 	local stockSection = {};
@@ -240,19 +230,35 @@ function MapTacksIconOptions(stockIcons : table)
 	end
 
 	-- Districts
+	local skip_district = {};  -- we will skip all districts in this set
+	for item in GameInfo.Districts() do
+		local itype = item.DistrictType;
+		local trait = item.TraitType;
+		if itype == "DISTRICT_WONDER" then
+			skip_district[itype] = itype
+		elseif traits[trait] then
+			-- unique district for our civ
+			-- mark any districts replaced by this one
+			for i, swap in ipairs(item.ReplacesCollection) do
+				local base = swap.ReplacesDistrictType;
+				skip_district[base] = itype;
+			end
+		elseif trait then
+			-- unique district for another civ
+			skip_district[itype] = trait;
+		end
+	end
 	local districtSection = {};
 	local districtIcons = {};
 	for item in GameInfo.Districts() do
 		local itype = item.DistrictType;
-		if districts[itype] then
-			-- unique district replacements for this civ
-			table.insert(districtIcons, districts[itype]);
-		elseif item.TraitType then
-			-- skip other unique districts
-		elseif itype ~= "DISTRICT_WONDER" then
+		if skip_district[itype] then
+			-- our civ does not have this district
+			print(string.format("%s: skip (%s)", itype, skip_district[itype]));
+		else
 			table.insert(districtIcons, item);
+			print(string.format("%s: %d", itype, MapTacksTimeline(item)));
 		end
-		-- print(item.Name, MapTacksTimeline(item));
 	end
 	table.sort(districtIcons, MapTacksTechCivicSort);
 	for i,v in ipairs(districtIcons) do table.insert(districtSection, MapTacksIcon(v)); end
@@ -351,19 +357,19 @@ end
 function MapTacksIcon(item)
 	local name :string = nil;
 	local tooltip :string = nil;
-	if item.GreatPersonClassType then  -- note, districts also have this field
+	if item.GreatPersonClassType then  -- this must come before districts
 		name = item.ActionIcon;
 		tooltip = item.Name;
-	elseif item.BuildingType then
-		name = "ICON_"..item.BuildingType;
-		tooltip = item.BuildingType;
-	elseif item.DistrictType then
+	elseif item.DistrictType then  -- because great people have district types
 		name = "ICON_"..item.DistrictType;
 		if item.CityCenter or item.InternalOnly then
 			tooltip = item.Name
 		else
 			tooltip = item.DistrictType;
 		end
+	elseif item.BuildingType then
+		name = "ICON_"..item.BuildingType;
+		tooltip = item.BuildingType;
 	elseif item.ImprovementType then
 		name = item.Icon;
 		tooltip = item.ImprovementType;

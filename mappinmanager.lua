@@ -274,7 +274,8 @@ function MapPinFlag.SetFlagUnitEmblem( self : MapPinFlag )
 			local size = (iconType == MAPTACKS_STOCK and 24) or 26;
 			self.m_Instance.UnitIcon:SetSizeVal(size, size);
 			if not self.m_Instance.UnitIcon:SetIcon(iconName) then
-				self.m_Instance.UnitIcon:SetIcon("ICON_MAP_PIN_UNKNOWN_WHITE");
+				-- self.m_Instance.UnitIcon:SetIcon("ICON_MAP_PIN_UNKNOWN_WHITE");
+				self.m_Instance.UnitIcon:SetIcon(ICON_MAP_PIN_UNKNOWN);
 			end
 			self.m_Instance.UnitIcon:SetHide(false);
 			self.m_Instance.DistrictIcon:SetHide(true);
