@@ -498,37 +498,9 @@ end
 -- ===========================================================================
 -- Reference info
 
--- ===========================================================================
--- Civilization color values
---         maxrgb luma
--- RUSSIA      20   20
--- GERMANY     63   61
--- NUBIA      108   74
--- ARABIA     118   99
--- PERSIA     164   69
--- JAPAN      166   64
--- AZTEC      181   98
--- SCYTHIA    184   67
--- KONGO      207   74
--- INDIA      239  216
--- SPARTA     239  232
--- SPAIN      241  214
--- BRAZIL     245  221
--- SUMERIA    246  171
--- NORWAY     254  104
--- ROME       255  212
--- MACEDON    255  238
--- EGYPT      255  244
--- FRANCE     255  248
--- POLAND     255  251
--- AMERICA    255  255
--- AUSTRALIA  255  255
--- CHINA      255  255
--- ENGLAND    255  255
--- GREECE     255  255
-
--- ===========================================================================
--- Unit commands
+-- COMMANDS -------------------------------------------------------------------
+-- ATTACK:
+--   UNITCOMMAND_PRIORITY_TARGET  -- Rise & Fall
 -- INPLACE:
 --   UNITCOMMAND_WAKE
 --   UNITCOMMAND_CANCEL
@@ -536,12 +508,13 @@ end
 --   UNITCOMMAND_GIFT
 -- MOVE:
 --   UNITCOMMAND_AIRLIFT
+--   UNITCOMMAND_PARADROP  -- Rise & Fall
+--   UNITCOMMAND_MOVE_JUMP  -- Gathering Storm
 -- SECONDARY:
 --   UNITCOMMAND_DELETE
 -- SPECIFIC:
 --   UNITCOMMAND_PROMOTE
 --   UNITCOMMAND_UPGRADE
---   UNITCOMMAND_AUTOMATE  -- not VisibleInUI
 --   UNITCOMMAND_ENTER_FORMATION
 --   UNITCOMMAND_EXIT_FORMATION
 --   UNITCOMMAND_ACTIVATE_GREAT_PERSON
@@ -549,12 +522,13 @@ end
 --   UNITCOMMAND_FORM_CORPS
 --   UNITCOMMAND_FORM_ARMY
 --   UNITCOMMAND_PLUNDER_TRADE_ROUTE
+--   UNITCOMMAND_CONDEMN_HERETIC
 --   UNITCOMMAND_NAME_UNIT
 --   UNITCOMMAND_WONDER_PRODUCTION
 --   UNITCOMMAND_HARVEST_WONDER
-
--- ===========================================================================
--- Unit operations
+--   UNITCOMMAND_PROJECT_PRODUCTION  -- Rise & Fall
+--
+-- OPERATIONS -----------------------------------------------------------------
 -- ATTACK:
 --   UNITOPERATION_AIR_ATTACK
 --   UNITOPERATION_WMD_STRIKE
@@ -569,6 +543,7 @@ end
 --   UNITOPERATION_PLANT_FOREST
 --   UNITOPERATION_REMOVE_FEATURE
 --   UNITOPERATION_REMOVE_IMPROVEMENT
+--   UNITOPERATION_BUILD_IMPROVEMENT_ADJACENT  -- Gathering Storm
 -- INPLACE:
 --   UNITOPERATION_FORTIFY
 --   UNITOPERATION_HEAL
@@ -578,12 +553,8 @@ end
 --   UNITOPERATION_ALERT
 -- MOVE:
 --   UNITOPERATION_DEPLOY
---   UNITOPERATION_DISEMBARK  -- not VisibleInUI
---   UNITOPERATION_EMBARK  -- not VisibleInUI
 --   UNITOPERATION_MOVE_TO
---   UNITOPERATION_MOVE_TO_UNIT  -- not VisibleInUI
 --   UNITOPERATION_REBASE
---   UNITOPERATION_ROUTE_TO  -- not VisibleInUI
 --   UNITOPERATION_SPY_COUNTERSPY  -- special handling in unit panel
 --   UNITOPERATION_SPY_TRAVEL_NEW_CITY
 --   UNITOPERATION_TELEPORT_TO_CITY
@@ -596,6 +567,10 @@ end
 --   UNITOPERATION_SPY_SABOTAGE_PRODUCTION
 --   UNITOPERATION_SPY_SIPHON_FUNDS
 --   UNITOPERATION_SPY_STEAL_TECH_BOOST
+--   UNITOPERATION_SPY_FABRICATE_SCANDAL  -- Rise & Fall
+--   UNITOPERATION_SPY_FOMENT_UNREST  -- Rise & Fall
+--   UNITOPERATION_SPY_NEUTRALIZE_GOVERNOR  -- Rise & Fall
+--   UNITOPERATION_SPY_BREACH_DAM  -- Gathering Storm
 -- SECONDARY:
 --   UNITOPERATION_AUTOMATE_EXPLORE
 -- SPECIFIC:
@@ -613,8 +588,7 @@ end
 --   UNITOPERATION_REPAIR_ROUTE
 --   UNITOPERATION_RETRAIN
 --   UNITOPERATION_SPREAD_RELIGION
---   UNITOPERATION_SWAP_UNITS  -- not VisibleInUI
 --   UNITOPERATION_UPGRADE
---   UNITOPERATION_WAIT_FOR  -- not VisibleInUI
-
+--   UNITOPERATION_RELIGIOUS_HEAL
+--   UNITOPERATION_TOURISM_BOMB  -- Gathering Storm
 -- vim: sw=4 ts=4
