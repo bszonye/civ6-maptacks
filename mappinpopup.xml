@@ -8,7 +8,7 @@
       <SlideAnim      ID="PopupSlideIn" Start="0,-20" End="0,0" Speed="3" Function="Root" Cycle="Once" Size="parent,parent">
 
         <Grid           ID="WindowContainer" Size="auto,auto" Anchor="C,C" Offset="0,0" Style="DropShadow2"     Color="255,255,255,200" AutoSizePadding="25,25" ConsumeMouse="1">
-          <Grid         ID="Window"      Size="910,auto" Anchor="C,C" Offset="0,0" Style="WindowFrameTitle" AutoSizePadding="0,12">
+          <Grid         ID="Window"      Size="910,auto" Anchor="C,C" Offset="0,0" Style="WindowFrameTitle" AutoSizePadding="0,13">
             <Stack      ID="WindowStack" StackGrowth="Down" Padding="10" Anchor="C,T">
               <Container                 Size="330,42" Anchor="C,T">
                 <Label  ID="TitleText"   Style="WindowHeader"        Anchor="C,C" String="{LOC_MAP_PIN_POPUP_TITLE:upper}" />
@@ -29,10 +29,10 @@
                   </Container>
 
                   <!-- Buttons -->
-                  <Stack        ID="OptionsStack" StackGrowth="Right" Padding="10" Anchor="C,T"  WrapWidth="480">
-                    <GridButton ID="DeleteButton"		  Anchor="L,T" Size="150,41"		Style="ButtonRed" FontStyle="Shadow" String="LOC_DELETE_BUTTON" />
+                  <Stack        ID="OptionsStack" StackGrowth="Right" Padding="8" Anchor="C,T"  WrapWidth="480">
                     <GridButton ID="OkButton"			    Anchor="L,T" Size="150,41"		Style="MainButton" FontStyle="Shadow" String="LOC_OK_BUTTON" />
                     <GridButton ID="SendToChatButton"	Anchor="L,T" Size="150,41"		Style="MainButton" FontStyle="Shadow" String="LOC_MAP_PIN_SEND_TO_CHAT" ToolTip="LOC_MAP_PIN_SEND_TO_CHAT_TT"/>
+                    <GridButton ID="DeleteButton"		  Anchor="L,T" Size="150,41"		Style="ButtonRed" FontStyle="Shadow" String="LOC_DELETE_BUTTON" />
                   </Stack>
                 </Stack>
               </Container>

@@ -5,31 +5,7 @@
 ICON_MAP_PIN_UNKNOWN = "ICON_CIVILIZATION_UNKNOWN";
 
 local g_debugLeader = nil;
--- g_debugLeader = GameInfo.Leaders.LEADER_BARBAROSSA
--- g_debugLeader = GameInfo.Leaders.LEADER_CATHERINE_DE_MEDICI
--- g_debugLeader = GameInfo.Leaders.LEADER_CLEOPATRA
--- g_debugLeader = GameInfo.Leaders.LEADER_GANDHI
--- g_debugLeader = GameInfo.Leaders.LEADER_GILGAMESH
--- g_debugLeader = GameInfo.Leaders.LEADER_GORGO
--- g_debugLeader = GameInfo.Leaders.LEADER_HARDRADA
--- g_debugLeader = GameInfo.Leaders.LEADER_HOJO
--- g_debugLeader = GameInfo.Leaders.LEADER_MVEMBA
--- g_debugLeader = GameInfo.Leaders.LEADER_PEDRO
--- g_debugLeader = GameInfo.Leaders.LEADER_PERICLES
--- g_debugLeader = GameInfo.Leaders.LEADER_PETER_GREAT
--- g_debugLeader = GameInfo.Leaders.LEADER_PHILIP_II
--- g_debugLeader = GameInfo.Leaders.LEADER_QIN
--- g_debugLeader = GameInfo.Leaders.LEADER_SALADIN
--- g_debugLeader = GameInfo.Leaders.LEADER_TOMYRIS
--- g_debugLeader = GameInfo.Leaders.LEADER_TRAJAN
--- g_debugLeader = GameInfo.Leaders.LEADER_T_ROOSEVELT
--- g_debugLeader = GameInfo.Leaders.LEADER_VICTORIA
--- g_debugLeader = GameInfo.Leaders.LEADER_JOHN_CURTIN
--- g_debugLeader = GameInfo.Leaders.LEADER_MONTEZUMA
--- g_debugLeader = GameInfo.Leaders.LEADER_ALEXANDER
--- g_debugLeader = GameInfo.Leaders.LEADER_CYRUS
--- g_debugLeader = GameInfo.Leaders.LEADER_AMANITORE
--- g_debugLeader = GameInfo.Leaders.LEADER_JADWIGA
+-- g_debugLeader = GameInfo.Leaders.LEADER_XXX
 
 -- ===========================================================================
 local g_stockIcons = {
@@ -48,120 +24,70 @@ local g_stockIcons = {
 	{ name="ICON_MAP_PIN_SQUARE"   },
 	{ name="ICON_MAP_PIN_DIAMOND"  },
 };
-local g_builderOps = {
-	GameInfo.UnitOperations.UNITOPERATION_PLANT_FOREST,
-	GameInfo.UnitOperations.UNITOPERATION_REMOVE_FEATURE,
-	GameInfo.UnitOperations.UNITOPERATION_HARVEST_RESOURCE,
+
+-- synthetic icons (not in database)
+local ICON_BARBARIANS = {
+	name="ICON_NOTIFICATION_BARBARIANS_SIGHTED",
+	tooltip="LOC_IMPROVEMENT_BARBARIAN_CAMP_NAME",
 };
-local g_engineerOps = {
+local ICON_GOODY_HUT = {
+	name="ICON_NOTIFICATION_DISCOVER_GOODY_HUT",
+	tooltip="LOC_IMPROVEMENT_GOODY_HUT_NAME",
+};
+local ICON_SPY = {
+	name="ICON_UNITOPERATION_SPY_COUNTERSPY_ACTION",
+	-- tooltip="LOC_UNIT_SPY_NAME",
+	tooltip="LOC_PROMOTION_CLASS_SPY_NAME",
+};
+
+-- TODO: clean up this mess
+local g_buildActions = {
+	-- CategoryInUI = BUILD
+	GameInfo.UnitOperations.UNITOPERATION_PLANT_FOREST,  -- Conservation
+	GameInfo.UnitOperations.UNITOPERATION_DESIGNATE_PARK,  -- Conservation
 	GameInfo.UnitOperations.UNITOPERATION_BUILD_ROUTE,
-	GameInfo.UnitOperations.UNITOPERATION_CLEAR_CONTAMINATION,
+	-- GameInfo.UnitOperations.UNITOPERATION_BUILD_IMPROVEMENT,
+	-- GameInfo.UnitOperations.UNITOPERATION_REMOVE_FEATURE,
+	-- GameInfo.UnitOperations.UNITOPERATION_REMOVE_IMPROVEMENT,
+	-- GameInfo.UnitOperations.UNITOPERATION_BUILD_IMPROVEMENT_ADJACENT,  -- GS
+};
+local g_removeActions = {  -- remove, harvest, repair, clear
+	-- CategoryInUI = BUILD
+	GameInfo.UnitOperations.UNITOPERATION_REMOVE_FEATURE,
+	-- CategoryInUI = SPECIFIC
+	GameInfo.UnitOperations.UNITOPERATION_HARVEST_RESOURCE,
 	GameInfo.UnitOperations.UNITOPERATION_REPAIR,
+	-- GameInfo.UnitOperations.UNITOPERATION_CLEAR_CONTAMINATION,
+	-- GameInfo.UnitOperations.UNITOPERATION_REPAIR_ROUTE,
 };
-local g_gsIcons = {
-	-- TODO: fit this in somewhere
-	GameInfo.UnitOperations.UNITOPERATION_TOURISM_BOMB,
-};
-local g_miscIcons = {
-	{
-		Icon="ICON_NOTIFICATION_BARBARIANS_SIGHTED",
-		Description="LOC_IMPROVEMENT_BARBARIAN_CAMP_NAME",
-	},
-	{
-		Icon="ICON_NOTIFICATION_DISCOVER_GOODY_HUT",
-		Description="LOC_IMPROVEMENT_GOODY_HUT_NAME",
-	},
-	{
-		Icon="ICON_UNITOPERATION_SPY_COUNTERSPY_ACTION",
-		-- Description="LOC_UNIT_SPY_NAME",
-		Description="LOC_PROMOTION_CLASS_SPY_NAME",
-	},
-	-- Unit operations --------------------------------------------------------
-	-- ATTACK:
-	-- GameInfo.UnitOperations.UNITOPERATION_AIR_ATTACK,
-	-- GameInfo.UnitOperations.UNITOPERATION_WMD_STRIKE,
+local g_attackActions = {
 	-- GameInfo.UnitOperations.UNITOPERATION_COASTAL_RAID,
 	GameInfo.UnitOperations.UNITOPERATION_PILLAGE,
 	-- GameInfo.UnitOperations.UNITOPERATION_PILLAGE_ROUTE,
-	-- GameInfo.UnitOperations.UNITOPERATION_RANGE_ATTACK,
-	-- BUILD:
-	-- GameInfo.UnitOperations.UNITOPERATION_BUILD_IMPROVEMENT,
-	-- GameInfo.UnitOperations.UNITOPERATION_BUILD_ROUTE,
-	GameInfo.UnitOperations.UNITOPERATION_DESIGNATE_PARK,
-	-- GameInfo.UnitOperations.UNITOPERATION_PLANT_FOREST,
-	-- GameInfo.UnitOperations.UNITOPERATION_REMOVE_FEATURE,
-	-- GameInfo.UnitOperations.UNITOPERATION_REMOVE_IMPROVEMENT,
-	-- INPLACE:
-	-- GameInfo.UnitOperations.UNITOPERATION_FORTIFY,
-	-- GameInfo.UnitOperations.UNITOPERATION_HEAL,
-	-- GameInfo.UnitOperations.UNITOPERATION_REST_REPAIR,
-	-- GameInfo.UnitOperations.UNITOPERATION_SKIP_TURN,
-	-- GameInfo.UnitOperations.UNITOPERATION_SLEEP,
-	-- GameInfo.UnitOperations.UNITOPERATION_ALERT,
-	-- MOVE:
-	-- GameInfo.UnitOperations.UNITOPERATION_DEPLOY,
-	-- GameInfo.UnitOperations.UNITOPERATION_DISEMBARK,  -- not VisibleInUI
-	-- GameInfo.UnitOperations.UNITOPERATION_EMBARK,  -- not VisibleInUI
-	-- GameInfo.UnitOperations.UNITOPERATION_MOVE_TO,
-	-- GameInfo.UnitOperations.UNITOPERATION_MOVE_TO_UNIT,  -- not VisibleInUI
-	-- GameInfo.UnitOperations.UNITOPERATION_REBASE,
-	-- GameInfo.UnitOperations.UNITOPERATION_ROUTE_TO,  -- not VisibleInUI
-	-- GameInfo.UnitOperations.UNITOPERATION_SPY_COUNTERSPY,  -- special handling in unit panel
-	-- GameInfo.UnitOperations.UNITOPERATION_SPY_TRAVEL_NEW_CITY,
-	-- GameInfo.UnitOperations.UNITOPERATION_TELEPORT_TO_CITY,
-	-- OFFENSIVESPY:  -- these do not appear in unit panel
-	-- GameInfo.UnitOperations.UNITOPERATION_SPY_DISRUPT_ROCKETRY,
-	-- GameInfo.UnitOperations.UNITOPERATION_SPY_GAIN_SOURCES,
-	-- GameInfo.UnitOperations.UNITOPERATION_SPY_GREAT_WORK_HEIST,
-	-- GameInfo.UnitOperations.UNITOPERATION_SPY_LISTENING_POST,
-	-- GameInfo.UnitOperations.UNITOPERATION_SPY_RECRUIT_PARTISANS,
-	-- GameInfo.UnitOperations.UNITOPERATION_SPY_SABOTAGE_PRODUCTION,
-	-- GameInfo.UnitOperations.UNITOPERATION_SPY_SIPHON_FUNDS,
-	-- GameInfo.UnitOperations.UNITOPERATION_SPY_STEAL_TECH_BOOST,
-	-- SECONDARY:
-	-- GameInfo.UnitOperations.UNITOPERATION_AUTOMATE_EXPLORE,
-	-- SPECIFIC:
-	-- GameInfo.UnitOperations.UNITOPERATION_CLEAR_CONTAMINATION,
-	-- GameInfo.UnitOperations.UNITOPERATION_CONVERT_BARBARIANS,
-	-- GameInfo.UnitOperations.UNITOPERATION_EVANGELIZE_BELIEF,
-	GameInfo.UnitOperations.UNITOPERATION_EXCAVATE,
-	-- GameInfo.UnitOperations.UNITOPERATION_FOUND_CITY,
-	-- GameInfo.UnitOperations.UNITOPERATION_FOUND_RELIGION,
-	-- GameInfo.UnitOperations.UNITOPERATION_HARVEST_RESOURCE,
-	-- GameInfo.UnitOperations.UNITOPERATION_LAUNCH_INQUISITION,
+	GameInfo.UnitOperations.UNITOPERATION_RANGE_ATTACK,
+	GameInfo.UnitOperations.UNITOPERATION_AIR_ATTACK,
+	GameInfo.UnitOperations.UNITOPERATION_WMD_STRIKE,
+}
+local g_basicIcons = {
+	ICON_BARBARIANS,
+	ICON_GOODY_HUT,
+	GameInfo.UnitOperations.UNITOPERATION_PILLAGE,
+	-- ICON_SPY,
+	-- GameInfo.Units.UNIT_TRADER,
+	-- GameInfo.Units.UNIT_SPY,
+	-- GameInfo.Units.UNIT_ARCHAEOLOGIST,
+};
+local g_miscIcons = {
+	-- ICON_BARBARIANS,
+	-- ICON_GOODY_HUT,
+	-- GameInfo.UnitOperations.UNITOPERATION_PILLAGE,
 	GameInfo.UnitOperations.UNITOPERATION_MAKE_TRADE_ROUTE,
-	-- GameInfo.UnitOperations.UNITOPERATION_REMOVE_HERESY,
-	-- GameInfo.UnitOperations.UNITOPERATION_REPAIR,
-	-- GameInfo.UnitOperations.UNITOPERATION_REPAIR_ROUTE,
-	-- GameInfo.UnitOperations.UNITOPERATION_RETRAIN,
-	-- GameInfo.UnitOperations.UNITOPERATION_SPREAD_RELIGION,
-	-- GameInfo.UnitOperations.UNITOPERATION_SWAP_UNITS,  -- not VisibleInUI
-	-- GameInfo.UnitOperations.UNITOPERATION_UPGRADE,
-	-- GameInfo.UnitOperations.UNITOPERATION_WAIT_FOR,  -- not VisibleInUI
-	-- Unit commands ----------------------------------------------------------
-	-- INPLACE:
-	-- GameInfo.UnitCommands.UNITCOMMAND_WAKE,
-	-- GameInfo.UnitCommands.UNITCOMMAND_CANCEL,
-	-- GameInfo.UnitCommands.UNITCOMMAND_STOP_AUTOMATION,
-	-- GameInfo.UnitCommands.UNITCOMMAND_GIFT,
-	-- MOVE:
-	-- GameInfo.UnitCommands.UNITCOMMAND_AIRLIFT,
-	-- SECONDARY:
-	-- GameInfo.UnitCommands.UNITCOMMAND_DELETE,
-	-- SPECIFIC:
-	-- GameInfo.UnitCommands.UNITCOMMAND_PROMOTE,
-	-- GameInfo.UnitCommands.UNITCOMMAND_UPGRADE,
-	-- GameInfo.UnitCommands.UNITCOMMAND_AUTOMATE,  -- not VisibleInUI
-	-- GameInfo.UnitCommands.UNITCOMMAND_ENTER_FORMATION,
-	-- GameInfo.UnitCommands.UNITCOMMAND_EXIT_FORMATION,
-	-- GameInfo.UnitCommands.UNITCOMMAND_ACTIVATE_GREAT_PERSON,
-	-- GameInfo.UnitCommands.UNITCOMMAND_DISTRICT_PRODUCTION,
-	-- GameInfo.UnitCommands.UNITCOMMAND_FORM_CORPS,
+	ICON_SPY,
+	GameInfo.UnitOperations.UNITOPERATION_EXCAVATE,
+	-- GameInfo.Units.UNIT_TRADER,
+	-- GameInfo.Units.UNIT_SPY,
+	-- GameInfo.Units.UNIT_ARCHAEOLOGIST,
 	GameInfo.UnitCommands.UNITCOMMAND_FORM_ARMY,
-	-- GameInfo.UnitCommands.UNITCOMMAND_PLUNDER_TRADE_ROUTE,
-	-- GameInfo.UnitCommands.UNITCOMMAND_NAME_UNIT,
-	-- GameInfo.UnitCommands.UNITCOMMAND_WONDER_PRODUCTION,
-	-- GameInfo.UnitCommands.UNITCOMMAND_HARVEST_WONDER,
 };
 
 -- ===========================================================================
@@ -208,7 +134,10 @@ end
 
 -- ===========================================================================
 -- Build the grid of map pin icon options
-function MapTacksIconOptions(stockIcons : table)
+function MapTacksIconOptions(stockIcons :table)
+	if stockIcons == nil then
+		stockIcons = g_stockIcons;
+	end
 	local icons = {};
 	local activePlayerID = Game.GetLocalPlayer();
 	local pPlayerCfg = PlayerConfigurations[activePlayerID];
@@ -227,12 +156,6 @@ function MapTacksIconOptions(stockIcons : table)
 	for i, item in ipairs(civ.TraitCollection) do
 		traits[item.TraitType] = true;
 		-- print(item.TraitType);
-	end
-
-	-- Stock map pins
-	local stockSection = {};
-	for i, item in ipairs(stockIcons or g_stockIcons) do
-		table.insert(stockSection, item);
 	end
 
 	-- Districts
@@ -264,7 +187,7 @@ function MapTacksIconOptions(stockIcons : table)
 	end
 
 	-- Improvements
-	local builderIcons = {};
+	local improvementIcons = {};
 	local uniqueIcons = {};
 	local governorIcons = {};
 	local minorCivIcons = {};
@@ -289,7 +212,7 @@ function MapTacksIconOptions(stockIcons : table)
 					table.insert(minorCivIcons, item);
 				end
 			elseif unit.UnitType == "UNIT_BUILDER" then
-				table.insert(builderIcons, item);
+				table.insert(improvementIcons, item);
 			else
 				table.insert(engineerIcons, item);
 			end
@@ -297,23 +220,23 @@ function MapTacksIconOptions(stockIcons : table)
 		end
 	end
 
-	-- Unit Commands/Operations
-	print("COMMANDS --------------------------------------------------------");
-	for item in GameInfo.UnitCommands() do
-		if item.VisibleInUI then
-			print(item.CategoryInUI, item.CommandType);
-		end
+	-- TODO: refine this?
+	-- TODO: make the variable section assignment less awful
+	-- TODO: join lines if they fit in 7-9 columns combined
+	local columns = math.max(#districtIcons, #improvementIcons);
+
+	-- Stock map pins
+	local stockSection = {};
+	if #stockIcons + #g_basicIcons <= columns then
+		for i,v in ipairs(g_basicIcons) do table.insert(stockSection, MapTacksIcon(v)); end
 	end
-	print("OPERATIONS ------------------------------------------------------");
-	for item in GameInfo.UnitOperations() do
-		if item.VisibleInUI then
-			print(item.CategoryInUI, item.OperationType);
-		end
+	for i, item in ipairs(stockIcons) do
+		table.insert(stockSection, item);
 	end
 
 	-- sort icons according to tech cost
 	table.sort(districtIcons, MapTacksTimelineSort);
-	table.sort(builderIcons, MapTacksTimelineSort);
+	table.sort(improvementIcons, MapTacksTimelineSort);
 	table.sort(uniqueIcons, MapTacksTimelineSort);
 	table.sort(governorIcons, MapTacksTimelineSort);
 	table.sort(minorCivIcons, MapTacksTimelineSort);
@@ -321,50 +244,67 @@ function MapTacksIconOptions(stockIcons : table)
 
 	local districtSection = {};
 	for i,v in ipairs(districtIcons) do table.insert(districtSection, MapTacksIcon(v)); end
-	local builderSection = {};
-	for i,v in ipairs(builderIcons) do table.insert(builderSection, MapTacksIcon(v)); end
-	local uniqueSection = {
-		-- TODO: find a better place for this
-		MapTacksIcon(GameInfo.UnitOperations.UNITOPERATION_BUILD_IMPROVEMENT),
-	};
-	for i,v in ipairs(uniqueIcons) do table.insert(uniqueSection, MapTacksIcon(v)); end
-	for i,v in ipairs(governorIcons) do table.insert(uniqueSection, MapTacksIcon(v)); end
-	for i,v in ipairs(minorCivIcons) do table.insert(uniqueSection, MapTacksIcon(v)); end
-	for i,v in ipairs(engineerIcons) do table.insert(uniqueSection, MapTacksIcon(v)); end
+	local improvementSection = {};
+	for i,v in ipairs(improvementIcons) do table.insert(improvementSection, MapTacksIcon(v)); end
+	-- TODO: put the repair icon on the engineer line instead
+	if #improvementIcons + #g_removeActions <= columns then
+		for i,v in ipairs(g_removeActions) do table.insert(improvementSection, MapTacksIcon(v)); end
+	end
+	local buildSection = {};
+	-- TODO: add spacers if < 2 unique improvements
+	for i,v in ipairs(uniqueIcons) do table.insert(buildSection, MapTacksIcon(v)); end
+	for i,v in ipairs(governorIcons) do table.insert(buildSection, MapTacksIcon(v)); end
+	for i,v in ipairs(minorCivIcons) do table.insert(buildSection, MapTacksIcon(v)); end
+	for i,v in ipairs(g_buildActions) do table.insert(buildSection, MapTacksIcon(v)); end
+	for i,v in ipairs(engineerIcons) do table.insert(buildSection, MapTacksIcon(v)); end
 
-	local buildopSection = {};
-	for i,v in ipairs(g_engineerOps) do table.insert(buildopSection, MapTacksIcon(v)); end
-	for i,v in ipairs(g_builderOps) do table.insert(buildopSection, MapTacksIcon(v)); end
+	-- TODO: clean this up
+	-- local removeSection = {};
+	-- for i,v in ipairs(g_removeActions) do table.insert(removeSection, MapTacksIcon(v)); end
+	-- local attackSection = {};
+	-- for i,v in ipairs(g_attackActions) do table.insert(attackSection, MapTacksIcon(v)); end
 
 	local miscSection = {};
-	for i,v in ipairs(g_gsIcons) do table.insert(miscSection, MapTacksIcon(v)); end
-	for i,v in ipairs(g_miscIcons) do table.insert(miscSection, MapTacksIcon(v)); end
-
-	-- Great people
-	local peopleSection = {};
-	table.insert(peopleSection, MapTacksIcon(GameInfo.UnitCommands.UNITCOMMAND_ACTIVATE_GREAT_PERSON));
-	for item in GameInfo.GreatPersonClasses() do
-		table.insert(peopleSection, MapTacksIcon(item));
+	if #stockIcons + #g_basicIcons > columns then
+		for i,v in ipairs(g_basicIcons) do table.insert(miscSection, MapTacksIcon(v)); end
 	end
+	if #improvementIcons + #g_removeActions > columns then
+		for i,v in ipairs(g_removeActions) do table.insert(miscSection, MapTacksIcon(v)); end
+	end
+	for i,v in ipairs(g_miscIcons) do table.insert(miscSection, MapTacksIcon(v)); end
+	-- table.insert(miscSection, MapTacksIcon(GameInfo.UnitCommands.UNITCOMMAND_ACTIVATE_GREAT_PERSON));
+	for item in GameInfo.GreatPersonClasses() do
+		table.insert(miscSection, MapTacksIcon(item));
+	end
+	-- without the expansion this will be nil, but Lua will ignore it
+	rockband = GameInfo.UnitOperations.UNITOPERATION_TOURISM_BOMB;
+	table.insert(miscSection, MapTacksIcon(rockband));
 
 	-- Wonders
-	local wonderSection = {};
-	local wonderIcons = { GameInfo.Districts.DISTRICT_WONDER, };
+	local wonderIcons = {};
 	for item in GameInfo.Buildings() do
 		if item.IsWonder then
 			table.insert(wonderIcons, item);
 		end
 	end
+	if #wonderIcons ~= 0 then
+		-- skip this icon if no wonders at all, e.g. in some scenarios
+		table.insert(wonderIcons, GameInfo.Districts.DISTRICT_WONDER);
+	end
 	table.sort(wonderIcons, MapTacksTimelineSort);
+
+	local wonderSection = {};
 	for i,v in ipairs(wonderIcons) do table.insert(wonderSection, MapTacksIcon(v)); end
 
-	table.insert(icons, districtSection);
-	table.insert(icons, builderSection);
-	table.insert(icons, uniqueSection);
-	table.insert(icons, buildopSection);
-	table.insert(icons, miscSection);
-	table.insert(icons, peopleSection);
+	-- TODO: skip adding empty sections
+	-- TODO: clean this up
 	table.insert(icons, stockSection);
+	table.insert(icons, districtSection);
+	table.insert(icons, improvementSection);
+	table.insert(icons, buildSection);
+	-- table.insert(icons, removeSection);
+	-- table.insert(icons, attackSection);
+	table.insert(icons, miscSection);
 	table.insert(icons, wonderSection);
 
 	return icons;
@@ -375,7 +315,12 @@ end
 function MapTacksIcon(item)
 	local name :string = nil;
 	local tooltip :string = nil;
-	if item.GreatPersonClassType then  -- this must come before districts
+	if item == nil then
+		return nil
+	elseif item.name then
+		-- already constructed
+		return item;
+	elseif item.GreatPersonClassType then  -- this must come before districts
 		name = item.ActionIcon;
 		tooltip = item.Name;
 	elseif item.DistrictType then  -- because great people have district types
@@ -513,6 +458,24 @@ function MapTacksTestPin(x, y, item)
 	pMapPin:SetIconName(name);
 	pMapPin:SetVisibility(ChatTargetTypes.CHATTARGET_ALL);
 	pPlayerCfg:GetMapPins();
+end
+
+-- ===========================================================================
+-- XXX: dump reference info
+function MapTacksReferenceInfo()
+	-- Unit Commands/Operations
+	print("COMMANDS --------------------------------------------------------");
+	for item in GameInfo.UnitCommands() do
+		if item.VisibleInUI then
+			print(item.CategoryInUI, item.CommandType);
+		end
+	end
+	print("OPERATIONS ------------------------------------------------------");
+	for item in GameInfo.UnitOperations() do
+		if item.VisibleInUI then
+			print(item.CategoryInUI, item.OperationType);
+		end
+	end
 end
 
 -- ===========================================================================

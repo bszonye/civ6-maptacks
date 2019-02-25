@@ -144,7 +144,14 @@ function PopulateIconOptions()
 	g_iconOptionEntries = {};
 	Controls.IconOptionStack:DestroyAllChildren();
 
-	local columns = math.max(14, #g_iconPulldownOptions[1]);
+	-- calculate column width
+	local columns = 7;
+	for j, section in ipairs(g_iconPulldownOptions) do
+		local width = #section;
+		if columns < width and width <= 20 and 1 < j and j <= 3 then
+			columns = width;
+		end
+	end
 	local sectionTable = {};
 	local controlTable = {};
 	local newIconEntry = {};
@@ -155,7 +162,10 @@ function PopulateIconOptions()
 		local ht = math.floor((#section + columns - 1) / columns);
 		local wd = math.floor((#section + ht - 1) / ht);
 		sectionTable.IconOptionRowStack:SetWrapWidth(40 * ht);
-		-- if columns < wd then columns = wd; end
+		if j > 1 and (ht > 1 or columns < #g_iconPulldownOptions[j - 1]) then
+			-- leave a break around multi-row sections
+			sectionTable.IconOptionRowStack:SetOffsetY(8);
+		end
 		for i, pair in ipairs(section) do
 			controlTable = {};
 			newIconEntry = {};
@@ -185,6 +195,7 @@ function PopulateIconOptions()
 
 	-- set width dynamically according to widest section
 	Controls.Window:SetSizeX(44 * columns + 30);
+	Controls.OptionsStack:SetWrapWidth(44 * columns + 8);
 	-- Controls.PinFrame:SetSizeX(44 * (columns - 4) + 2);
 	Controls.IconOptionStack:CalculateSize();
 	Controls.IconOptionStack:ReprocessAnchoring();
