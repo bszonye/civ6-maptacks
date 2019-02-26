@@ -26,26 +26,7 @@ local g_desiredIconName :string = "";
 local g_playerTarget = { targetType = ChatTargetTypes.CHATTARGET_PLAYER, targetID = Game.GetLocalPlayer() };
 local g_cachedChatPanelTarget = nil; -- Cached player target for ingame chat panel
 
--- When we aren't quite so crunched on time, it would be good to add the map pins table to the database
-local g_iconPulldownOptions = {};
-local g_stockIcons =
-{	
--- stock icons
-	{ name = "ICON_MAP_PIN_STRENGTH" },
-	{ name = "ICON_MAP_PIN_RANGED"   },
-	{ name = "ICON_MAP_PIN_BOMBARD"  },
-	{ name = "ICON_MAP_PIN_DISTRICT" },
-	{ name = "ICON_MAP_PIN_CHARGES"  },
-	{ name = "ICON_MAP_PIN_DEFENSE"  },
-	{ name = "ICON_MAP_PIN_MOVEMENT" },
-	{ name = "ICON_MAP_PIN_NO"       },
-	{ name = "ICON_MAP_PIN_PLUS"     },
-	{ name = "ICON_MAP_PIN_CIRCLE"   },
-	{ name = "ICON_MAP_PIN_TRIANGLE" },
-	{ name = "ICON_MAP_PIN_SUN"      },
-	{ name = "ICON_MAP_PIN_SQUARE"   },
-	{ name = "ICON_MAP_PIN_DIAMOND"  },
-};
+local g_iconPulldownOptions = {};  -- from MapTacksIconOptions()
 
 local sendToChatTTStr = Locale.Lookup( "LOC_MAP_PIN_SEND_TO_CHAT_TT" );
 local sendToChatNotVisibleTTStr = Locale.Lookup( "LOC_MAP_PIN_SEND_TO_CHAT_NOT_VISIBLE_TT" );
@@ -129,7 +110,7 @@ end
 function SetMapPinIcon(imageControl :table, mapPinIconName :string)
 	if(imageControl ~= nil and mapPinIconName ~= nil) then
 		if not imageControl:SetIcon(mapPinIconName) then
-			imageControl:SetIcon(ICON_MAP_PIN_UNKNOWN);
+			imageControl:SetIcon(MapTacks.UNKNOWN);
 		end
 	end
 end
@@ -139,7 +120,7 @@ function PopulateIconOptions()
 	-- unique icons are specific to the current player
 	g_uniqueIconsPlayer = Game.GetLocalPlayer();
 	-- build icon table with default pins + extensions
-	g_iconPulldownOptions = MapTacksIconOptions(g_stockIcons);
+	g_iconPulldownOptions = MapTacksIconOptions();
 
 	g_iconOptionEntries = {};
 	Controls.IconOptionStack:DestroyAllChildren();

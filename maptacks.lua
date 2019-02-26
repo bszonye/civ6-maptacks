@@ -2,12 +2,33 @@
 -- MapTacks
 -- utility functions
 
-ICON_MAP_PIN_UNKNOWN = "ICON_CIVILIZATION_UNKNOWN";
+-- Global data
+if not MapTacks then
+	-- XXX debug: check how often this gets reloaded
+	print("initializing global data");
+end
+MapTacks = MapTacks or {};  -- initialize global
+print('global MapTacks', MapTacks);  -- XXX debug: this shouldn't change
+local MapTacks = MapTacks;  -- localize access
+print('local MapTacks', MapTacks);  -- XXX debug: this shouldn't change
 
+-- Icon types table
+-- MapTacks.IconType["ICON_NAME"] =>
+MapTacks.STOCK = 0;  -- stock icons
+MapTacks.WHITE = 1;  -- white icons (units, spy ops)
+MapTacks.GRAY = 2;   -- gray shaded icons (improvements, commands)
+MapTacks.COLOR = 3;  -- full color icons (buildings, wonders)
+MapTacks.HEX = 4;  -- full color icons with hex backgrounds (districts)
+
+-- Other constants
+MapTacks.UNKNOWN = "ICON_CIVILIZATION_UNKNOWN";
+
+-- TODO: remove debug stuff
 local g_debugLeader = nil;
 -- g_debugLeader = GameInfo.Leaders.LEADER_XXX
 
 -- ===========================================================================
+-- TODO: only keep one copy of this table
 local g_stockIcons = {
 	{ name="ICON_MAP_PIN_STRENGTH" },
 	{ name="ICON_MAP_PIN_RANGED"   },
@@ -134,15 +155,15 @@ end
 
 -- ===========================================================================
 -- Build the grid of map pin icon options
-function MapTacksIconOptions(stockIcons :table)
-	if stockIcons == nil then
-		stockIcons = g_stockIcons;
-	end
-	local icons = {};
+function MapTacksIconOptions()
+	-- initialize global type table
+	MapTacks.IconType = {};
+
+	-- get player configuration
 	local activePlayerID = Game.GetLocalPlayer();
 	local pPlayerCfg = PlayerConfigurations[activePlayerID];
-
 	local leader = GameInfo.Leaders[pPlayerCfg:GetLeaderTypeID()];
+	-- TODO: remove debug stuff
 	if g_debugLeader then leader = g_debugLeader; end
 	local civ = leader.CivilizationCollection[1];
 	-- print(civ.CivilizationType);
@@ -162,6 +183,7 @@ function MapTacksIconOptions(stockIcons :table)
 	local skip_district = {};  -- we will skip all districts in this set
 	for item in GameInfo.Districts() do
 		local itype = item.DistrictType;
+		MapTacks.IconType["ICON_"..itype] = MapTacks.HEX;  -- track icon type
 		local trait = item.TraitType;
 		if itype == "DISTRICT_WONDER" then
 			-- this goes in the wonders section instead
@@ -193,10 +215,10 @@ function MapTacksIconOptions(stockIcons :table)
 	local minorCivIcons = {};
 	local engineerIcons = {};
 	for item in GameInfo.Improvements() do
+		MapTacks.IconType[item.Icon] = MapTacks.GRAY;  -- track icon type
 		-- does this improvement have a valid build unit?
 		local units = item.ValidBuildUnits;
 		if #units ~= 0 then
-			local entry = MapTacksIcon(item);
 			local unit = GameInfo.Units[units[1].UnitType];
 			local trait = item.TraitType or unit.TraitType;
 			-- print(valid.UnitType, trait);
@@ -228,9 +250,10 @@ function MapTacksIconOptions(stockIcons :table)
 	-- Stock map pins
 	local stockSection = {};
 	if #stockIcons + #g_basicIcons <= columns then
-		for i,v in ipairs(g_basicIcons) do table.insert(stockSection, MapTacksIcon(v)); end
+		for i,v in ipairs(g_basicIcons) do table.insert(stockSection, v); end
 	end
 	for i, item in ipairs(stockIcons) do
+		MapTacks.IconType[item.name] = MapTacks.STOCK;  -- track icon type
 		table.insert(stockSection, item);
 	end
 
@@ -243,46 +266,48 @@ function MapTacksIconOptions(stockIcons :table)
 	table.sort(engineerIcons, MapTacksTimelineSort);
 
 	local districtSection = {};
-	for i,v in ipairs(districtIcons) do table.insert(districtSection, MapTacksIcon(v)); end
+	for i,v in ipairs(districtIcons) do table.insert(districtSection, v); end
 	local improvementSection = {};
-	for i,v in ipairs(improvementIcons) do table.insert(improvementSection, MapTacksIcon(v)); end
+	for i,v in ipairs(improvementIcons) do table.insert(improvementSection, v); end
 	-- TODO: put the repair icon on the engineer line instead
 	if #improvementIcons + #g_removeActions <= columns then
-		for i,v in ipairs(g_removeActions) do table.insert(improvementSection, MapTacksIcon(v)); end
+		for i,v in ipairs(g_removeActions) do table.insert(improvementSection, v); end
 	end
 	local buildSection = {};
 	-- TODO: add spacers if < 2 unique improvements
-	for i,v in ipairs(uniqueIcons) do table.insert(buildSection, MapTacksIcon(v)); end
-	for i,v in ipairs(governorIcons) do table.insert(buildSection, MapTacksIcon(v)); end
-	for i,v in ipairs(minorCivIcons) do table.insert(buildSection, MapTacksIcon(v)); end
-	for i,v in ipairs(g_buildActions) do table.insert(buildSection, MapTacksIcon(v)); end
-	for i,v in ipairs(engineerIcons) do table.insert(buildSection, MapTacksIcon(v)); end
+	for i,v in ipairs(uniqueIcons) do table.insert(buildSection, v); end
+	for i,v in ipairs(governorIcons) do table.insert(buildSection, v); end
+	for i,v in ipairs(minorCivIcons) do table.insert(buildSection, v); end
+	for i,v in ipairs(g_buildActions) do table.insert(buildSection, v); end
+	for i,v in ipairs(engineerIcons) do table.insert(buildSection, v); end
 
 	-- TODO: clean this up
 	-- local removeSection = {};
-	-- for i,v in ipairs(g_removeActions) do table.insert(removeSection, MapTacksIcon(v)); end
+	-- for i,v in ipairs(g_removeActions) do table.insert(removeSection, v); end
 	-- local attackSection = {};
-	-- for i,v in ipairs(g_attackActions) do table.insert(attackSection, MapTacksIcon(v)); end
+	-- for i,v in ipairs(g_attackActions) do table.insert(attackSection, v); end
 
 	local miscSection = {};
 	if #stockIcons + #g_basicIcons > columns then
-		for i,v in ipairs(g_basicIcons) do table.insert(miscSection, MapTacksIcon(v)); end
+		for i,v in ipairs(g_basicIcons) do table.insert(miscSection, v); end
 	end
 	if #improvementIcons + #g_removeActions > columns then
-		for i,v in ipairs(g_removeActions) do table.insert(miscSection, MapTacksIcon(v)); end
+		for i,v in ipairs(g_removeActions) do table.insert(miscSection, v); end
 	end
-	for i,v in ipairs(g_miscIcons) do table.insert(miscSection, MapTacksIcon(v)); end
-	-- table.insert(miscSection, MapTacksIcon(GameInfo.UnitCommands.UNITCOMMAND_ACTIVATE_GREAT_PERSON));
+	for i,v in ipairs(g_miscIcons) do table.insert(miscSection, v); end
+	-- table.insert(miscSection, GameInfo.UnitCommands.UNITCOMMAND_ACTIVATE_GREAT_PERSON);
 	for item in GameInfo.GreatPersonClasses() do
-		table.insert(miscSection, MapTacksIcon(item));
+		table.insert(miscSection, item);
 	end
 	-- without the expansion this will be nil, but Lua will ignore it
 	rockband = GameInfo.UnitOperations.UNITOPERATION_TOURISM_BOMB;
-	table.insert(miscSection, MapTacksIcon(rockband));
+	table.insert(miscSection, rockband);
 
 	-- Wonders
 	local wonderIcons = {};
 	for item in GameInfo.Buildings() do
+		local itype = item.BuildingType;
+		MapTacks.IconType["ICON_"..itype] = MapTacks.COLOR;  -- track icon type
 		if item.IsWonder then
 			table.insert(wonderIcons, item);
 		end
@@ -294,20 +319,27 @@ function MapTacksIconOptions(stockIcons :table)
 	table.sort(wonderIcons, MapTacksTimelineSort);
 
 	local wonderSection = {};
-	for i,v in ipairs(wonderIcons) do table.insert(wonderSection, MapTacksIcon(v)); end
+	for i,v in ipairs(wonderIcons) do table.insert(wonderSection, v); end
 
 	-- TODO: skip adding empty sections
-	-- TODO: clean this up
-	table.insert(icons, stockSection);
-	table.insert(icons, districtSection);
-	table.insert(icons, improvementSection);
-	table.insert(icons, buildSection);
-	-- table.insert(icons, removeSection);
-	-- table.insert(icons, attackSection);
-	table.insert(icons, miscSection);
-	table.insert(icons, wonderSection);
+	local sections = {};
+	table.insert(sections, stockSection);
+	table.insert(sections, districtSection);
+	table.insert(sections, improvementSection);
+	table.insert(sections, buildSection);
+	-- table.insert(sections, removeSection);
+	-- table.insert(sections, attackSection);
+	table.insert(sections, miscSection);
+	table.insert(sections, wonderSection);
 
-	return icons;
+	-- convert everything to the right format
+	local grid = {};
+	for j,section in sections do
+		local row = {};
+		for i,item in section do table.insert(row, MapTacksIcon(item)); end
+		table.insert(optionsGrid, row);
+	end
+	return grid;
 end
 
 -- ===========================================================================
@@ -351,28 +383,28 @@ end
 
 -- ===========================================================================
 -- Given an icon name, determine its color and size profile
-MAPTACKS_STOCK = 0;  -- stock icons
-MAPTACKS_WHITE = 1;  -- white icons (units, spy ops)
-MAPTACKS_GRAY = 2;   -- gray shaded icons (improvements, commands)
-MAPTACKS_COLOR = 3;  -- full color icons (buildings, wonders)
-MAPTACKS_HEX = 4;  -- full color icons with hex backgrounds (districts)
 function MapTacksType(pin : table)
-	-- TODO: keep an index of all full-color icons to catch corner cases like
-	-- modded districts/wonders with nonstandard names
 	if not pin then return nil; end
 	local iconName = pin:GetIconName();
+	-- look up icon types recorded during initialization
+	local iconType = MapTacks.IconType and MapTacks.IconType[iconName];
+	if iconType then
+		print(iconName, iconType);  -- XXX debug
+		return iconType;
+	end
+	-- TODO: remove most/all this if the lookup table works
 	if iconName:sub(1,5) ~= "ICON_" then return nil; end
 	local iconType = iconName:sub(6, 10);
 	if iconType == "MAP_P" then
-		return MAPTACKS_STOCK;
+		return MapTacks.STOCK;
 	elseif iconType == "UNIT_" then
-		return MAPTACKS_WHITE;
+		return MapTacks.WHITE;
 	elseif iconType == "BUILD" then  -- wonders
-		return MAPTACKS_COLOR;
+		return MapTacks.COLOR;
 	elseif iconType == "DISTR" then
-		return MAPTACKS_HEX;
+		return MapTacks.HEX;
 	else
-		return MAPTACKS_GRAY;
+		return MapTacks.GRAY;
 	end
 end
 
