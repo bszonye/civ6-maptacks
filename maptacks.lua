@@ -373,20 +373,32 @@ end
 local function InitializeTypes()
 	-- initialize global type table
 	MapTacks.iconTypes = {};
-	MapTacks.iconTypes[ICON_BARBARIAN_CAMP.name] = MapTacks.GRAY;
-	MapTacks.iconTypes[ICON_GOODY_HUT.name] = MapTacks.GRAY;
-	MapTacks.iconTypes[ICON_SPY.name] = MapTacks.GRAY;
-	for item in GameInfo.Districts() do
-		MapTacks.iconTypes["ICON_"..item.DistrictType] = MapTacks.HEX;
-	end
-	for item in GameInfo.Improvements() do
-		MapTacks.iconTypes[item.Icon] = MapTacks.GRAY;
-	end
 	for i, item in ipairs(g_stockIcons) do
 		MapTacks.iconTypes[item.name] = MapTacks.STOCK;
 	end
+	for item in GameInfo.Units() do
+		MapTacks.iconTypes["ICON_"..item.UnitType] = MapTacks.WHITE;
+	end
+	MapTacks.iconTypes[ICON_BARBARIAN_CAMP.name] = MapTacks.GRAY;
+	MapTacks.iconTypes[ICON_GOODY_HUT.name] = MapTacks.GRAY;
+	MapTacks.iconTypes[ICON_SPY.name] = MapTacks.GRAY;
+	for item in GameInfo.Improvements() do
+		MapTacks.iconTypes[item.Icon] = MapTacks.GRAY;
+	end
+	for item in GameInfo.UnitCommands() do
+		MapTacks.iconTypes[item.Icon] = MapTacks.GRAY;
+	end
+	for item in GameInfo.UnitOperations() do
+		MapTacks.iconTypes[item.Icon] = MapTacks.GRAY;
+	end
+	for item in GameInfo.GreatPersonClasses() do
+		MapTacks.iconTypes[item.ActionIcon] = MapTacks.GRAY;
+	end
 	for item in GameInfo.Buildings() do
 		MapTacks.iconTypes["ICON_"..item.BuildingType] = MapTacks.COLOR;
+	end
+	for item in GameInfo.Districts() do
+		MapTacks.iconTypes["ICON_"..item.DistrictType] = MapTacks.HEX;
 	end
 end
 
@@ -398,10 +410,9 @@ function MapTacks.IconType(pin :table)
 	-- look up icon types recorded during initialization
 	if MapTacks.iconTypes == nil then InitializeTypes(); end
 	local iconType = MapTacks.iconTypes[iconName];
-	if iconType then
-		return iconType;
-	end
-	-- TODO: remove most/all this if the lookup table works
+	if iconType then return iconType; end
+	-- print(iconName, iconType);  -- debug
+	-- fallback code in case some random/modded stuff falls through the cracks
 	if iconName:sub(1,5) ~= "ICON_" then return nil; end
 	local iconType = iconName:sub(6, 10);
 	if iconType == "MAP_P" then
