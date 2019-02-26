@@ -26,7 +26,7 @@ local g_desiredIconName :string = "";
 local g_playerTarget = { targetType = ChatTargetTypes.CHATTARGET_PLAYER, targetID = Game.GetLocalPlayer() };
 local g_cachedChatPanelTarget = nil; -- Cached player target for ingame chat panel
 
-local g_iconPulldownOptions = {};  -- from MapTacksIconOptions()
+local g_iconPulldownOptions = {};  -- from MapTacks.IconOptions()
 
 local sendToChatTTStr = Locale.Lookup( "LOC_MAP_PIN_SEND_TO_CHAT_TT" );
 local sendToChatNotVisibleTTStr = Locale.Lookup( "LOC_MAP_PIN_SEND_TO_CHAT_NOT_VISIBLE_TT" );
@@ -120,7 +120,7 @@ function PopulateIconOptions()
 	-- unique icons are specific to the current player
 	g_uniqueIconsPlayer = Game.GetLocalPlayer();
 	-- build icon table with default pins + extensions
-	g_iconPulldownOptions = MapTacksIconOptions();
+	g_iconPulldownOptions = MapTacks.IconOptions();
 
 	g_iconOptionEntries = {};
 	Controls.IconOptionStack:DestroyAllChildren();

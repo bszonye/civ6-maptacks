@@ -8,7 +8,6 @@ include( "SupportFunctions" );
 include( "Colors" );
 include( "MapTacks" );
 
-
 -- ===========================================================================
 --	CONSTANTS
 -- ===========================================================================
@@ -231,23 +230,25 @@ end
 ------------------------------------------------------------------
 -- Set the flag color based on the player colors.
 function MapPinFlag.SetColor( self : MapPinFlag )
-	local primaryColor, secondaryColor = MapTacksColors(self.m_Player:GetID());
+	local primaryColor, secondaryColor = UI.GetPlayerColors(self.m_Player:GetID());
 
-	local darkerFlagColor   :number = MapTacksTint(primaryColor, -85);
-	local brighterFlagColor :number = MapTacksTint(primaryColor, 90);
-	local brighterIconColor :number = MapTacksTint(secondaryColor, 20);
-	-- local darkerIconColor   :number = MapTacksTint(secondaryColor, -30);
+	local darkerFlagColor   :number = MapTacks.Tint(primaryColor, -85);
+	local brighterFlagColor :number = MapTacks.Tint(primaryColor, 90);
+	local brighterIconColor :number = MapTacks.Tint(secondaryColor, 20);
+	-- local darkerIconColor   :number = MapTacks.Tint(secondaryColor, -30);
         
-	local iconType = MapTacksType(self:GetMapPin()) or MapTacks.STOCK;
-	-- print(iconName);
+	local iconType = MapTacks.Type(self:GetMapPin()) or MapTacks.STOCK;
 	-- set icon tint appropriate for the icon color
 	if iconType <= MapTacks.WHITE then
 		-- stock & white map pins
 		self.m_Instance.UnitIcon:SetColor( brighterIconColor );
 	elseif iconType == MapTacks.GRAY then
 		-- shaded icons: match midtones to stock pin color
-		local tintedIconColor = MapTacksIconTint(brighterIconColor);
+		local tintedIconColor = MapTacks.IconTint(brighterIconColor);
 		self.m_Instance.UnitIcon:SetColor(tintedIconColor);
+	else
+		-- full color
+		self.m_Instance.UnitIcon:SetColor(-1);  -- pure white
 	end
 	self.m_Instance.FlagBase:SetColor( primaryColor );
 	self.m_Instance.FlagBaseOutline:SetColor( primaryColor );
@@ -257,6 +258,15 @@ function MapPinFlag.SetColor( self : MapPinFlag )
 	self.m_Instance.FlagOver:SetColor( brighterFlagColor );
 	self.m_Instance.NormalSelect:SetColor( brighterFlagColor );
 	self.m_Instance.NormalSelectPulse:SetColor( brighterFlagColor );
+
+	-- XXX debug
+	-- self.m_Instance.FlagBase:SetColor( brighterFlagColor );
+	-- self.m_Instance.FlagBaseOutline:SetColor( darkerFlagColor );
+	-- self.m_Instance.FlagBaseDarken:SetColor( darkerFlagColor );
+	-- self.m_Instance.FlagBaseLighten:SetColor( darkerFlagColor );
+	-- self.m_Instance.FlagOver:SetColor( darkerFlagColor );
+	-- self.m_Instance.NormalSelect:SetColor( darkerFlagColor );
+	-- self.m_Instance.NormalSelectPulse:SetColor( darkerFlagColor );
 end
 
 ------------------------------------------------------------------
@@ -265,29 +275,23 @@ function MapPinFlag.SetFlagUnitEmblem( self : MapPinFlag )
 	local pMapPin = self:GetMapPin();
     if pMapPin ~= nil then
 		local iconName = pMapPin:GetIconName();
-		local iconType = MapTacksType(pMapPin);
-		if iconType >= MapTacks.COLOR then
-			-- full-color icon on a hex base
-			if self.m_Instance.HexIcon:SetIcon(iconName) then
-				-- MapTacks.HEX has the base built in; MapTacks.COLOR does not
-				self.m_Instance.HexBase:SetHide(iconType == MapTacks.HEX);
-			else
-				-- missing icon, so show ? on a hex base
+		local iconType = MapTacks.Type(pMapPin);
+		if iconType == MapTacks.HEX then
+			-- district icons are embedded into the tack head (HexIcon)
+			if not self.m_Instance.HexIcon:SetIcon(iconName) then
 				self.m_Instance.HexIcon:SetIcon(MapTacks.UNKNOWN);
-				self.m_Instance.HexBase:SetHide(false);
 			end
 			self.m_Instance.HexIcon:SetHide(false);
 			self.m_Instance.UnitIcon:SetHide(true);
 		else
-			-- white or gray icon on the UnitIcon layer
-			local size = (iconType == MapTacks.STOCK and 24) or 26;
+			-- other icons sit on top of the tack (UnitIcon)
+			local size = MapTacks.iconSizes[iconType];
 			self.m_Instance.UnitIcon:SetSizeVal(size, size);
 			if not self.m_Instance.UnitIcon:SetIcon(iconName) then
 				self.m_Instance.UnitIcon:SetIcon(MapTacks.UNKNOWN);
 			end
 			self.m_Instance.UnitIcon:SetHide(false);
 			self.m_Instance.HexIcon:SetHide(true);
-			self.m_Instance.HexBase:SetHide(true);
 		end
 
 	end
@@ -631,7 +635,6 @@ function StackMapPin(pMapPin :table)
 	local iW, iH = Map.GetGridSize();
 	local y = pMapPin:GetHexY() % iH;
 	local x = pMapPin:GetHexX() % iW;
-	-- print(string.format('%d %d', x, y));
 	local stack = m_MapPinStacks[y][x];
 	if stack then
 		stack[#stack + 1] = pMapPin;
@@ -704,6 +707,7 @@ end
 
 -- ===========================================================================
 function Initialize()
+	print("initializing");  -- XXX debug
 	ContextPtr:SetInitHandler( OnContextInitialize );
 	ContextPtr:SetShutdown( OnShutdown );
 

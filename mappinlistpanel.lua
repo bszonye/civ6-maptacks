@@ -2,9 +2,6 @@
 -- Map Pin List Panel
 ----------------------------------------------------------------  
 
-include( "MapTacks" );
-
-
 local m_playerMapPins	:table = {};
 local m_MapPinListButtonToPinEntry :table = {}; -- map pin entries keyed to their MapPinListButton object string names.  This is currently just used for sorting, please becareful if you use it for anything else as it is cleared after use.
 
@@ -249,11 +246,7 @@ function Initialize()
 	Events.InterfaceModeChanged.Add( OnInterfaceModeChanged );
 	Events.LocalPlayerChanged.Add( OnLocalPlayerChanged );
 
-
 	BuildMapPinList();
-
-	-- XXX debug
-	-- Controls.AddPinButton:RegisterCallback( Mouse.eRClick, MapTacksTestPattern );
 end
 Initialize()
 

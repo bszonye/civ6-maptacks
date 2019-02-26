@@ -3,32 +3,28 @@
 -- utility functions
 
 -- Global data
-if not MapTacks then
-	-- XXX debug: check how often this gets reloaded
-	print("initializing global data");
-end
-MapTacks = MapTacks or {};  -- initialize global
-print('global MapTacks', MapTacks);  -- XXX debug: this shouldn't change
+-- Shared between modules:
+ExposedMembers.MapTacks = ExposedMembers.MapTacks or {};
+MapTacks = ExposedMembers.MapTacks;
+-- Local to one script:
+-- MapTacks = MapTacks or {};
+
 local MapTacks = MapTacks;  -- localize access
-print('local MapTacks', MapTacks);  -- XXX debug: this shouldn't change
+print('MapTacks', MapTacks);  -- XXX debug: this shouldn't change
 
 -- Icon types table
--- MapTacks.IconType["ICON_NAME"] =>
-MapTacks.STOCK = 0;  -- stock icons
-MapTacks.WHITE = 1;  -- white icons (units, spy ops)
-MapTacks.GRAY = 2;   -- gray shaded icons (improvements, commands)
-MapTacks.COLOR = 3;  -- full color icons (buildings, wonders)
-MapTacks.HEX = 4;  -- full color icons with hex backgrounds (districts)
+-- MapTacks.iconTypes["ICON_NAME"] =
+MapTacks.STOCK = 1;  -- stock icons
+MapTacks.WHITE = 2;  -- white icons (units, spy ops)
+MapTacks.GRAY = 3;   -- gray shaded icons (improvements, commands)
+MapTacks.COLOR = 4;  -- full color icons (buildings, wonders)
+MapTacks.HEX = 5;  -- full color icons with hex backgrounds (districts)
+MapTacks.iconSizes = { 24, 26, 26, 32, 32, };
 
 -- Other constants
 MapTacks.UNKNOWN = "ICON_CIVILIZATION_UNKNOWN";
 
--- TODO: remove debug stuff
-local g_debugLeader = nil;
--- g_debugLeader = GameInfo.Leaders.LEADER_XXX
-
 -- ===========================================================================
--- TODO: only keep one copy of this table
 local g_stockIcons = {
 	{ name="ICON_MAP_PIN_STRENGTH" },
 	{ name="ICON_MAP_PIN_RANGED"   },
@@ -113,7 +109,7 @@ local g_miscIcons = {
 
 -- ===========================================================================
 -- Timeline value based on tech/civic cost
-function MapTacksTimeline(a)
+function MapTacks.Timeline(a)
 	local techCost = 0;
 	if a.PrereqTech ~= nil then
 		tech = GameInfo.Technologies[a.PrereqTech];
@@ -128,9 +124,9 @@ function MapTacksTimeline(a)
 	return cost;
 end
 
-function MapTacksTimelineSort(a, b)
-	local atime = MapTacksTimeline(a);
-	local btime = MapTacksTimeline(b);
+function MapTacks.TimelineSort(a, b)
+	local atime = MapTacks.Timeline(a);
+	local btime = MapTacks.Timeline(b);
 	-- primary sort: tech/civic timeline
 	if atime ~= btime then
 		return atime < btime;
@@ -147,7 +143,7 @@ function MapTacksTimelineSort(a, b)
 	return Locale.Compare(aname, bname) == -1;
 end
 
-function MapTacksDescriptionSort(a, b)
+function MapTacks.DescriptionSort(a, b)
 	aname = Locale.Lookup(a.Description);
 	bname = Locale.Lookup(b.Description);
 	return Locale.Compare(aname, bname) == -1;
@@ -155,16 +151,14 @@ end
 
 -- ===========================================================================
 -- Build the grid of map pin icon options
-function MapTacksIconOptions()
+function MapTacks.IconOptions()
 	-- initialize global type table
-	MapTacks.IconType = {};
+	MapTacks.iconTypes = {};
 
 	-- get player configuration
 	local activePlayerID = Game.GetLocalPlayer();
 	local pPlayerCfg = PlayerConfigurations[activePlayerID];
 	local leader = GameInfo.Leaders[pPlayerCfg:GetLeaderTypeID()];
-	-- TODO: remove debug stuff
-	if g_debugLeader then leader = g_debugLeader; end
 	local civ = leader.CivilizationCollection[1];
 	-- print(civ.CivilizationType);
 
@@ -183,7 +177,7 @@ function MapTacksIconOptions()
 	local skip_district = {};  -- we will skip all districts in this set
 	for item in GameInfo.Districts() do
 		local itype = item.DistrictType;
-		MapTacks.IconType["ICON_"..itype] = MapTacks.HEX;  -- track icon type
+		MapTacks.iconTypes["ICON_"..itype] = MapTacks.HEX;  -- track icon type
 		local trait = item.TraitType;
 		if itype == "DISTRICT_WONDER" then
 			-- this goes in the wonders section instead
@@ -215,7 +209,7 @@ function MapTacksIconOptions()
 	local minorCivIcons = {};
 	local engineerIcons = {};
 	for item in GameInfo.Improvements() do
-		MapTacks.IconType[item.Icon] = MapTacks.GRAY;  -- track icon type
+		MapTacks.iconTypes[item.Icon] = MapTacks.GRAY;  -- track icon type
 		-- does this improvement have a valid build unit?
 		local units = item.ValidBuildUnits;
 		if #units ~= 0 then
@@ -238,7 +232,7 @@ function MapTacksIconOptions()
 			else
 				table.insert(engineerIcons, item);
 			end
-			-- print(item.Name, MapTacksTimeline(item));
+			-- print(item.Name, MapTacks.Timeline(item));
 		end
 	end
 
@@ -249,21 +243,21 @@ function MapTacksIconOptions()
 
 	-- Stock map pins
 	local stockSection = {};
-	if #stockIcons + #g_basicIcons <= columns then
+	if #g_stockIcons + #g_basicIcons <= columns then
 		for i,v in ipairs(g_basicIcons) do table.insert(stockSection, v); end
 	end
-	for i, item in ipairs(stockIcons) do
-		MapTacks.IconType[item.name] = MapTacks.STOCK;  -- track icon type
+	for i, item in ipairs(g_stockIcons) do
+		MapTacks.iconTypes[item.name] = MapTacks.STOCK;  -- track icon type
 		table.insert(stockSection, item);
 	end
 
 	-- sort icons according to tech cost
-	table.sort(districtIcons, MapTacksTimelineSort);
-	table.sort(improvementIcons, MapTacksTimelineSort);
-	table.sort(uniqueIcons, MapTacksTimelineSort);
-	table.sort(governorIcons, MapTacksTimelineSort);
-	table.sort(minorCivIcons, MapTacksTimelineSort);
-	table.sort(engineerIcons, MapTacksTimelineSort);
+	table.sort(districtIcons, MapTacks.TimelineSort);
+	table.sort(improvementIcons, MapTacks.TimelineSort);
+	table.sort(uniqueIcons, MapTacks.TimelineSort);
+	table.sort(governorIcons, MapTacks.TimelineSort);
+	table.sort(minorCivIcons, MapTacks.TimelineSort);
+	table.sort(engineerIcons, MapTacks.TimelineSort);
 
 	local districtSection = {};
 	for i,v in ipairs(districtIcons) do table.insert(districtSection, v); end
@@ -288,7 +282,7 @@ function MapTacksIconOptions()
 	-- for i,v in ipairs(g_attackActions) do table.insert(attackSection, v); end
 
 	local miscSection = {};
-	if #stockIcons + #g_basicIcons > columns then
+	if #g_stockIcons + #g_basicIcons > columns then
 		for i,v in ipairs(g_basicIcons) do table.insert(miscSection, v); end
 	end
 	if #improvementIcons + #g_removeActions > columns then
@@ -307,7 +301,7 @@ function MapTacksIconOptions()
 	local wonderIcons = {};
 	for item in GameInfo.Buildings() do
 		local itype = item.BuildingType;
-		MapTacks.IconType["ICON_"..itype] = MapTacks.COLOR;  -- track icon type
+		MapTacks.iconTypes["ICON_"..itype] = MapTacks.COLOR;  -- track icon type
 		if item.IsWonder then
 			table.insert(wonderIcons, item);
 		end
@@ -316,7 +310,7 @@ function MapTacksIconOptions()
 		-- skip this icon if no wonders at all, e.g. in some scenarios
 		table.insert(wonderIcons, GameInfo.Districts.DISTRICT_WONDER);
 	end
-	table.sort(wonderIcons, MapTacksTimelineSort);
+	table.sort(wonderIcons, MapTacks.TimelineSort);
 
 	local wonderSection = {};
 	for i,v in ipairs(wonderIcons) do table.insert(wonderSection, v); end
@@ -334,17 +328,17 @@ function MapTacksIconOptions()
 
 	-- convert everything to the right format
 	local grid = {};
-	for j,section in sections do
+	for j,section in ipairs(sections) do
 		local row = {};
-		for i,item in section do table.insert(row, MapTacksIcon(item)); end
-		table.insert(optionsGrid, row);
+		for i,item in ipairs(section) do table.insert(row, MapTacks.Icon(item)); end
+		table.insert(grid, row);
 	end
 	return grid;
 end
 
 -- ===========================================================================
 -- Given a GameInfo object, determine its icon and tooltip
-function MapTacksIcon(item)
+function MapTacks.Icon(item)
 	local name :string = nil;
 	local tooltip :string = nil;
 	if item == nil then
@@ -383,14 +377,16 @@ end
 
 -- ===========================================================================
 -- Given an icon name, determine its color and size profile
-function MapTacksType(pin : table)
+function MapTacks.Type(pin : table)
 	if not pin then return nil; end
 	local iconName = pin:GetIconName();
 	-- look up icon types recorded during initialization
-	local iconType = MapTacks.IconType and MapTacks.IconType[iconName];
+	local iconType = MapTacks.iconTypes and MapTacks.iconTypes[iconName];
 	if iconType then
 		print(iconName, iconType);  -- XXX debug
 		return iconType;
+	else
+		print("MapTacks.iconTypes not initialized");
 	end
 	-- TODO: remove most/all this if the lookup table works
 	if iconName:sub(1,5) ~= "ICON_" then return nil; end
@@ -409,18 +405,6 @@ function MapTacksType(pin : table)
 end
 
 -- ===========================================================================
--- Get player colors (with debug override)
-function MapTacksColors(playerID : number)
-	local primaryColor, secondaryColor = UI.GetPlayerColors(playerID);
-	if g_debugLeader then
-		local colors = GameInfo.PlayerColors[g_debugLeader.Hash];
-		primaryColor = UI.GetColorValue(colors.PrimaryColor);
-		secondaryColor = UI.GetColorValue(colors.SecondaryColor);
-	end
-	return primaryColor, secondaryColor;
-end
-
--- ===========================================================================
 -- Calculate icon tint color
 -- Icons generally have light=224, shadow=112 (out of 255).
 -- So, to match icons to civ colors, ideally brighten the original color:
@@ -431,7 +415,7 @@ end
 -- The darkest colors need shadow=56, light=112, max=128 for legibility.
 -- Other colors look good around 1.5-1.8x brightness, matching midtones.
 local g_tintCache = {};
-function MapTacksIconTint( abgr : number, debug : number )
+function MapTacks.IconTint( abgr : number, debug : number )
 	if g_tintCache[abgr] ~= nil then return g_tintCache[abgr]; end
 	local r = abgr % 256;
 	local g = math.floor(abgr / 256) % 256;
@@ -457,7 +441,7 @@ end
 
 -- ===========================================================================
 -- Simpler version of DarkenLightenColor
-function MapTacksTint( abgr : number, tint : number )
+function MapTacks.Tint( abgr : number, tint : number )
 	local r = abgr % 256;
 	local g = math.floor(abgr / 256) % 256;
 	local b = math.floor(abgr / 65536) % 256;
@@ -468,36 +452,8 @@ function MapTacksTint( abgr : number, tint : number )
 end
 
 -- ===========================================================================
--- XXX: Create a test pattern of icons on the map
-function MapTacksTestPattern()
-	print("MapTacksTestPattern: start");
-	local iW, iH = Map.GetGridSize();
-	items = MapTacksIconOptions();
-	for i, item in ipairs(items) do
-		local x = ((i-1) % 15 - 7) % iW;
-		local y = 4 - math.floor((i-1) / 15);
-		MapTacksTestPin(x, y, item);
-	end
-	Network.BroadcastPlayerInfo();
-	UI.PlaySound("Map_Pin_Add");
-	print("MapTacksTestPattern: end");
-end
-
-function MapTacksTestPin(x, y, item)
-	local name = item and item.name;
-	print(string.format("%d %d %s", x, y, tostring(name)));
-	local activePlayerID = Game.GetLocalPlayer();
-	local pPlayerCfg = PlayerConfigurations[activePlayerID];
-	local pMapPin = pPlayerCfg:GetMapPin(x, y);
-	pMapPin:SetName("");
-	pMapPin:SetIconName(name);
-	pMapPin:SetVisibility(ChatTargetTypes.CHATTARGET_ALL);
-	pPlayerCfg:GetMapPins();
-end
-
--- ===========================================================================
 -- XXX: dump reference info
-function MapTacksReferenceInfo()
+function MapTacks.ReferenceInfo()
 	-- Unit Commands/Operations
 	print("COMMANDS --------------------------------------------------------");
 	for item in GameInfo.UnitCommands() do

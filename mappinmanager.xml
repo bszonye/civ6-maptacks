@@ -23,7 +23,6 @@
           </Image>
 
           <Button ID="NormalButton"	Anchor="C,T" Size="50,50" NoDefaultSound="1">
-            <Image ID="HexBase" Image="ICON_DISTRICT_WONDER" Color="63,63,63,191" Anchor="C,C" Size="30,30" Hide="1"/>
             <Image ID="HexIcon" Anchor="C,C" Size="32,32" Hide="1"/>
             <ScrollAnim ID="NormalScrollAnim"  Size="50,50" Pause=".05" Speed="3" Texture="UnitFlagShine" MaskTexture="MapPinFlagMask" Cycle="Once" ShowOnMouseOver="1"/>
             <Image ID="FlagOver" Size="50,50" TextureOffset="0,50" Texture="MapPinFlag"/>
