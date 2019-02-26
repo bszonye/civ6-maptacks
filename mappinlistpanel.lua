@@ -1,6 +1,7 @@
 ----------------------------------------------------------------  
 -- Map Pin List Panel
 ----------------------------------------------------------------  
+include( "MapTacks" );
 
 local m_playerMapPins	:table = {};
 local m_MapPinListButtonToPinEntry :table = {}; -- map pin entries keyed to their MapPinListButton object string names.  This is currently just used for sorting, please becareful if you use it for anything else as it is cleared after use.
@@ -28,7 +29,7 @@ function SetMapPinIcon(imageControl :table, mapPinIconName :string)
 	if(imageControl ~= nil and mapPinIconName ~= nil) then
 		local iconName = mapPinIconName;
 		if(not imageControl:SetIcon(iconName)) then
-			imageControl:SetIcon(ICON_MAP_PIN_UNKNOWN);
+			imageControl:SetIcon(MapTacks.UNKNOWN);
 		end
 	end
 end
