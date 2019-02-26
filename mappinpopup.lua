@@ -1,19 +1,19 @@
-----------------------------------------------------------------  
+----------------------------------------------------------------
 -- MapPinPopup
 --
 -- Popup used for creating and editting map pins.
-----------------------------------------------------------------  
+----------------------------------------------------------------
+
 include( "PlayerTargetLogic" );
 include( "ToolTipHelper" );
 include( "MapTacks" );
 
-
-----------------------------------------------------------------  
+----------------------------------------------------------------
 -- Globals
----------------------------------------------------------------- 
+----------------------------------------------------------------
 local COLOR_YELLOW				:number = 0xFF2DFFF8;
 local COLOR_WHITE				:number = 0xFFFFFFFF;
- 
+
 local NO_EDIT_PIN_ID :number = -1;
 local g_editPinID :number = NO_EDIT_PIN_ID;
 local g_uniqueIconsPlayer :number = nil;  -- tailor UAs to the player
@@ -32,7 +32,7 @@ local sendToChatTTStr = Locale.Lookup( "LOC_MAP_PIN_SEND_TO_CHAT_TT" );
 local sendToChatNotVisibleTTStr = Locale.Lookup( "LOC_MAP_PIN_SEND_TO_CHAT_NOT_VISIBLE_TT" );
 
 -------------------------------------------------------------------------------
--- 
+--
 -------------------------------------------------------------------------------
 function MapPinVisibilityToPlayerTarget(mapPinVisibility :number, playerTargetData :table)
 	if(mapPinVisibility == ChatTargetTypes.CHATTARGET_ALL) then
@@ -88,10 +88,10 @@ function MapPinIsVisibleToChatTarget(mapPinVisibility :number, chatPlayerTarget 
 		elseif(chatPlayerTarget.targetType == ChatTargetTypes.CHATTARGET_PLAYER and chatPlayerTarget.targetID ~= NO_PLAYERTARGET_ID) then
 			local chatPlayerID = chatPlayerTarget.targetID;
 			local chatPlayer = PlayerConfigurations[chatPlayerID];
-			local chatTeam = chatPlayer:GetTeam();	
+			local chatTeam = chatPlayer:GetTeam();
 			if(localTeam == chatTeam) then
 				return true;
-			end	
+			end
 		end
 	elseif(mapPinVisibility >= 0) then
 		-- Individual map pin is only visible to that player.
@@ -105,7 +105,7 @@ end
 
 
 -------------------------------------------------------------------------------
--- 
+--
 -------------------------------------------------------------------------------
 function SetMapPinIcon(imageControl :table, mapPinIconName :string)
 	if(imageControl ~= nil and mapPinIconName ~= nil) then
@@ -227,7 +227,6 @@ function RequestMapPin(hexX :number, hexY :number)
 			Controls.VisibilityContainer:SetHide(false);
 		else
 			Controls.VisibilityContainer:SetHide(true);
-			-- Controls.VisibilityContainer:SetHide(false);  -- XXX debug
 		end
 
 		Controls.PinName:SetText(pMapPin:GetName());
@@ -358,9 +357,9 @@ end
 function OnCancel()
 	UIManager:DequeuePopup( ContextPtr );
 end
-----------------------------------------------------------------  
+----------------------------------------------------------------
 -- Event Handlers
----------------------------------------------------------------- 
+----------------------------------------------------------------
 function OnMapPinPlayerInfoChanged( playerID :number )
 	PlayerTarget_OnPlayerInfoChanged( playerID, Controls.VisibilityPull, nil, nil, g_visibilityTargetEntries, g_playerTarget, true);
 end
@@ -404,7 +403,7 @@ function Initialize()
 	Controls.OkButton:RegisterCallback(Mouse.eLClick, OnOk);
 	Controls.OkButton:RegisterCallback( Mouse.eMouseEnter, function() UI.PlaySound("Main_Menu_Mouse_Over"); end);
 	Controls.PinName:RegisterCommitCallback( OnOk );
-	
+
 	LuaEvents.MapPinPopup_RequestMapPin.Add(RequestMapPin);
 	LuaEvents.ChatPanel_PlayerTargetChanged.Add(OnChatPanel_PlayerTargetChanged);
 
@@ -412,8 +411,8 @@ function Initialize()
 	Events.PlayerInfoChanged.Add(OnMapPinPlayerInfoChanged);
 	Events.LocalPlayerChanged.Add(OnLocalPlayerChanged);
 
-	-- Request the chat panel's player target so we have an initial value. 
-	-- We have to do this because the map pin's context is loaded after the chat panel's 
+	-- Request the chat panel's player target so we have an initial value.
+	-- We have to do this because the map pin's context is loaded after the chat panel's
 	-- and the chat panel's show/hide handler is not triggered as expected.
 	LuaEvents.MapPinPopup_RequestChatPlayerTarget();
 

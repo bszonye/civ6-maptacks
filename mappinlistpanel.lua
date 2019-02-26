@@ -1,6 +1,7 @@
-----------------------------------------------------------------  
+----------------------------------------------------------------
 -- Map Pin List Panel
-----------------------------------------------------------------  
+----------------------------------------------------------------
+
 include( "MapTacks" );
 
 local m_playerMapPins	:table = {};
@@ -9,7 +10,7 @@ local m_MapPinListButtonToPinEntry :table = {}; -- map pin entries keyed to thei
 local PlayerMapPinListTTStr :string = Locale.Lookup( "LOC_MAP_PIN_LIST_REMOTE_PIN_TOOLTIP" );
 local RemoteMapPinListTTStr :string = Locale.Lookup( "LOC_MAP_PIN_LIST_REMOTE_PIN_TOOLTIP" );
 
-------------------------------------------------- 
+-------------------------------------------------
 -- Map Pin List Scripting
 -------------------------------------------------
 function GetMapPinConfig(iPlayerID :number, mapPinID :number)
@@ -111,7 +112,7 @@ function GetMapPinListEntry(iPlayerID :number, mapPinID :number)
 		else
 			mapPinEntry.EditMapPin:SetHide(true);
 		end
-		
+
 		mapPinEntry.MapPinListButton:RegisterCallback(Mouse.eLClick, OnMapPinEntryLeftClick);
 
 		if(iPlayerID == Game.GetLocalPlayer()) then
@@ -151,7 +152,7 @@ function BuildMapPinList()
 
 	-- Don't need this anymore, get rid of the references so they can be properly released!
 	m_MapPinListButtonToPinEntry = {};
-	
+
 	-- Recalc after sorting so the anchoring can account for hidden elements.
 	Controls.MapPinEntryStack:CalculateSize();
 	Controls.MapPinEntryStack:ReprocessAnchoring();
@@ -167,7 +168,7 @@ function BuildMapPinList()
 end
 
 
-------------------------------------------------- 
+-------------------------------------------------
 -- Button Event Handlers
 -------------------------------------------------
 function OnMapPinEntryLeftClick(iPlayerID :number, mapPinID :number)
@@ -206,7 +207,7 @@ function OnAddPinButton()
 end
 
 
-------------------------------------------------- 
+-------------------------------------------------
 -- External Event Handlers
 -------------------------------------------------
 function OnPlayerInfoChanged(playerID)
@@ -233,8 +234,8 @@ end
 -- ShowHideHandler
 -------------------------------------------------
 function ShowHideHandler( bIsHide, bIsInit )
-	if(not bIsHide) then 
-	end	
+	if(not bIsHide) then
+	end
 end
 ContextPtr:SetShowHideHandler( ShowHideHandler );
 

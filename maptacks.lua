@@ -2,18 +2,20 @@
 -- MapTacks
 -- utility functions
 
+-- ===========================================================================
 -- Global data
--- Shared between modules:
-ExposedMembers.MapTacks = ExposedMembers.MapTacks or {};
-MapTacks = ExposedMembers.MapTacks;
--- Local to one script:
--- MapTacks = MapTacks or {};
 
+-- Note that this is not shared between different calling modules.
+-- To get that you either need to share data through ExposedMembers:
+--     ExposedMembers.MapTacks = ExposedMembers.MapTacks or {};
+--     MapTacks = ExposedMembers.MapTacks;
+-- or share functions through LuaEvents:
+--     LuaEvents.MapTacks_Function.Add(MapTacks.Function);
+
+MapTacks = MapTacks or {};
 local MapTacks = MapTacks;  -- localize access
-print('MapTacks', MapTacks);  -- XXX debug: this shouldn't change
 
--- Icon types table
--- MapTacks.iconTypes["ICON_NAME"] =
+-- Values for MapTacks.iconTypes["ICON_NAME"]:
 MapTacks.STOCK = 1;  -- stock icons
 MapTacks.WHITE = 2;  -- white icons (units, spy ops)
 MapTacks.GRAY = 3;   -- gray shaded icons (improvements, commands)
@@ -43,7 +45,7 @@ local g_stockIcons = {
 };
 
 -- synthetic icons (not in database)
-local ICON_BARBARIANS = {
+local ICON_BARBARIAN_CAMP = {
 	name="ICON_NOTIFICATION_BARBARIANS_SIGHTED",
 	tooltip="LOC_IMPROVEMENT_BARBARIAN_CAMP_NAME",
 };
@@ -86,7 +88,7 @@ local g_attackActions = {
 	GameInfo.UnitOperations.UNITOPERATION_WMD_STRIKE,
 }
 local g_basicIcons = {
-	ICON_BARBARIANS,
+	ICON_BARBARIAN_CAMP,
 	ICON_GOODY_HUT,
 	GameInfo.UnitOperations.UNITOPERATION_PILLAGE,
 	-- ICON_SPY,
@@ -95,7 +97,7 @@ local g_basicIcons = {
 	-- GameInfo.Units.UNIT_ARCHAEOLOGIST,
 };
 local g_miscIcons = {
-	-- ICON_BARBARIANS,
+	-- ICON_BARBARIAN_CAMP,
 	-- ICON_GOODY_HUT,
 	-- GameInfo.UnitOperations.UNITOPERATION_PILLAGE,
 	GameInfo.UnitOperations.UNITOPERATION_MAKE_TRADE_ROUTE,
@@ -152,15 +154,12 @@ end
 -- ===========================================================================
 -- Build the grid of map pin icon options
 function MapTacks.IconOptions()
-	-- initialize global type table
-	MapTacks.iconTypes = {};
 
 	-- get player configuration
 	local activePlayerID = Game.GetLocalPlayer();
 	local pPlayerCfg = PlayerConfigurations[activePlayerID];
 	local leader = GameInfo.Leaders[pPlayerCfg:GetLeaderTypeID()];
 	local civ = leader.CivilizationCollection[1];
-	-- print(civ.CivilizationType);
 
 	-- Get unique traits for the player civilization
 	local traits = {};
@@ -177,7 +176,6 @@ function MapTacks.IconOptions()
 	local skip_district = {};  -- we will skip all districts in this set
 	for item in GameInfo.Districts() do
 		local itype = item.DistrictType;
-		MapTacks.iconTypes["ICON_"..itype] = MapTacks.HEX;  -- track icon type
 		local trait = item.TraitType;
 		if itype == "DISTRICT_WONDER" then
 			-- this goes in the wonders section instead
@@ -209,7 +207,6 @@ function MapTacks.IconOptions()
 	local minorCivIcons = {};
 	local engineerIcons = {};
 	for item in GameInfo.Improvements() do
-		MapTacks.iconTypes[item.Icon] = MapTacks.GRAY;  -- track icon type
 		-- does this improvement have a valid build unit?
 		local units = item.ValidBuildUnits;
 		if #units ~= 0 then
@@ -247,7 +244,6 @@ function MapTacks.IconOptions()
 		for i,v in ipairs(g_basicIcons) do table.insert(stockSection, v); end
 	end
 	for i, item in ipairs(g_stockIcons) do
-		MapTacks.iconTypes[item.name] = MapTacks.STOCK;  -- track icon type
 		table.insert(stockSection, item);
 	end
 
@@ -300,8 +296,6 @@ function MapTacks.IconOptions()
 	-- Wonders
 	local wonderIcons = {};
 	for item in GameInfo.Buildings() do
-		local itype = item.BuildingType;
-		MapTacks.iconTypes["ICON_"..itype] = MapTacks.COLOR;  -- track icon type
 		if item.IsWonder then
 			table.insert(wonderIcons, item);
 		end
@@ -376,17 +370,36 @@ function MapTacks.Icon(item)
 end
 
 -- ===========================================================================
+local function InitializeTypes()
+	-- initialize global type table
+	MapTacks.iconTypes = {};
+	MapTacks.iconTypes[ICON_BARBARIAN_CAMP.name] = MapTacks.GRAY;
+	MapTacks.iconTypes[ICON_GOODY_HUT.name] = MapTacks.GRAY;
+	MapTacks.iconTypes[ICON_SPY.name] = MapTacks.GRAY;
+	for item in GameInfo.Districts() do
+		MapTacks.iconTypes["ICON_"..item.DistrictType] = MapTacks.HEX;
+	end
+	for item in GameInfo.Improvements() do
+		MapTacks.iconTypes[item.Icon] = MapTacks.GRAY;
+	end
+	for i, item in ipairs(g_stockIcons) do
+		MapTacks.iconTypes[item.name] = MapTacks.STOCK;
+	end
+	for item in GameInfo.Buildings() do
+		MapTacks.iconTypes["ICON_"..item.BuildingType] = MapTacks.COLOR;
+	end
+end
+
+-- ===========================================================================
 -- Given an icon name, determine its color and size profile
-function MapTacks.Type(pin : table)
+function MapTacks.IconType(pin :table)
 	if not pin then return nil; end
 	local iconName = pin:GetIconName();
 	-- look up icon types recorded during initialization
-	local iconType = MapTacks.iconTypes and MapTacks.iconTypes[iconName];
+	if MapTacks.iconTypes == nil then InitializeTypes(); end
+	local iconType = MapTacks.iconTypes[iconName];
 	if iconType then
-		print(iconName, iconType);  -- XXX debug
 		return iconType;
-	else
-		print("MapTacks.iconTypes not initialized");
 	end
 	-- TODO: remove most/all this if the lookup table works
 	if iconName:sub(1,5) ~= "ICON_" then return nil; end
@@ -452,7 +465,7 @@ function MapTacks.Tint( abgr : number, tint : number )
 end
 
 -- ===========================================================================
--- XXX: dump reference info
+-- Dump reference info
 function MapTacks.ReferenceInfo()
 	-- Unit Commands/Operations
 	print("COMMANDS --------------------------------------------------------");

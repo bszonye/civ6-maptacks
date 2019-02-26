@@ -1,10 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
-
 <Context >
+  <Container ID="MapPinFlags"/>
 
-	<Container ID="MapPinFlags"/>
-
-	<Instance Name="MapPinFlag">
+  <Instance Name="MapPinFlag">
     <WorldAnchor ID="Anchor">
       <Container ID="FlagRoot" Anchor="C,B"	Size="48,48">
         <Container    Anchor="C,C" Size="50,50">
@@ -36,12 +34,12 @@
           </AlphaAnim>
 
           <Image   ID="NameContainer" Texture="Controls_DropShadow4" Color="0,0,0,150" Size="auto,20" Anchor="C,T" AnchorSide="I,O" StretchMode="Fill" AutoSizePadding="15,8" Offset="0,-8">
-					  <Label ID="NameLabel" Anchor="C,C" String="UNKNOWN_MAP_PIN_NAME" Style="FontNormal14" FontStyle="Glow" ColorSet="BodyTextBright"/>
+            <Label ID="NameLabel" Anchor="C,C" String="UNKNOWN_MAP_PIN_NAME" Style="FontNormal14" FontStyle="Glow" ColorSet="BodyTextBright"/>
           </Image>
-          
+
         </Container>
       </Container>
-     </WorldAnchor>
-	</Instance>
+    </WorldAnchor>
+  </Instance>
 </Context>
-<!-- vim: set sw=2 ts=2: -->
+<!-- vim: set sw=2 ts=2 et: -->
