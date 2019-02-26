@@ -365,23 +365,29 @@ function MapTacks.IconOptions()
 	-- Builder remove/repair ops
 	local ops = GameInfo.UnitOperations;
 	local builderSpace = math.max(0, columns - #builder);
+	local miscSpace = math.max(0, columns - #miscbuild);
 	-- Repair icon
 	if #miscbuild == 0 then  -- builder sections merged
 		-- repair can go here unless there are exactly two spaces left
 		if builderSpace ~= 0 and builderSpace ~= 2 then
 			table.insert(builder, ops.UNITOPERATION_REPAIR);
+			builderSpace = builderSpace - 1;
 		else
 			table.insert(miscunits, 1, ops.UNITOPERATION_REPAIR);
 		end
-	elseif #miscbuild < columns then
+	elseif miscSpace ~= 0 then
 		table.insert(miscbuild, ops.UNITOPERATION_REPAIR);
+		miscSpace = miscSpace - 1;
 	else
 		table.insert(miscunits, 1, ops.UNITOPERATION_REPAIR);
 	end
-	-- Remove & harvest icons
+	-- Remove/harvest icons
 	if 2 <= builderSpace then
 		table.insert(builder, ops.UNITOPERATION_REMOVE_FEATURE);
 		table.insert(builder, ops.UNITOPERATION_HARVEST_RESOURCE);
+	elseif #miscbuild ~= 0 and 2 <= miscSpace then
+		table.insert(miscbuild, ops.UNITOPERATION_REMOVE_FEATURE);
+		table.insert(miscbuild, ops.UNITOPERATION_HARVEST_RESOURCE);
 	else
 		table.insert(basic, ops.UNITOPERATION_REMOVE_FEATURE);
 		table.insert(basic, ops.UNITOPERATION_HARVEST_RESOURCE);
