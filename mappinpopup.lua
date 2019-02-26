@@ -1,8 +1,7 @@
 ----------------------------------------------------------------
 -- MapPinPopup
 --
--- Popup used for creating and editting map pins.
-----------------------------------------------------------------
+-- Popup used for creating and editting map pins.  --------------------------------------------------------------
 
 include( "PlayerTargetLogic" );
 include( "ToolTipHelper" );

@@ -58,18 +58,13 @@ local ICON_SPY = {
 	-- tooltip="LOC_UNIT_SPY_NAME",
 	tooltip="LOC_PROMOTION_CLASS_SPY_NAME",
 };
-
--- TODO: clean up this mess
-local g_buildActions = {
-	-- CategoryInUI = BUILD
-	GameInfo.UnitOperations.UNITOPERATION_PLANT_FOREST,  -- Conservation
-	GameInfo.UnitOperations.UNITOPERATION_DESIGNATE_PARK,  -- Conservation
-	GameInfo.UnitOperations.UNITOPERATION_BUILD_ROUTE,
-	-- GameInfo.UnitOperations.UNITOPERATION_BUILD_IMPROVEMENT,
-	-- GameInfo.UnitOperations.UNITOPERATION_REMOVE_FEATURE,
-	-- GameInfo.UnitOperations.UNITOPERATION_REMOVE_IMPROVEMENT,
-	-- GameInfo.UnitOperations.UNITOPERATION_BUILD_IMPROVEMENT_ADJACENT,  -- GS
+local g_basicIcons = {
+	ICON_BARBARIAN_CAMP,
+	ICON_GOODY_HUT,
+	GameInfo.UnitOperations.UNITOPERATION_PILLAGE,
 };
+
+-- TODO: fit these into the new dynamic system
 local g_removeActions = {  -- remove, harvest, repair, clear
 	-- CategoryInUI = BUILD
 	GameInfo.UnitOperations.UNITOPERATION_REMOVE_FEATURE,
@@ -78,35 +73,6 @@ local g_removeActions = {  -- remove, harvest, repair, clear
 	GameInfo.UnitOperations.UNITOPERATION_REPAIR,
 	-- GameInfo.UnitOperations.UNITOPERATION_CLEAR_CONTAMINATION,
 	-- GameInfo.UnitOperations.UNITOPERATION_REPAIR_ROUTE,
-};
-local g_attackActions = {
-	-- GameInfo.UnitOperations.UNITOPERATION_COASTAL_RAID,
-	GameInfo.UnitOperations.UNITOPERATION_PILLAGE,
-	-- GameInfo.UnitOperations.UNITOPERATION_PILLAGE_ROUTE,
-	GameInfo.UnitOperations.UNITOPERATION_RANGE_ATTACK,
-	GameInfo.UnitOperations.UNITOPERATION_AIR_ATTACK,
-	GameInfo.UnitOperations.UNITOPERATION_WMD_STRIKE,
-}
-local g_basicIcons = {
-	ICON_BARBARIAN_CAMP,
-	ICON_GOODY_HUT,
-	GameInfo.UnitOperations.UNITOPERATION_PILLAGE,
-	-- ICON_SPY,
-	-- GameInfo.Units.UNIT_TRADER,
-	-- GameInfo.Units.UNIT_SPY,
-	-- GameInfo.Units.UNIT_ARCHAEOLOGIST,
-};
-local g_miscIcons = {
-	-- ICON_BARBARIAN_CAMP,
-	-- ICON_GOODY_HUT,
-	-- GameInfo.UnitOperations.UNITOPERATION_PILLAGE,
-	GameInfo.UnitOperations.UNITOPERATION_MAKE_TRADE_ROUTE,
-	ICON_SPY,
-	GameInfo.UnitOperations.UNITOPERATION_EXCAVATE,
-	-- GameInfo.Units.UNIT_TRADER,
-	-- GameInfo.Units.UNIT_SPY,
-	-- GameInfo.Units.UNIT_ARCHAEOLOGIST,
-	GameInfo.UnitCommands.UNITCOMMAND_FORM_ARMY,
 };
 
 -- ===========================================================================
@@ -152,180 +118,304 @@ function MapTacks.DescriptionSort(a, b)
 end
 
 -- ===========================================================================
--- Build the grid of map pin icon options
-function MapTacks.IconOptions()
-
-	-- get player configuration
+-- Database utility functions
+function MapTacks.PlayerTraits()
+	-- First, get the true traits.
+	local traits = {};
 	local activePlayerID = Game.GetLocalPlayer();
 	local pPlayerCfg = PlayerConfigurations[activePlayerID];
 	local leader = GameInfo.Leaders[pPlayerCfg:GetLeaderTypeID()];
-	local civ = leader.CivilizationCollection[1];
-
-	-- Get unique traits for the player civilization
-	local traits = {};
 	for i, item in ipairs(leader.TraitCollection) do
 		traits[item.TraitType] = true;
-		-- print(item.TraitType);
 	end
-	for i, item in ipairs(civ.TraitCollection) do
+	local civilization = leader.CivilizationCollection[1];
+	for i, item in ipairs(civilization.TraitCollection) do
 		traits[item.TraitType] = true;
-		-- print(item.TraitType);
 	end
+	local ops = GameInfo.UnitOperations;
+	local buildops = {};
+	-- Then, check the game rules for various actions and abilities.
+	-- forest planting
+	for item in GameInfo.Features() do
+		if item.AddCivic then
+			traits.UNITOPERATION_PLANT_FOREST = true;
+		end
+	end
+	-- resource harvesting
+	for item in GameInfo.Resources() do
+		if #item.Harvests ~= 0 then
+			traits.UNITOPERATION_HARVEST_RESOURCE = true;
+		end
+	end
+	-- road building
+	for item in GameInfo.Routes() do
+		if #item.ValidBuildUnits ~= 0 then
+			traits.UNITOPERATION_BUILD_ROUTE = true;
+		end
+	end
+	-- unit abilities: espionage, naturalism, archaeology, trade
+	for item in GameInfo.Units() do
+		if item.Spy then
+			traits.UNIT_SPY = true;
+		end
+		if item.ParkCharges ~= 0 then
+			traits.UNITOPERATION_DESIGNATE_PARK = true;
+		end
+		if item.ExtractsArtifacts then
+			traits.UNITOPERATION_EXCAVATE = true;
+		end
+		if item.MakeTradeRoute then
+			traits.UNITOPERATION_MAKE_TRADE_ROUTE = true;
+		end
+	end
+	return traits;
+end
 
-	-- Districts
-	local skip_district = {};  -- we will skip all districts in this set
+function MapTacks.PlayerDistricts(traits :table)
+	-- First, determine which districts to ignore.
+	local skipDistricts = {};
 	for item in GameInfo.Districts() do
 		local itype = item.DistrictType;
 		local trait = item.TraitType;
 		if itype == "DISTRICT_WONDER" then
 			-- this goes in the wonders section instead
-			skip_district[itype] = itype
+			skipDistricts[itype] = itype
 		elseif traits[trait] then
 			-- unique district for our civ
 			-- mark any districts replaced by this one
 			for i, swap in ipairs(item.ReplacesCollection) do
 				local base = swap.ReplacesDistrictType;
-				skip_district[base] = itype;
+				skipDistricts[base] = itype;
 			end
 		elseif trait then
 			-- unique district for another civ
-			skip_district[itype] = trait;
+			skipDistricts[itype] = trait;
 		end
 	end
-	local districtIcons = {};
+	-- Then, collect all of the districts for this civ.
+	local districts = {};
 	for item in GameInfo.Districts() do
-		if not skip_district[item.DistrictType] then
-			-- our civ does not have this district
-			table.insert(districtIcons, item);
+		if not skipDistricts[item.DistrictType] then
+			table.insert(districts, item);
 		end
 	end
+	table.sort(districts, MapTacks.TimelineSort);
+	return districts;
+end
 
+function MapTacks.PlayerImprovements(traits :table)
 	-- Improvements
-	local improvementIcons = {};
-	local uniqueIcons = {};
-	local governorIcons = {};
-	local minorCivIcons = {};
-	local engineerIcons = {};
+	local builder = {};
+	local unique = {};
+	local governor = {};
+	local minorCiv = {};
+	local engineer = {};
+	-- read Improvements database
 	for item in GameInfo.Improvements() do
 		-- does this improvement have a valid build unit?
 		local units = item.ValidBuildUnits;
 		if #units ~= 0 then
 			local unit = GameInfo.Units[units[1].UnitType];
 			local trait = item.TraitType or unit.TraitType;
-			-- print(valid.UnitType, trait);
 			if trait then
-				-- print(trait);
 				if traits[trait] then
-					-- separate unique improvements
-					table.insert(uniqueIcons, item);
+					table.insert(unique, item);
 				elseif trait == "TRAIT_CIVILIZATION_NO_PLAYER" then
-					-- governor improvements
-					table.insert(governorIcons, item);
+					table.insert(governor, item);
 				elseif trait:sub(1, 10) == "MINOR_CIV_" then
-					table.insert(minorCivIcons, item);
+					table.insert(minorCiv, item);
 				end
 			elseif unit.UnitType == "UNIT_BUILDER" then
-				table.insert(improvementIcons, item);
+				table.insert(builder, item);
 			else
-				table.insert(engineerIcons, item);
+				table.insert(engineer, item);
 			end
 			-- print(item.Name, MapTacks.Timeline(item));
 		end
 	end
-
-	-- TODO: refine this?
-	-- TODO: make the variable section assignment less awful
-	-- TODO: join lines if they fit in 7-9 columns combined
-	local columns = math.max(#districtIcons, #improvementIcons);
-
-	-- Stock map pins
-	local stockSection = {};
-	if #g_stockIcons + #g_basicIcons <= columns then
-		for i,v in ipairs(g_basicIcons) do table.insert(stockSection, v); end
+	-- determine whether we can plant forests, parks, or roads
+	local ops = GameInfo.UnitOperations;
+	local buildops = {};
+	if traits.UNITOPERATION_PLANT_FOREST then
+		table.insert(buildops, ops.UNITOPERATION_PLANT_FOREST);
 	end
-	for i, item in ipairs(g_stockIcons) do
-		table.insert(stockSection, item);
+	if traits.UNITOPERATION_DESIGNATE_PARK then
+		table.insert(buildops, ops.UNITOPERATION_DESIGNATE_PARK);
 	end
-
-	-- sort icons according to tech cost
-	table.sort(districtIcons, MapTacks.TimelineSort);
-	table.sort(improvementIcons, MapTacks.TimelineSort);
-	table.sort(uniqueIcons, MapTacks.TimelineSort);
-	table.sort(governorIcons, MapTacks.TimelineSort);
-	table.sort(minorCivIcons, MapTacks.TimelineSort);
-	table.sort(engineerIcons, MapTacks.TimelineSort);
-
-	local districtSection = {};
-	for i,v in ipairs(districtIcons) do table.insert(districtSection, v); end
-	local improvementSection = {};
-	for i,v in ipairs(improvementIcons) do table.insert(improvementSection, v); end
-	-- TODO: put the repair icon on the engineer line instead
-	if #improvementIcons + #g_removeActions <= columns then
-		for i,v in ipairs(g_removeActions) do table.insert(improvementSection, v); end
+	if traits.UNITOPERATION_BUILD_ROUTE then
+		table.insert(buildops, ops.UNITOPERATION_BUILD_ROUTE);
 	end
-	local buildSection = {};
-	-- TODO: add spacers if < 2 unique improvements
-	for i,v in ipairs(uniqueIcons) do table.insert(buildSection, v); end
-	for i,v in ipairs(governorIcons) do table.insert(buildSection, v); end
-	for i,v in ipairs(minorCivIcons) do table.insert(buildSection, v); end
-	for i,v in ipairs(g_buildActions) do table.insert(buildSection, v); end
-	for i,v in ipairs(engineerIcons) do table.insert(buildSection, v); end
+	-- sort lists by timeline
+	table.sort(builder, MapTacks.TimelineSort);
+	table.sort(unique, MapTacks.TimelineSort);
+	table.sort(governor, MapTacks.TimelineSort);
+	table.sort(minorCiv, MapTacks.TimelineSort);
+	table.sort(engineer, MapTacks.TimelineSort);
+	local misc = {};
+	for i,v in ipairs(governor) do table.insert(misc, v); end
+	for i,v in ipairs(minorCiv) do table.insert(misc, v); end
+	for i,v in ipairs(buildops) do table.insert(misc, v); end
+	for i,v in ipairs(engineer) do table.insert(misc, v); end
+	return builder, unique, misc, governor, minorCiv, buildops, engineer;
+end
 
-	-- TODO: clean this up
-	-- local removeSection = {};
-	-- for i,v in ipairs(g_removeActions) do table.insert(removeSection, v); end
-	-- local attackSection = {};
-	-- for i,v in ipairs(g_attackActions) do table.insert(attackSection, v); end
+function MapTacks.PlayerUnits(traits :table)
+	local ops = GameInfo.UnitOperations;
+	local miscunits = {};
+	if traits.UNITOPERATION_MAKE_TRADE_ROUTE then
+		table.insert(miscunits, ops.UNITOPERATION_MAKE_TRADE_ROUTE);
+	end
+	if traits.UNIT_SPY then
+		table.insert(miscunits, ICON_SPY);
+	end
+	if traits.UNITOPERATION_EXCAVATE then
+		table.insert(miscunits, ops.UNITOPERATION_EXCAVATE);
+	end
+	return miscunits;
+end
 
-	local miscSection = {};
-	if #g_stockIcons + #g_basicIcons > columns then
-		for i,v in ipairs(g_basicIcons) do table.insert(miscSection, v); end
-	end
-	if #improvementIcons + #g_removeActions > columns then
-		for i,v in ipairs(g_removeActions) do table.insert(miscSection, v); end
-	end
-	for i,v in ipairs(g_miscIcons) do table.insert(miscSection, v); end
-	-- table.insert(miscSection, GameInfo.UnitCommands.UNITCOMMAND_ACTIVATE_GREAT_PERSON);
+function MapTacks.PlayerGreatPeople(traits :table)
+	local cmd = GameInfo.UnitCommands;
+	local ops = GameInfo.UnitOperations;
+	-- If these are not in the current game rules, the values resolve to nil,
+	-- which is a no-op in the table.insert below.
+	local army = cmd.UNITCOMMAND_FORM_ARMY or cmd.UNITCOMMAND_FORM_CORPS;
+	local rockband = ops.UNITOPERATION_TOURISM_BOMB;
+
+	local people = {};
+	table.insert(people, army);
 	for item in GameInfo.GreatPersonClasses() do
-		table.insert(miscSection, item);
+		table.insert(people, item);
 	end
-	-- without the expansion this will be nil, but Lua will ignore it
-	rockband = GameInfo.UnitOperations.UNITOPERATION_TOURISM_BOMB;
-	table.insert(miscSection, rockband);
+	table.insert(people, rockband);
 
-	-- Wonders
-	local wonderIcons = {};
+	return people;
+end
+
+function MapTacks.PlayerWonders(traits :table)
+	local wonders = {};
 	for item in GameInfo.Buildings() do
 		if item.IsWonder then
-			table.insert(wonderIcons, item);
+			table.insert(wonders, item);
 		end
 	end
-	if #wonderIcons ~= 0 then
-		-- skip this icon if no wonders at all, e.g. in some scenarios
-		table.insert(wonderIcons, GameInfo.Districts.DISTRICT_WONDER);
+	-- also include the generic icon, if there are any wonders
+	if #wonders ~= 0 then
+		table.insert(wonders, GameInfo.Districts.DISTRICT_WONDER);
 	end
-	table.sort(wonderIcons, MapTacks.TimelineSort);
+	table.sort(wonders, MapTacks.TimelineSort);
+	return wonders;
+end
 
-	local wonderSection = {};
-	for i,v in ipairs(wonderIcons) do table.insert(wonderSection, v); end
+-- ===========================================================================
+-- Build the grid of map pin icon options
+function MapTacks.IconOptions()
+	-- Collect static sets.
+	local stock = {};
+	for i, item in ipairs(g_stockIcons) do table.insert(stock, item); end
+	local basic = {};
+	for i, item in ipairs(g_basicIcons) do table.insert(basic, item); end
 
-	-- TODO: skip adding empty sections
+	-- Gather all of the icon sets from the database.
+	local traits = MapTacks.PlayerTraits();
+	local districts = MapTacks.PlayerDistricts(traits);
+	local builder, unique, miscbuild = MapTacks.PlayerImprovements(traits);
+	local miscunits = MapTacks.PlayerUnits(traits);
+	local people = MapTacks.PlayerGreatPeople(traits);
+	local wonders = MapTacks.PlayerWonders(traits);
+
+	-- Lay out the basic structure.
+	-- Start with a preliminary estimate of the grid width.
+	local columns = math.max(9, #districts, #builder, #unique + #miscbuild);
+	print(columns, "columns (preliminary)");
+
+	-- Consolidate similar rows if possible.
+	if #districts + #wonders <= columns then
+		-- move all the wonders into the district section
+		for i,v in ipairs(wonders) do table.insert(districts, v); end
+		wonders = nil;
+	end
+	if #builder + #unique + #miscbuild <= columns then
+		-- move all of the improvements onto a single row
+		for i,v in ipairs(unique) do table.insert(builder, i, v); end
+		for i,v in ipairs(miscbuild) do table.insert(builder, v); end
+		miscbuild = {};
+	else
+		-- only join the misc build section
+		for i,v in ipairs(unique) do table.insert(miscbuild, i, v); end
+	end
+
+	-- Now finalize the design width.
+	-- TODO: stretch this if a section is only a little over
+	columns = math.max(7, #districts, #builder, #miscbuild);
+	print(columns, "columns (final)");
+
+	-- TODO: make the variable section assignment less awful
+
+	-- Stock map pins
+	if #stock + #basic <= columns then
+		for i,v in ipairs(basic) do table.insert(stock, i, v); end
+		basic = {};
+	elseif #stock < columns then
+		table.insert(stock, 1, table.remove(basic));
+	end
+	local stockSection = {};
+	for i, item in ipairs(stock) do table.insert(stockSection, item); end
+
+	-- Builder remove/repair ops
+	local ops = GameInfo.UnitOperations;
+	local builderSpace = math.max(0, columns - #builder);
+	-- Repair icon
+	if #miscbuild == 0 then  -- builder sections merged
+		-- repair can go here unless there are exactly two spaces left
+		if builderSpace ~= 0 and builderSpace ~= 2 then
+			table.insert(builder, ops.UNITOPERATION_REPAIR);
+		else
+			table.insert(miscunits, 1, ops.UNITOPERATION_REPAIR);
+		end
+	elseif #miscbuild < columns then
+		table.insert(miscbuild, ops.UNITOPERATION_REPAIR);
+	else
+		table.insert(miscunits, 1, ops.UNITOPERATION_REPAIR);
+	end
+	-- Remove & harvest icons
+	if 2 <= builderSpace then
+		table.insert(builder, ops.UNITOPERATION_REMOVE_FEATURE);
+		table.insert(builder, ops.UNITOPERATION_HARVEST_RESOURCE);
+	else
+		table.insert(basic, ops.UNITOPERATION_REMOVE_FEATURE);
+		table.insert(basic, ops.UNITOPERATION_HARVEST_RESOURCE);
+	end
+
+	-- Merge basic icons and misc units
+	local misc = {};
+	for i,v in ipairs(basic) do table.insert(misc, v); end
+	for i,v in ipairs(miscunits) do table.insert(misc, v); end
+	-- Merge misc and great people if they fit
+	if #misc + #people <= columns then
+		for i,v in ipairs(people) do table.insert(misc, v); end
+		people = {};
+	end
+
 	local sections = {};
 	table.insert(sections, stockSection);
-	table.insert(sections, districtSection);
-	table.insert(sections, improvementSection);
-	table.insert(sections, buildSection);
-	-- table.insert(sections, removeSection);
-	-- table.insert(sections, attackSection);
-	table.insert(sections, miscSection);
-	table.insert(sections, wonderSection);
+	table.insert(sections, districts);
+	table.insert(sections, builder);
+	table.insert(sections, miscbuild);
+	table.insert(sections, misc);
+	table.insert(sections, people);
+	table.insert(sections, wonders);
 
 	-- convert everything to the right format
 	local grid = {};
 	for j,section in ipairs(sections) do
-		local row = {};
-		for i,item in ipairs(section) do table.insert(row, MapTacks.Icon(item)); end
-		table.insert(grid, row);
+		if #section ~= 0 then
+			local row = {};
+			for i,item in ipairs(section) do
+				table.insert(row, MapTacks.Icon(item));
+			end
+			table.insert(grid, row);
+		end
 	end
 	return grid;
 end

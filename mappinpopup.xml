@@ -31,7 +31,7 @@
                   <!-- Buttons -->
                   <Stack        ID="OptionsStack" StackGrowth="Right" Padding="8" Anchor="C,T"  WrapWidth="480">
                     <GridButton ID="OkButton"			    Anchor="L,T" Size="150,41"		Style="MainButton" FontStyle="Shadow" String="LOC_OK_BUTTON" />
-                    <GridButton ID="SendToChatButton"	Anchor="L,T" Size="150,41"		Style="MainButton" FontStyle="Shadow" String="LOC_MAP_PIN_SEND_TO_CHAT" ToolTip="LOC_MAP_PIN_SEND_TO_CHAT_TT"/>
+                    <GridButton ID="SendToChatButton"	Anchor="L,T" Size="150,41"		Style="MainButton" FontStyle="Shadow" String="LOC_MAP_PIN_SEND_TO_CHAT" ToolTip="LOC_MAP_PIN_SEND_TO_CHAT_TT" Hidden="1"/>
                     <GridButton ID="DeleteButton"		  Anchor="L,T" Size="150,41"		Style="ButtonRed" FontStyle="Shadow" String="LOC_DELETE_BUTTON" />
                   </Stack>
                 </Stack>
