@@ -254,6 +254,8 @@ end
 
 function MapTacks.PlayerActions(traits :table)
 	local actions = {};
+	-- Note that all of these ops/cmd lookups degrade gracefully to nil,
+	-- and table.insert(actions, nil) is a safe no-op.
 	table.insert(actions, ops.UNITOPERATION_PILLAGE);
 	table.insert(actions, ops.UNITOPERATION_REPAIR);
 	if traits.UNITOPERATION_HARVEST_RESOURCE then
@@ -268,22 +270,17 @@ function MapTacks.PlayerActions(traits :table)
 	if traits.UNITOPERATION_EXCAVATE then
 		table.insert(actions, ops.UNITOPERATION_EXCAVATE);
 	end
+	table.insert(actions, ops.UNITOPERATION_TOURISM_BOMB);
+	table.insert(actions, ops.UNITOPERATION_PARADROP);
+	table.insert(actions, cmd.UNITCOMMAND_FORM_ARMY or cmd.UNITCOMMAND_FORM_CORPS);
 	return actions;
 end
 
 function MapTacks.PlayerGreatPeople(traits :table)
-	-- If these are not in the current game rules, the values resolve to nil,
-	-- which is a no-op in the table.insert below.
-	local army = cmd.UNITCOMMAND_FORM_ARMY or cmd.UNITCOMMAND_FORM_CORPS;
-	local rockband = ops.UNITOPERATION_TOURISM_BOMB;
-
 	local people = {};
-	table.insert(people, army);
 	for item in GameInfo.GreatPersonClasses() do
 		table.insert(people, item);
 	end
-	table.insert(people, rockband);
-
 	return people;
 end
 
@@ -314,36 +311,38 @@ function MapTacks.IconOptions()
 	-- Gather all of the icon sets from the database.
 	local traits = MapTacks.PlayerTraits();
 	local districts = MapTacks.PlayerDistricts(traits);
-	local builder, unique, miscbuild = MapTacks.PlayerImprovements(traits);
+	local builder, unique, buildmisc = MapTacks.PlayerImprovements(traits);
 	local actions = MapTacks.PlayerActions(traits);
 	local people = MapTacks.PlayerGreatPeople(traits);
 	local wonders = MapTacks.PlayerWonders(traits);
 
-	-- Lay out the basic structure.
-	-- Start with a preliminary estimate of the grid width.
-	local columns = math.max(9, #districts, #builder, #unique + #miscbuild);
-	print(columns, "columns (preliminary)");
+	-- Grid design width guides.
+	local loose = 9;
+	local tight = 7;
 
-	-- Consolidate similar rows if possible.
-	if #districts + #wonders <= columns then
+	-- Lay out the improvement & build icons.
+	if #builder + #unique + #buildmisc <= math.max(loose, #districts) then
+		-- Move them all onto a single row, if they will fit.
+		for i,v in ipairs(unique) do table.insert(builder, i, v); end
+		for i,v in ipairs(buildmisc) do table.insert(builder, v); end
+		buildmisc = {};
+	elseif #builder <= #buildmisc then
+		-- Otherwise, put the unique improvements on the shorter row.
+		for i,v in ipairs(unique) do table.insert(builder, i, v); end
+	else
+		for i,v in ipairs(unique) do table.insert(buildmisc, i, v); end
+	end
+
+	-- Combine districts with wonders, if they will fit.
+	if #districts + #wonders <= math.max(loose, #builder, #buildmisc) then
 		-- move all the wonders into the district section
 		for i,v in ipairs(wonders) do table.insert(districts, v); end
-		wonders = nil;
-	end
-	if #builder + #unique + #miscbuild <= columns then
-		-- move all of the improvements onto a single row
-		for i,v in ipairs(unique) do table.insert(builder, i, v); end
-		for i,v in ipairs(miscbuild) do table.insert(builder, v); end
-		miscbuild = {};
-	else
-		-- only join the misc build section
-		for i,v in ipairs(unique) do table.insert(miscbuild, i, v); end
+		wonders = {};
 	end
 
-	-- Now finalize the design width.
-	-- TODO: stretch this if a section is only a little over
-	columns = math.max(7, #districts, #builder, #miscbuild);
-	print(columns, "columns (final)");
+	-- Determine the design width.
+	local columns = math.max(tight, #districts, #builder, #buildmisc);
+	print(str(columns) .. " grid columns");
 
 	-- Stock map pins
 	local stockSpace = math.min(0, columns - #stock);
@@ -354,17 +353,16 @@ function MapTacks.IconOptions()
 	if #basic + #stock <= columns then
 		-- move the basic icons to stock if there's room
 		for i,v in ipairs(basic) do
-			table.insert(stock, i, remove(basic, 1))
+			table.insert(stock, i, v);
 		end
+		basic = {};
 	end
 
-	-- Merge basic icons and misc units
-	local misc = {};
-	for i,v in ipairs(basic) do table.insert(misc, v); end
-	for i,v in ipairs(actions) do table.insert(misc, v); end
-	-- Merge misc and great people if they fit
-	if #misc + #people <= columns then
-		for i,v in ipairs(people) do table.insert(misc, v); end
+	-- Merge basic icons and actions.
+	for i,v in ipairs(basic) do table.insert(actions, i, v); end
+	-- Merge actions and great people if they fit
+	if #actions + #people <= columns then
+		for i,v in ipairs(people) do table.insert(actions, v); end
 		people = {};
 	end
 
@@ -372,8 +370,8 @@ function MapTacks.IconOptions()
 	table.insert(sections, stock);
 	table.insert(sections, districts);
 	table.insert(sections, builder);
-	table.insert(sections, miscbuild);
-	table.insert(sections, misc);
+	table.insert(sections, buildmisc);
+	table.insert(sections, actions);
 	table.insert(sections, people);
 	table.insert(sections, wonders);
 
@@ -500,7 +498,7 @@ end
 -- The darkest colors need shadow=56, light=112, max=128 for legibility.
 -- Other colors look good around 1.5-1.8x brightness, matching midtones.
 local g_tintCache = {};
-function MapTacks.IconTint( abgr : number, debug : number )
+function MapTacks.IconTint(abgr :number)
 	if g_tintCache[abgr] ~= nil then return g_tintCache[abgr]; end
 	local r = abgr % 256;
 	local g = math.floor(abgr / 256) % 256;
