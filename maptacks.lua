@@ -26,6 +26,10 @@ MapTacks.iconSizes = { 24, 26, 26, 32, 32, };
 -- Other constants
 MapTacks.UNKNOWN = "ICON_CIVILIZATION_UNKNOWN";
 
+-- shorthand for common GameInfo lookups
+local cmd = GameInfo.UnitCommands;
+local ops = GameInfo.UnitOperations;
+
 -- ===========================================================================
 local g_stockIcons = {
 	{ name="ICON_MAP_PIN_STRENGTH" },
@@ -61,18 +65,6 @@ local ICON_SPY = {
 local g_basicIcons = {
 	ICON_BARBARIAN_CAMP,
 	ICON_GOODY_HUT,
-	GameInfo.UnitOperations.UNITOPERATION_PILLAGE,
-};
-
--- TODO: fit these into the new dynamic system
-local g_removeActions = {  -- remove, harvest, repair, clear
-	-- CategoryInUI = BUILD
-	GameInfo.UnitOperations.UNITOPERATION_REMOVE_FEATURE,
-	-- CategoryInUI = SPECIFIC
-	GameInfo.UnitOperations.UNITOPERATION_HARVEST_RESOURCE,
-	GameInfo.UnitOperations.UNITOPERATION_REPAIR,
-	-- GameInfo.UnitOperations.UNITOPERATION_CLEAR_CONTAMINATION,
-	-- GameInfo.UnitOperations.UNITOPERATION_REPAIR_ROUTE,
 };
 
 -- ===========================================================================
@@ -132,9 +124,8 @@ function MapTacks.PlayerTraits()
 	for i, item in ipairs(civilization.TraitCollection) do
 		traits[item.TraitType] = true;
 	end
-	local ops = GameInfo.UnitOperations;
 	local buildops = {};
-	-- Then, check the game rules for various actions and abilities.
+	-- Then, check the game rules for various abilities and actions.
 	-- forest planting
 	for item in GameInfo.Features() do
 		if item.AddCivic then
@@ -233,50 +224,54 @@ function MapTacks.PlayerImprovements(traits :table)
 			-- print(item.Name, MapTacks.Timeline(item));
 		end
 	end
-	-- determine whether we can plant forests, parks, or roads
-	local ops = GameInfo.UnitOperations;
-	local buildops = {};
-	if traits.UNITOPERATION_PLANT_FOREST then
-		table.insert(buildops, ops.UNITOPERATION_PLANT_FOREST);
-	end
-	if traits.UNITOPERATION_DESIGNATE_PARK then
-		table.insert(buildops, ops.UNITOPERATION_DESIGNATE_PARK);
-	end
-	if traits.UNITOPERATION_BUILD_ROUTE then
-		table.insert(buildops, ops.UNITOPERATION_BUILD_ROUTE);
-	end
 	-- sort lists by timeline
 	table.sort(builder, MapTacks.TimelineSort);
 	table.sort(unique, MapTacks.TimelineSort);
 	table.sort(governor, MapTacks.TimelineSort);
 	table.sort(minorCiv, MapTacks.TimelineSort);
 	table.sort(engineer, MapTacks.TimelineSort);
+	-- additional engineer operations
+	if traits.UNITOPERATION_BUILD_ROUTE then
+		table.insert(engineer, 1, ops.UNITOPERATION_BUILD_ROUTE);
+	end
+	-- additional builder & support operations
+	local buildops = {};
+	if traits.UNITOPERATION_DESIGNATE_PARK then
+		table.insert(buildops, ops.UNITOPERATION_DESIGNATE_PARK);
+	end
+	if traits.UNITOPERATION_PLANT_FOREST then
+		table.insert(buildops, ops.UNITOPERATION_PLANT_FOREST);
+	end
+	table.insert(buildops, ops.UNITOPERATION_REMOVE_FEATURE);
+	-- collect all of the miscellaneous builds & improvements
 	local misc = {};
 	for i,v in ipairs(governor) do table.insert(misc, v); end
 	for i,v in ipairs(minorCiv) do table.insert(misc, v); end
-	for i,v in ipairs(buildops) do table.insert(misc, v); end
 	for i,v in ipairs(engineer) do table.insert(misc, v); end
-	return builder, unique, misc, governor, minorCiv, buildops, engineer;
+	for i,v in ipairs(buildops) do table.insert(misc, v); end
+	return builder, unique, misc, governor, minorCiv, engineer, buildops;
 end
 
-function MapTacks.PlayerUnits(traits :table)
-	local ops = GameInfo.UnitOperations;
-	local miscunits = {};
+function MapTacks.PlayerActions(traits :table)
+	local actions = {};
+	table.insert(actions, ops.UNITOPERATION_PILLAGE);
+	table.insert(actions, ops.UNITOPERATION_REPAIR);
+	if traits.UNITOPERATION_HARVEST_RESOURCE then
+		table.insert(actions, ops.UNITOPERATION_HARVEST_RESOURCE);
+	end
 	if traits.UNITOPERATION_MAKE_TRADE_ROUTE then
-		table.insert(miscunits, ops.UNITOPERATION_MAKE_TRADE_ROUTE);
+		table.insert(actions, ops.UNITOPERATION_MAKE_TRADE_ROUTE);
 	end
 	if traits.UNIT_SPY then
-		table.insert(miscunits, ICON_SPY);
+		table.insert(actions, ICON_SPY);
 	end
 	if traits.UNITOPERATION_EXCAVATE then
-		table.insert(miscunits, ops.UNITOPERATION_EXCAVATE);
+		table.insert(actions, ops.UNITOPERATION_EXCAVATE);
 	end
-	return miscunits;
+	return actions;
 end
 
 function MapTacks.PlayerGreatPeople(traits :table)
-	local cmd = GameInfo.UnitCommands;
-	local ops = GameInfo.UnitOperations;
 	-- If these are not in the current game rules, the values resolve to nil,
 	-- which is a no-op in the table.insert below.
 	local army = cmd.UNITCOMMAND_FORM_ARMY or cmd.UNITCOMMAND_FORM_CORPS;
@@ -320,7 +315,7 @@ function MapTacks.IconOptions()
 	local traits = MapTacks.PlayerTraits();
 	local districts = MapTacks.PlayerDistricts(traits);
 	local builder, unique, miscbuild = MapTacks.PlayerImprovements(traits);
-	local miscunits = MapTacks.PlayerUnits(traits);
+	local actions = MapTacks.PlayerActions(traits);
 	local people = MapTacks.PlayerGreatPeople(traits);
 	local wonders = MapTacks.PlayerWonders(traits);
 
@@ -350,53 +345,23 @@ function MapTacks.IconOptions()
 	columns = math.max(7, #districts, #builder, #miscbuild);
 	print(columns, "columns (final)");
 
-	-- TODO: make the variable section assignment less awful
-
 	-- Stock map pins
-	if #stock + #basic <= columns then
-		for i,v in ipairs(basic) do table.insert(stock, i, v); end
-		basic = {};
-	elseif #stock < columns then
-		table.insert(stock, 1, table.remove(basic));
+	local stockSpace = math.min(0, columns - #stock);
+	if stockSpace == 1 or #basic < stockSpace then
+		-- move the Pillage icon to stock if there's room
+		table.insert(stock, 1, remove(actions, 1))
 	end
-	local stockSection = {};
-	for i, item in ipairs(stock) do table.insert(stockSection, item); end
-
-	-- Builder remove/repair ops
-	local ops = GameInfo.UnitOperations;
-	local builderSpace = math.max(0, columns - #builder);
-	local miscSpace = math.max(0, columns - #miscbuild);
-	-- Repair icon
-	if #miscbuild == 0 then  -- builder sections merged
-		-- repair can go here unless there are exactly two spaces left
-		if builderSpace ~= 0 and builderSpace ~= 2 then
-			table.insert(builder, ops.UNITOPERATION_REPAIR);
-			builderSpace = builderSpace - 1;
-		else
-			table.insert(miscunits, 1, ops.UNITOPERATION_REPAIR);
+	if #basic + #stock <= columns then
+		-- move the basic icons to stock if there's room
+		for i,v in ipairs(basic) do
+			table.insert(stock, i, remove(basic, 1))
 		end
-	elseif miscSpace ~= 0 then
-		table.insert(miscbuild, ops.UNITOPERATION_REPAIR);
-		miscSpace = miscSpace - 1;
-	else
-		table.insert(miscunits, 1, ops.UNITOPERATION_REPAIR);
-	end
-	-- Remove/harvest icons
-	if 2 <= builderSpace then
-		table.insert(builder, ops.UNITOPERATION_REMOVE_FEATURE);
-		table.insert(builder, ops.UNITOPERATION_HARVEST_RESOURCE);
-	elseif #miscbuild ~= 0 and 2 <= miscSpace then
-		table.insert(miscbuild, ops.UNITOPERATION_REMOVE_FEATURE);
-		table.insert(miscbuild, ops.UNITOPERATION_HARVEST_RESOURCE);
-	else
-		table.insert(basic, ops.UNITOPERATION_REMOVE_FEATURE);
-		table.insert(basic, ops.UNITOPERATION_HARVEST_RESOURCE);
 	end
 
 	-- Merge basic icons and misc units
 	local misc = {};
 	for i,v in ipairs(basic) do table.insert(misc, v); end
-	for i,v in ipairs(miscunits) do table.insert(misc, v); end
+	for i,v in ipairs(actions) do table.insert(misc, v); end
 	-- Merge misc and great people if they fit
 	if #misc + #people <= columns then
 		for i,v in ipairs(people) do table.insert(misc, v); end
@@ -404,7 +369,7 @@ function MapTacks.IconOptions()
 	end
 
 	local sections = {};
-	table.insert(sections, stockSection);
+	table.insert(sections, stock);
 	table.insert(sections, districts);
 	table.insert(sections, builder);
 	table.insert(sections, miscbuild);
