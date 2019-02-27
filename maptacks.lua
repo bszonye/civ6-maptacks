@@ -167,7 +167,9 @@ function MapTacks.PlayerTraits()
 			traits.UNITOPERATION_EXCAVATE = true;
 		end
 		if item.MakeTradeRoute then
+			-- if we have traders, include the trade AND road icons
 			traits.UNITOPERATION_MAKE_TRADE_ROUTE = true;
+			traits.UNITOPERATION_BUILD_ROUTE = true;
 		end
 		if rockband[item.UnitType] then
 			traits.UNITOPERATION_TOURISM_BOMB = true;
@@ -287,13 +289,13 @@ function MapTacks.PlayerActions(traits :table)
 	if traits.UNITOPERATION_EXCAVATE then
 		table.insert(actions, ops.UNITOPERATION_EXCAVATE);
 	end
-	if traits.UNITOPERATION_TOURISM_BOMB then
-		table.insert(actions, ops.UNITOPERATION_TOURISM_BOMB);
-	end
+	table.insert(actions, cmd.UNITCOMMAND_FORM_ARMY or cmd.UNITCOMMAND_FORM_CORPS);
 	if traits.UNITCOMMAND_PARADROP then
 		table.insert(actions, cmd.UNITCOMMAND_PARADROP);
 	end
-	table.insert(actions, cmd.UNITCOMMAND_FORM_ARMY or cmd.UNITCOMMAND_FORM_CORPS);
+	if traits.UNITOPERATION_TOURISM_BOMB then
+		table.insert(actions, ops.UNITOPERATION_TOURISM_BOMB);
+	end
 	return actions;
 end
 
