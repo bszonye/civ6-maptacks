@@ -144,6 +144,17 @@ function MapTacks.PlayerTraits()
 			traits.UNITOPERATION_BUILD_ROUTE = true;
 		end
 	end
+	-- unit classes: paradrop, rock band
+	local paradrop = {};
+	local rockband = {};
+	for item in GameInfo.TypeTags() do
+		if item.Tag == "CLASS_PARADROP" then
+			paradrop[item.Type] = true;
+		end
+		if item.Tag == "CLASS_ROCK_BAND" then
+			rockband[item.Type] = true;
+		end
+	end
 	-- unit abilities: espionage, naturalism, archaeology, trade
 	for item in GameInfo.Units() do
 		if item.Spy then
@@ -157,6 +168,12 @@ function MapTacks.PlayerTraits()
 		end
 		if item.MakeTradeRoute then
 			traits.UNITOPERATION_MAKE_TRADE_ROUTE = true;
+		end
+		if rockband[item.UnitType] then
+			traits.UNITOPERATION_TOURISM_BOMB = true;
+		end
+		if paradrop[item.UnitType] then
+			traits.UNITCOMMAND_PARADROP = true;
 		end
 	end
 	return traits;
@@ -270,8 +287,12 @@ function MapTacks.PlayerActions(traits :table)
 	if traits.UNITOPERATION_EXCAVATE then
 		table.insert(actions, ops.UNITOPERATION_EXCAVATE);
 	end
-	table.insert(actions, ops.UNITOPERATION_TOURISM_BOMB);
-	table.insert(actions, ops.UNITOPERATION_PARADROP);
+	if traits.UNITOPERATION_TOURISM_BOMB then
+		table.insert(actions, ops.UNITOPERATION_TOURISM_BOMB);
+	end
+	if traits.UNITCOMMAND_PARADROP then
+		table.insert(actions, cmd.UNITCOMMAND_PARADROP);
+	end
 	table.insert(actions, cmd.UNITCOMMAND_FORM_ARMY or cmd.UNITCOMMAND_FORM_CORPS);
 	return actions;
 end
@@ -326,7 +347,7 @@ function MapTacks.IconOptions()
 		for i,v in ipairs(unique) do table.insert(builder, i, v); end
 		for i,v in ipairs(buildmisc) do table.insert(builder, v); end
 		buildmisc = {};
-	elseif #builder <= #buildmisc then
+	elseif #builder ~= 0 and #builder <= #buildmisc then
 		-- Otherwise, put the unique improvements on the shorter row.
 		for i,v in ipairs(unique) do table.insert(builder, i, v); end
 	else
@@ -342,13 +363,14 @@ function MapTacks.IconOptions()
 
 	-- Determine the design width.
 	local columns = math.max(tight, #districts, #builder, #buildmisc);
-	print(str(columns) .. " grid columns");
+	print(tostring(columns) .. " grid columns");
 
 	-- Stock map pins
-	local stockSpace = math.min(0, columns - #stock);
+	-- TODO: simplify the basic icon stuff
+	local stockSpace = math.max(0, columns - #stock);
 	if stockSpace == 1 or #basic < stockSpace then
 		-- move the Pillage icon to stock if there's room
-		table.insert(stock, 1, remove(actions, 1))
+		table.insert(stock, 1, table.remove(actions, 1));
 	end
 	if #basic + #stock <= columns then
 		-- move the basic icons to stock if there's room

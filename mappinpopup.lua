@@ -128,7 +128,7 @@ function PopulateIconOptions()
 	local columns = 7;
 	for j, section in ipairs(g_iconPulldownOptions) do
 		local width = #section;
-		if columns < width and width <= 20 and 1 < j and j <= 3 then
+		if columns < width and width <= 20 and 1 < j then
 			columns = width;
 		end
 	end
