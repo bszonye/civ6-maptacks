@@ -310,13 +310,13 @@ function MapTacks.PlayerActions(traits :table)
 	if traits.UNITOPERATION_EXCAVATE then
 		table.insert(actions, ops.UNITOPERATION_EXCAVATE);
 	end
-	table.insert(actions, cmd.UNITCOMMAND_FORM_ARMY or cmd.UNITCOMMAND_FORM_CORPS);
-	if traits.UNITCOMMAND_PARADROP then
-		table.insert(actions, cmd.UNITCOMMAND_PARADROP);
-	end
 	if traits.UNITOPERATION_TOURISM_BOMB then
 		table.insert(actions, ops.UNITOPERATION_TOURISM_BOMB);
 	end
+	if traits.UNITCOMMAND_PARADROP then
+		table.insert(actions, cmd.UNITCOMMAND_PARADROP);
+	end
+	table.insert(actions, cmd.UNITCOMMAND_FORM_ARMY or cmd.UNITCOMMAND_FORM_CORPS);
 	return actions;
 end
 
@@ -406,13 +406,13 @@ function MapTacks.IconOptions(playerID :number)
 		stockSpace = stockSpace - 1;
 	end
 	-- Where will barbarians & goody huts fit?
-	if stockSpace < 0 then stockSpace = stockSpace + columns; end  -- wrapped
+	-- if stockSpace < 0 then stockSpace = stockSpace + columns; end
 	if stockSpace < 2 then
-		table.insert(actions, 1, ICON_BARBARIAN_CAMP);
-		table.insert(actions, 2, ICON_GOODY_HUT);
+		table.insert(actions, 1, ICON_GOODY_HUT);
+		table.insert(actions, 2, ICON_BARBARIAN_CAMP);
 	else
-		table.insert(stock, 1, ICON_BARBARIAN_CAMP);
-		table.insert(stock, 2, ICON_GOODY_HUT);
+		table.insert(stock, 1, ICON_GOODY_HUT);
+		table.insert(stock, 2, ICON_BARBARIAN_CAMP);
 	end
 
 	-- Merge small action & great people sections.
