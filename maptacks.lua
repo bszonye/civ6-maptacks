@@ -111,21 +111,19 @@ end
 
 -- ===========================================================================
 -- Database utility functions
-function MapTacks.PlayerTraits()
-	-- First, get the true traits.
+local g_gameTraitsCache :table = nil;
+function MapTacks.GameTraits()
 	local traits = {};
-	local activePlayerID = Game.GetLocalPlayer();
-	local pPlayerCfg = PlayerConfigurations[activePlayerID];
-	local leader = GameInfo.Leaders[pPlayerCfg:GetLeaderTypeID()];
-	for i, item in ipairs(leader.TraitCollection) do
-		traits[item.TraitType] = true;
+
+	-- Return a copy of the global cache, if it's initialized.
+	if g_gameTraitsCache then
+		for k,v in pairs(g_gameTraitsCache) do traits[k] = v; end
+		return traits;
 	end
-	local civilization = leader.CivilizationCollection[1];
-	for i, item in ipairs(civilization.TraitCollection) do
-		traits[item.TraitType] = true;
-	end
-	local buildops = {};
-	-- Then, check the game rules for various abilities and actions.
+
+	-- Otherwise, analyze the game info for available features.
+	print("initializing MapTacks.GameTraits()");
+
 	-- forest planting
 	for item in GameInfo.Features() do
 		if item.AddCivic then
@@ -158,7 +156,7 @@ function MapTacks.PlayerTraits()
 	-- unit abilities: espionage, naturalism, archaeology, trade
 	for item in GameInfo.Units() do
 		if item.Spy then
-			traits.UNIT_SPY = true;
+			traits.ICON_SPY = true;
 		end
 		if item.ParkCharges ~= 0 then
 			traits.UNITOPERATION_DESIGNATE_PARK = true;
@@ -178,6 +176,28 @@ function MapTacks.PlayerTraits()
 			traits.UNITCOMMAND_PARADROP = true;
 		end
 	end
+
+	-- Cache a copy of the traits.
+	-- Do not return the cache directly, as the caller will be adding
+	-- player-specific traits to the returned table.
+	for k,v in pairs(traits) do g_gameTraitsCache[k] = v; end
+	return traits;
+end
+
+function MapTacks.PlayerTraits(playerID :number)
+	-- First, get the player-independent game info.
+	local traits = MapTacks.GameTraits();
+	-- Then, add the player-specific traits.
+	local playerConfig = PlayerConfigurations[playerID];
+	local leader = GameInfo.Leaders[playerConfig:GetLeaderTypeID()];
+	for i, item in ipairs(leader.TraitCollection) do
+		traits[item.TraitType] = true;
+	end
+	local civilization = leader.CivilizationCollection[1];
+	for i, item in ipairs(civilization.TraitCollection) do
+		traits[item.TraitType] = true;
+	end
+	local buildops = {};
 	return traits;
 end
 
@@ -283,7 +303,7 @@ function MapTacks.PlayerActions(traits :table)
 	if traits.UNITOPERATION_MAKE_TRADE_ROUTE then
 		table.insert(actions, ops.UNITOPERATION_MAKE_TRADE_ROUTE);
 	end
-	if traits.UNIT_SPY then
+	if traits.ICON_SPY then
 		table.insert(actions, ICON_SPY);
 	end
 	if traits.UNITOPERATION_EXCAVATE then
@@ -324,7 +344,13 @@ end
 
 -- ===========================================================================
 -- Build the grid of map pin icon options
-function MapTacks.IconOptions()
+local g_playerIconsCache = {};
+function MapTacks.IconOptions(playerID :number)
+	-- Return cached values if we have seen this player before.
+	local cache = g_playerIconsCache[playerID];
+	if cache then return cache; end
+	print(string.format("initializing MapTacks.IconOptions(%d)", playerID));
+
 	-- Collect static sets.
 	local stock = {};
 	for i, item in ipairs(g_stockIcons) do table.insert(stock, item); end
@@ -332,7 +358,7 @@ function MapTacks.IconOptions()
 	for i, item in ipairs(g_basicIcons) do table.insert(basic, item); end
 
 	-- Gather all of the icon sets from the database.
-	local traits = MapTacks.PlayerTraits();
+	local traits = MapTacks.PlayerTraits(playerID);
 	local districts = MapTacks.PlayerDistricts(traits);
 	local builder, unique, buildmisc = MapTacks.PlayerImprovements(traits);
 	local actions = MapTacks.PlayerActions(traits);
@@ -410,6 +436,8 @@ function MapTacks.IconOptions()
 			table.insert(grid, row);
 		end
 	end
+	-- cache and return the results
+	g_playerIconsCache[playerID] = grid;
 	return grid;
 end
 

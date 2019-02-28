@@ -15,17 +15,18 @@ local COLOR_WHITE				:number = 0xFFFFFFFF;
 
 local NO_EDIT_PIN_ID :number = -1;
 local g_editPinID :number = NO_EDIT_PIN_ID;
-local g_uniqueIconsPlayer :number = nil;  -- tailor UAs to the player
-local g_iconOptionEntries = {};
-local g_visibilityTargetEntries = {};
+-- layout tables are tailored to the current player
+local g_iconLayoutPlayerID :number = nil;
+-- the tables are organized by section: grid[section][index]
+local g_iconPulldownOptions = {};  -- icon metadata from MapTacks.IconOptions()
+local g_iconOptionEntries = {};  -- icon control objects
 
 local g_desiredIconName :string = "";
 
+local g_visibilityTargetEntries = {};
 -- Default player target is self only.
 local g_playerTarget = { targetType = ChatTargetTypes.CHATTARGET_PLAYER, targetID = Game.GetLocalPlayer() };
 local g_cachedChatPanelTarget = nil; -- Cached player target for ingame chat panel
-
-local g_iconPulldownOptions = {};  -- from MapTacks.IconOptions()
 
 local sendToChatTTStr = Locale.Lookup( "LOC_MAP_PIN_SEND_TO_CHAT_TT" );
 local sendToChatNotVisibleTTStr = Locale.Lookup( "LOC_MAP_PIN_SEND_TO_CHAT_NOT_VISIBLE_TT" );
@@ -117,9 +118,9 @@ end
 -- ===========================================================================
 function PopulateIconOptions()
 	-- unique icons are specific to the current player
-	g_uniqueIconsPlayer = Game.GetLocalPlayer();
+	g_iconLayoutPlayerID = Game.GetLocalPlayer();
 	-- build icon table with default pins + extensions
-	g_iconPulldownOptions = MapTacks.IconOptions();
+	g_iconPulldownOptions = MapTacks.IconOptions(g_iconLayoutPlayerID);
 
 	g_iconOptionEntries = {};
 	Controls.IconOptionStack:DestroyAllChildren();
@@ -214,7 +215,7 @@ end
 function RequestMapPin(hexX :number, hexY :number)
 	local activePlayerID = Game.GetLocalPlayer();
 	-- update UA icons if the active player has changed
-	if g_uniqueIconsPlayer ~= activePlayerID then PopulateIconOptions(); end
+	if g_iconLayoutPlayerID ~= activePlayerID then PopulateIconOptions(); end
 	local pPlayerCfg = PlayerConfigurations[activePlayerID];
 	local pMapPin = pPlayerCfg:GetMapPin(hexX, hexY);
 	if(pMapPin ~= nil) then
