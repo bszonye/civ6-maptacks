@@ -31,23 +31,6 @@ local cmd = GameInfo.UnitCommands;
 local ops = GameInfo.UnitOperations;
 
 -- ===========================================================================
-local g_stockIcons = {
-	{ name="ICON_MAP_PIN_STRENGTH" },
-	{ name="ICON_MAP_PIN_RANGED"   },
-	{ name="ICON_MAP_PIN_BOMBARD"  },
-	{ name="ICON_MAP_PIN_DISTRICT" },
-	{ name="ICON_MAP_PIN_CHARGES"  },
-	{ name="ICON_MAP_PIN_DEFENSE"  },
-	{ name="ICON_MAP_PIN_MOVEMENT" },
-	{ name="ICON_MAP_PIN_NO"       },
-	{ name="ICON_MAP_PIN_PLUS"     },
-	{ name="ICON_MAP_PIN_CIRCLE"   },
-	{ name="ICON_MAP_PIN_TRIANGLE" },
-	{ name="ICON_MAP_PIN_SUN"      },
-	{ name="ICON_MAP_PIN_SQUARE"   },
-	{ name="ICON_MAP_PIN_DIAMOND"  },
-};
-
 -- synthetic icons (not in database)
 local ICON_BARBARIAN_CAMP = {
 	name="ICON_NOTIFICATION_BARBARIANS_SIGHTED",
@@ -61,10 +44,6 @@ local ICON_SPY = {
 	name="ICON_UNITOPERATION_SPY_COUNTERSPY_ACTION",
 	-- tooltip="LOC_UNIT_SPY_NAME",
 	tooltip="LOC_PROMOTION_CLASS_SPY_NAME",
-};
-local g_basicIcons = {
-	ICON_BARBARIAN_CAMP,
-	ICON_GOODY_HUT,
 };
 
 -- ===========================================================================
@@ -201,6 +180,28 @@ function MapTacks.PlayerTraits(playerID :number)
 	return traits;
 end
 
+function MapTacks.StockIcons()
+	stock = {
+		{ name="ICON_MAP_PIN_STRENGTH" },
+		{ name="ICON_MAP_PIN_RANGED"   },
+		{ name="ICON_MAP_PIN_BOMBARD"  },
+		{ name="ICON_MAP_PIN_DISTRICT" },
+		{ name="ICON_MAP_PIN_CHARGES"  },
+		{ name="ICON_MAP_PIN_DEFENSE"  },
+		{ name="ICON_MAP_PIN_MOVEMENT" },
+		{ name="ICON_MAP_PIN_NO"       },
+		{ name="ICON_MAP_PIN_PLUS"     },
+		{ name="ICON_MAP_PIN_CIRCLE"   },
+		{ name="ICON_MAP_PIN_TRIANGLE" },
+		{ name="ICON_MAP_PIN_SUN"      },
+		{ name="ICON_MAP_PIN_SQUARE"   },
+		{ name="ICON_MAP_PIN_DIAMOND"  },
+	};
+	-- TODO: verify that this returns a unique list every time
+	print(stock);
+	return stock;
+end
+
 function MapTacks.PlayerDistricts(traits :table)
 	-- First, determine which districts to ignore.
 	local skipDistricts = {};
@@ -295,7 +296,6 @@ function MapTacks.PlayerActions(traits :table)
 	local actions = {};
 	-- Note that all of these ops/cmd lookups degrade gracefully to nil,
 	-- and table.insert(actions, nil) is a safe no-op.
-	table.insert(actions, ops.UNITOPERATION_PILLAGE);
 	table.insert(actions, ops.UNITOPERATION_REPAIR);
 	if traits.UNITOPERATION_HARVEST_RESOURCE then
 		table.insert(actions, ops.UNITOPERATION_HARVEST_RESOURCE);
@@ -351,13 +351,8 @@ function MapTacks.IconOptions(playerID :number)
 	if cache then return cache; end
 	print(string.format("initializing MapTacks.IconOptions(%d)", playerID));
 
-	-- Collect static sets.
-	local stock = {};
-	for i, item in ipairs(g_stockIcons) do table.insert(stock, item); end
-	local basic = {};
-	for i, item in ipairs(g_basicIcons) do table.insert(basic, item); end
-
 	-- Gather all of the icon sets from the database.
+	local stock = MapTacks.StockIcons();
 	local traits = MapTacks.PlayerTraits(playerID);
 	local districts = MapTacks.PlayerDistricts(traits);
 	local builder, unique, buildmisc = MapTacks.PlayerImprovements(traits);
@@ -365,9 +360,12 @@ function MapTacks.IconOptions(playerID :number)
 	local people = MapTacks.PlayerGreatPeople(traits);
 	local wonders = MapTacks.PlayerWonders(traits);
 
+	-- TODO: merge orphan/widow sections
+
 	-- Grid design width guides.
 	local loose = 9;
 	local tight = 7;
+	local widow = 3;
 
 	-- Lay out the improvement & build icons.
 	if #builder + #unique + #buildmisc <= math.max(loose, #districts) then
@@ -393,23 +391,25 @@ function MapTacks.IconOptions(playerID :number)
 	local columns = math.max(tight, #districts, #builder, #buildmisc);
 	print(tostring(columns) .. " grid columns");
 
-	-- Stock map pins
-	-- TODO: simplify the basic icon stuff
-	local stockSpace = math.max(0, columns - #stock);
-	if stockSpace == 1 or #basic < stockSpace then
-		-- move the Pillage icon to stock if there's room
-		table.insert(stock, 1, table.remove(actions, 1));
+	-- Assign a few basic icons to the stock icons or actions section.
+	local stockSpace = columns - #stock;
+	-- Where will pillage fit?
+	if stockSpace < 1 or stockSpace == 2 then
+		table.insert(actions, 1, ops.UNITOPERATION_PILLAGE);
+	else
+		table.insert(stock, 1, ops.UNITOPERATION_PILLAGE);
+		stockSpace = stockSpace - 1;
 	end
-	if #basic + #stock <= columns then
-		-- move the basic icons to stock if there's room
-		for i,v in ipairs(basic) do
-			table.insert(stock, i, v);
-		end
-		basic = {};
+	-- Where will barbarians & goody huts fit?
+	if stockSpace < 0 then stockSpace = stockSpace + columns; end  -- wrapped
+	if stockSpace < 2 then
+		table.insert(actions, 1, ICON_BARBARIAN_CAMP);
+		table.insert(actions, 2, ICON_GOODY_HUT);
+	else
+		table.insert(stock, 1, ICON_BARBARIAN_CAMP);
+		table.insert(stock, 2, ICON_GOODY_HUT);
 	end
 
-	-- Merge basic icons and actions.
-	for i,v in ipairs(basic) do table.insert(actions, i, v); end
 	-- Merge actions and great people if they fit
 	if #actions + #people <= columns then
 		for i,v in ipairs(people) do table.insert(actions, v); end
@@ -522,7 +522,7 @@ function MapTacks.IconType(pin :table)
 	if MapTacks.iconTypes == nil then InitializeTypes(); end
 	local iconType = MapTacks.iconTypes[iconName];
 	if iconType then return iconType; end
-	-- print(iconName, iconType);  -- debug
+	-- print(iconName, iconType);
 	-- fallback code in case some random/modded stuff falls through the cracks
 	if iconName:sub(1,5) ~= "ICON_" then return nil; end
 	local iconType = iconName:sub(6, 10);
