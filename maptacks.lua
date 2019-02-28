@@ -101,7 +101,7 @@ function MapTacks.GameTraits()
 	end
 
 	-- Otherwise, analyze the game info for available features.
-	print("initializing MapTacks.GameTraits()");
+	-- print("initializing MapTacks.GameTraits()");
 
 	-- forest planting
 	for item in GameInfo.Features() do
@@ -159,6 +159,7 @@ function MapTacks.GameTraits()
 	-- Cache a copy of the traits.
 	-- Do not return the cache directly, as the caller will be adding
 	-- player-specific traits to the returned table.
+	g_gameTraitsCache = {};
 	for k,v in pairs(traits) do g_gameTraitsCache[k] = v; end
 	return traits;
 end
@@ -197,8 +198,8 @@ function MapTacks.StockIcons()
 		{ name="ICON_MAP_PIN_SQUARE"   },
 		{ name="ICON_MAP_PIN_DIAMOND"  },
 	};
-	-- TODO: verify that this returns a unique list every time
-	print(stock);
+	-- This creates a different table each time, which is important because the
+	-- layout algorithm adds more icons to this section.
 	return stock;
 end
 
@@ -488,7 +489,8 @@ end
 local function InitializeTypes()
 	-- initialize global type table
 	MapTacks.iconTypes = {};
-	for i, item in ipairs(g_stockIcons) do
+	stock = MapTacks.StockIcons();
+	for i, item in ipairs(stock) do
 		MapTacks.iconTypes[item.name] = MapTacks.STOCK;
 	end
 	for item in GameInfo.Units() do
