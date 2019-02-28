@@ -360,35 +360,39 @@ function MapTacks.IconOptions(playerID :number)
 	local people = MapTacks.PlayerGreatPeople(traits);
 	local wonders = MapTacks.PlayerWonders(traits);
 
-	-- TODO: merge orphan/widow sections
-
 	-- Grid design width guides.
 	local loose = 9;
 	local tight = 7;
 	local widow = 3;
 
 	-- Lay out the improvement & build icons.
-	if #builder + #unique + #buildmisc <= math.max(loose, #districts) then
-		-- Move them all onto a single row, if they will fit.
+	local columns = math.max(loose, #districts);  -- preliminary
+	local small = math.min(#builder, #buildmisc) + #unique;
+	local large = math.max(#builder, #buildmisc);
+	-- Merge small sections.
+	-- The unique improvements go into the smallest remaining section.
+	if small <= widow or small + large <= columns then
 		for i,v in ipairs(unique) do table.insert(builder, i, v); end
 		for i,v in ipairs(buildmisc) do table.insert(builder, v); end
 		buildmisc = {};
-	elseif #builder ~= 0 and #builder <= #buildmisc then
-		-- Otherwise, put the unique improvements on the shorter row.
+	elseif #builder <= #buildmisc then
 		for i,v in ipairs(unique) do table.insert(builder, i, v); end
 	else
 		for i,v in ipairs(unique) do table.insert(buildmisc, i, v); end
 	end
 
-	-- Combine districts with wonders, if they will fit.
-	if #districts + #wonders <= math.max(loose, #builder, #buildmisc) then
-		-- move all the wonders into the district section
+	-- Merge small district & wonder sections.
+	local columns = math.max(loose, #builder, #buildmisc);  -- preliminary
+	if #wonders <= widow or #districts + #wonders <= columns then
 		for i,v in ipairs(wonders) do table.insert(districts, v); end
 		wonders = {};
+	elseif #districts <= widow then
+		for i,v in ipairs(districts) do table.insert(wonders, i, v); end
+		districts = {};
 	end
 
 	-- Determine the design width.
-	local columns = math.max(tight, #districts, #builder, #buildmisc);
+	local columns = math.max(tight, #districts, #builder, #buildmisc); -- final
 	print(tostring(columns) .. " grid columns");
 
 	-- Assign a few basic icons to the stock icons or actions section.
@@ -410,8 +414,8 @@ function MapTacks.IconOptions(playerID :number)
 		table.insert(stock, 2, ICON_GOODY_HUT);
 	end
 
-	-- Merge actions and great people if they fit
-	if #actions + #people <= columns then
+	-- Merge small action & great people sections.
+	if #actions <= widow or #people <= widow or #actions + #people <= columns then
 		for i,v in ipairs(people) do table.insert(actions, v); end
 		people = {};
 	end
