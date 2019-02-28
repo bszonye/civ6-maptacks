@@ -1,57 +1,39 @@
-----------------------------------------------------------------  
+----------------------------------------------------------------
 -- MapPinPopup
 --
 -- Popup used for creating and editting map pins.
-----------------------------------------------------------------  
+----------------------------------------------------------------
+
 include( "PlayerTargetLogic" );
 include( "ToolTipHelper" );
 include( "MapTacks" );
 
-
-----------------------------------------------------------------  
+----------------------------------------------------------------
 -- Globals
----------------------------------------------------------------- 
+----------------------------------------------------------------
 local COLOR_YELLOW				:number = 0xFF2DFFF8;
 local COLOR_WHITE				:number = 0xFFFFFFFF;
- 
+
 local NO_EDIT_PIN_ID :number = -1;
 local g_editPinID :number = NO_EDIT_PIN_ID;
-local g_uniqueIconsPlayer :number = nil;  -- tailor UAs to the player
-local g_iconOptionEntries = {};
-local g_visibilityTargetEntries = {};
+-- layout tables are tailored to the current player
+local g_iconLayoutPlayerID :number = nil;
+-- the tables are organized by section: grid[section][index]
+local g_iconPulldownOptions = {};  -- icon metadata from MapTacks.IconOptions()
+local g_iconOptionEntries = {};  -- icon control objects
 
 local g_desiredIconName :string = "";
 
+local g_visibilityTargetEntries = {};
 -- Default player target is self only.
 local g_playerTarget = { targetType = ChatTargetTypes.CHATTARGET_PLAYER, targetID = Game.GetLocalPlayer() };
 local g_cachedChatPanelTarget = nil; -- Cached player target for ingame chat panel
-
--- When we aren't quite so crunched on time, it would be good to add the map pins table to the database
-local g_iconPulldownOptions = {};
-local g_stockIcons =
-{	
--- stock icons
-	{ name = "ICON_MAP_PIN_STRENGTH" },
-	{ name = "ICON_MAP_PIN_RANGED"   },
-	{ name = "ICON_MAP_PIN_BOMBARD"  },
-	{ name = "ICON_MAP_PIN_DISTRICT" },
-	{ name = "ICON_MAP_PIN_CHARGES"  },
-	{ name = "ICON_MAP_PIN_DEFENSE"  },
-	{ name = "ICON_MAP_PIN_MOVEMENT" },
-	{ name = "ICON_MAP_PIN_NO"       },
-	{ name = "ICON_MAP_PIN_PLUS"     },
-	{ name = "ICON_MAP_PIN_CIRCLE"   },
-	{ name = "ICON_MAP_PIN_TRIANGLE" },
-	{ name = "ICON_MAP_PIN_SUN"      },
-	{ name = "ICON_MAP_PIN_SQUARE"   },
-	{ name = "ICON_MAP_PIN_DIAMOND"  },
-};
 
 local sendToChatTTStr = Locale.Lookup( "LOC_MAP_PIN_SEND_TO_CHAT_TT" );
 local sendToChatNotVisibleTTStr = Locale.Lookup( "LOC_MAP_PIN_SEND_TO_CHAT_NOT_VISIBLE_TT" );
 
 -------------------------------------------------------------------------------
--- 
+--
 -------------------------------------------------------------------------------
 function MapPinVisibilityToPlayerTarget(mapPinVisibility :number, playerTargetData :table)
 	if(mapPinVisibility == ChatTargetTypes.CHATTARGET_ALL) then
@@ -107,10 +89,10 @@ function MapPinIsVisibleToChatTarget(mapPinVisibility :number, chatPlayerTarget 
 		elseif(chatPlayerTarget.targetType == ChatTargetTypes.CHATTARGET_PLAYER and chatPlayerTarget.targetID ~= NO_PLAYERTARGET_ID) then
 			local chatPlayerID = chatPlayerTarget.targetID;
 			local chatPlayer = PlayerConfigurations[chatPlayerID];
-			local chatTeam = chatPlayer:GetTeam();	
+			local chatTeam = chatPlayer:GetTeam();
 			if(localTeam == chatTeam) then
 				return true;
-			end	
+			end
 		end
 	elseif(mapPinVisibility >= 0) then
 		-- Individual map pin is only visible to that player.
@@ -124,45 +106,79 @@ end
 
 
 -------------------------------------------------------------------------------
--- 
+--
 -------------------------------------------------------------------------------
 function SetMapPinIcon(imageControl :table, mapPinIconName :string)
 	if(imageControl ~= nil and mapPinIconName ~= nil) then
-		imageControl:SetIcon(mapPinIconName);
+		if not imageControl:SetIcon(mapPinIconName) then
+			imageControl:SetIcon(MapTacks.UNKNOWN);
+		end
 	end
 end
 
 -- ===========================================================================
 function PopulateIconOptions()
 	-- unique icons are specific to the current player
-	g_uniqueIconsPlayer = Game.GetLocalPlayer();
+	g_iconLayoutPlayerID = Game.GetLocalPlayer();
 	-- build icon table with default pins + extensions
-	g_iconPulldownOptions = MapTacksIconOptions(g_stockIcons);
+	g_iconPulldownOptions = MapTacks.IconOptions(g_iconLayoutPlayerID);
 
 	g_iconOptionEntries = {};
 	Controls.IconOptionStack:DestroyAllChildren();
 
-	local controlTable = {};
-	local  newIconEntry = {};
-	for i, pair in ipairs(g_iconPulldownOptions) do
-		controlTable = {};
-		newIconEntry = {};
-		ContextPtr:BuildInstanceForControl( "IconOptionInstance", controlTable, Controls.IconOptionStack );
-		SetMapPinIcon(controlTable.Icon, pair.name);
-	    controlTable.IconOptionButton:RegisterCallback(Mouse.eLClick, OnIconOption);
-		controlTable.IconOptionButton:SetVoids(i, -1);
-		if pair.tooltip then
-			local tooltip = ToolTipHelper.GetToolTip(pair.tooltip, Game.GetLocalPlayer()) or Locale.Lookup(pair.tooltip);
-			controlTable.IconOptionButton:SetToolTipString(tooltip);
+	-- calculate column width
+	local columns = 7;
+	for j, section in ipairs(g_iconPulldownOptions) do
+		local width = #section;
+		if columns < width and width <= 21 and 1 < j then
+			columns = width;
 		end
+	end
+	local sectionTable = {};
+	local controlTable = {};
+	local newIconEntry = {};
+	for j, section in ipairs(g_iconPulldownOptions) do
+		g_iconOptionEntries[j] = {};
+		ContextPtr:BuildInstanceForControl( "IconOptionRowInstance", sectionTable, Controls.IconOptionStack );
+		-- dynamically determine section spacing
+		local ht = math.floor((#section + columns - 1) / columns);
+		local wd = math.floor((#section + ht - 1) / ht);
+		sectionTable.IconOptionRowStack:SetWrapWidth(40 * ht);
+		if j > 1 and (ht > 1 or columns < #g_iconPulldownOptions[j - 1]) then
+			-- leave a break around multi-row sections
+			sectionTable.IconOptionRowStack:SetOffsetY(8);
+		end
+		for i, pair in ipairs(section) do
+			controlTable = {};
+			newIconEntry = {};
+			ContextPtr:BuildInstanceForControl( "IconOptionInstance", controlTable, sectionTable.IconOptionRowStack );
+			SetMapPinIcon(controlTable.Icon, pair.name);
+			controlTable.IconOptionButton:RegisterCallback(Mouse.eLClick, OnIconOption);
+			controlTable.IconOptionButton:SetVoids(i, j);
+			if pair.tooltip then
+				local tooltip = ToolTipHelper.GetToolTip(pair.tooltip, Game.GetLocalPlayer()) or Locale.Lookup(pair.tooltip);
+				controlTable.IconOptionButton:SetToolTipString(tooltip);
+			end
 
-		newIconEntry.IconName = pair.name;
-		newIconEntry.Instance = controlTable;
-		g_iconOptionEntries[i] = newIconEntry;
+			newIconEntry.IconName = pair.name;
+			newIconEntry.Instance = controlTable;
+			g_iconOptionEntries[j][i] = newIconEntry;
 
-		UpdateIconOptionColor(i);
+			UpdateIconOptionColor(i, j);
+		end
+		for i=#section+1,ht*wd do
+			-- fill out section blocks with disabled boxes
+			controlTable = {};
+			ContextPtr:BuildInstanceForControl( "IconOptionInstance", controlTable, sectionTable.IconOptionRowStack );
+			controlTable.IconOptionButton:SetDisabled(true);
+			controlTable.Icon:SetHide(true);
+		end
 	end
 
+	-- set width dynamically according to widest section
+	Controls.Window:SetSizeX(44 * columns + 30);
+	Controls.OptionsStack:SetWrapWidth(44 * columns + 8);
+	-- Controls.PinFrame:SetSizeX(44 * (columns - 4) + 2);
 	Controls.IconOptionStack:CalculateSize();
 	Controls.IconOptionStack:ReprocessAnchoring();
 	Controls.OptionsStack:CalculateSize();
@@ -176,14 +192,16 @@ end
 
 -- ===========================================================================
 function UpdateIconOptionColors()
-	for iconIndex, iconEntry in pairs(g_iconOptionEntries) do
-		UpdateIconOptionColor(iconIndex);
+	for j, section in ipairs(g_iconOptionEntries) do
+		for i, icon in ipairs(section) do
+			UpdateIconOptionColor(i, j);
+		end
 	end
 end
 
 -- ===========================================================================
-function UpdateIconOptionColor(iconEntryIndex :number)
-	local iconEntry :table = g_iconOptionEntries[iconEntryIndex];
+function UpdateIconOptionColor(index :number, section :number)
+	local iconEntry :table = g_iconOptionEntries[section][index];
 	if(iconEntry ~= nil) then
 		if(iconEntry.IconName == g_desiredIconName) then
 			-- Selected icon
@@ -198,7 +216,7 @@ end
 function RequestMapPin(hexX :number, hexY :number)
 	local activePlayerID = Game.GetLocalPlayer();
 	-- update UA icons if the active player has changed
-	if g_uniqueIconsPlayer ~= activePlayerID then PopulateIconOptions(); end
+	if g_iconLayoutPlayerID ~= activePlayerID then PopulateIconOptions(); end
 	local pPlayerCfg = PlayerConfigurations[activePlayerID];
 	local pMapPin = pPlayerCfg:GetMapPin(hexX, hexY);
 	if(pMapPin ~= nil) then
@@ -283,8 +301,8 @@ function ShowHideSendToChatButton()
 end
 
 -- ===========================================================================
-function OnIconOption( iconPulldownIndex :number, notUsed :number )
-	local iconOptions :table = g_iconPulldownOptions[iconPulldownIndex];
+function OnIconOption( index :number, section :number )
+	local iconOptions :table = g_iconPulldownOptions[section][index];
 	if(iconOptions) then
 		local newIconName :string = iconOptions.name;
 		g_desiredIconName = newIconName;
@@ -340,9 +358,9 @@ end
 function OnCancel()
 	UIManager:DequeuePopup( ContextPtr );
 end
-----------------------------------------------------------------  
+----------------------------------------------------------------
 -- Event Handlers
----------------------------------------------------------------- 
+----------------------------------------------------------------
 function OnMapPinPlayerInfoChanged( playerID :number )
 	PlayerTarget_OnPlayerInfoChanged( playerID, Controls.VisibilityPull, nil, nil, g_visibilityTargetEntries, g_playerTarget, true);
 end
@@ -386,7 +404,7 @@ function Initialize()
 	Controls.OkButton:RegisterCallback(Mouse.eLClick, OnOk);
 	Controls.OkButton:RegisterCallback( Mouse.eMouseEnter, function() UI.PlaySound("Main_Menu_Mouse_Over"); end);
 	Controls.PinName:RegisterCommitCallback( OnOk );
-	
+
 	LuaEvents.MapPinPopup_RequestMapPin.Add(RequestMapPin);
 	LuaEvents.ChatPanel_PlayerTargetChanged.Add(OnChatPanel_PlayerTargetChanged);
 
@@ -394,8 +412,8 @@ function Initialize()
 	Events.PlayerInfoChanged.Add(OnMapPinPlayerInfoChanged);
 	Events.LocalPlayerChanged.Add(OnLocalPlayerChanged);
 
-	-- Request the chat panel's player target so we have an initial value. 
-	-- We have to do this because the map pin's context is loaded after the chat panel's 
+	-- Request the chat panel's player target so we have an initial value.
+	-- We have to do this because the map pin's context is loaded after the chat panel's
 	-- and the chat panel's show/hide handler is not triggered as expected.
 	LuaEvents.MapPinPopup_RequestChatPlayerTarget();
 

@@ -1,4 +1,4 @@
-# Map Tacks 1.2.0 [<img align="right" src="maptacks.png" height="256" width="256">](https://steamcommunity.com/sharedfiles/filedetails/?id=1122081356)
+# Map Tacks 2.0.0 [<img align="right" src="maptacks.png" height="256" width="256">](https://steamcommunity.com/sharedfiles/filedetails/?id=1122081356)
 Adds new map icons  
 Enhances list interface  
 Fixes bugs and styling  
@@ -6,15 +6,15 @@ Fixes bugs and styling
 ## New icons
 The map tack editor adds many new icons:
 
-* districts, customized with civilization unique districts
-* improvements, including unique & bonus improvements from civilization
-  abilities, city states, and governors
-* unit actions like harvesting, repair, archaeology, and espionage
-* scouting markers for barbarian outposts and tribal villages
-* all types of great people, and
-* a golden tile to mark wonder sites
+* districts
+* improvements
+* villages and barbarians
+* common unit actions
+* great people
+* wonders
 
-All new icons have tooltips, with game effects for districts and improvements.
+All new icons have tooltips, including game effects for districts,
+improvements, and wonders.
 
 ## Scrollable map tack list
 The list dynamically resizes to show up to 15 map tacks, with a scrollbar to

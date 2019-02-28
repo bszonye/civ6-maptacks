@@ -8,7 +8,6 @@ include( "SupportFunctions" );
 include( "Colors" );
 include( "MapTacks" );
 
-
 -- ===========================================================================
 --	CONSTANTS
 -- ===========================================================================
@@ -78,7 +77,7 @@ hstructure MapPinFlag
 
 	m_InstanceManager				: table;				-- The instance manager that made the control set.
     m_Instance						: table;				-- The instanced control set.
-    
+
     m_Type							: number;				-- Pin type
     m_IsSelected					: boolean;
     m_IsCurrentlyVisible			: boolean;
@@ -86,12 +85,12 @@ hstructure MapPinFlag
     m_IsDimmed						: boolean;
 	m_OverrideDimmed				: boolean;
 	m_OverrideDim					: boolean;
-    
+
     m_Player						: table;
     m_pinID							: number;				-- The pin ID.  Keeping just the ID, rather than a reference because there will be times when we need the value, but the pin instance will not exist.
 end
 
--- Create one instance of the meta object as a global variable with the same name as the data structure portion.  
+-- Create one instance of the meta object as a global variable with the same name as the data structure portion.
 -- This allows us to do a MapPinFlag:new, so the naming looks consistent.
 MapPinFlag = hmake MapPinFlagMeta {};
 
@@ -123,15 +122,15 @@ function MapPinFlag.new( self : MapPinFlagMeta, playerID: number, pinID : number
 	if (m_MapPinInstances[playerID] == nil) then
 		m_MapPinInstances[playerID] = {};
 	end
-	
+
 	m_MapPinInstances[playerID][pinID] = o;
 end
 
 ------------------------------------------------------------------
 function MapPinFlag.destroy( self : MapPinFlag )
-    if ( self.m_InstanceManager ~= nil ) then         
+    if ( self.m_InstanceManager ~= nil ) then
         self:UpdateSelected( false );
-                        		    
+
 		if (self.m_Instance ~= nil) then
 			self.m_InstanceManager:ReleaseInstance( self.m_Instance );
 			m_MapPinInstances[ self.m_Player:GetID() ][ self.m_pinID ] = nil;
@@ -159,7 +158,7 @@ function MapPinFlag.Initialize( self : MapPinFlag, playerID: number, pinID : num
 		self.m_IsForceHide = false;
 		self.m_IsDimmed = false;
 		self.m_OverrideDimmed = false;
-    
+
 		self.m_Player = Players[playerID];
 		self.m_pinID = pinID;
 
@@ -193,7 +192,7 @@ function OnMapPinFlagLeftClick( playerID : number, pinID : number )
 		local flagInstance = GetMapPinFlag( playerID, pinID );
 		if (flagInstance ~= nil) then
 			local pMapPin = flagInstance:GetMapPin();
-			if(pMapPin ~= nil) then		
+			if(pMapPin ~= nil) then
 				LuaEvents.MapPinPopup_RequestMapPin(pMapPin:GetHexX(), pMapPin:GetHexY());
 			end
 		end
@@ -220,7 +219,7 @@ function MapPinFlag.SetInteractivity( self : MapPinFlag )
     local localPlayerID :number = Game.GetLocalPlayer();
     local flagPlayerID	:number = self.m_Player:GetID();
 	local pinID			:number = self.m_pinID;
-        			
+
 
     self.m_Instance.NormalButton:SetVoid1( flagPlayerID );
     self.m_Instance.NormalButton:SetVoid2( pinID );
@@ -231,23 +230,25 @@ end
 ------------------------------------------------------------------
 -- Set the flag color based on the player colors.
 function MapPinFlag.SetColor( self : MapPinFlag )
-	local primaryColor, secondaryColor = MapTacksColors(self.m_Player:GetID());
+	local primaryColor, secondaryColor = UI.GetPlayerColors(self.m_Player:GetID());
 
-	local darkerFlagColor   :number = MapTacksTint(primaryColor, -85);
-	local brighterFlagColor :number = MapTacksTint(primaryColor, 90);
-	local brighterIconColor :number = MapTacksTint(secondaryColor, 20);
-	-- local darkerIconColor   :number = MapTacksTint(secondaryColor, -30);
-        
-	local iconType = MapTacksType(self:GetMapPin()) or MAPTACKS_STOCK;
-	-- print(iconName);
+	local darkerFlagColor   :number = MapTacks.Tint(primaryColor, -85);
+	local brighterFlagColor :number = MapTacks.Tint(primaryColor, 90);
+	local brighterIconColor :number = MapTacks.Tint(secondaryColor, 20);
+	-- local darkerIconColor   :number = MapTacks.Tint(secondaryColor, -30);
+
+	local iconType = MapTacks.IconType(self:GetMapPin()) or MapTacks.STOCK;
 	-- set icon tint appropriate for the icon color
-	if iconType <= MAPTACKS_WHITE then
+	if iconType <= MapTacks.WHITE then
 		-- stock & white map pins
 		self.m_Instance.UnitIcon:SetColor( brighterIconColor );
-	elseif iconType == MAPTACKS_GRAY then
+	elseif iconType == MapTacks.GRAY then
 		-- shaded icons: match midtones to stock pin color
-		local tintedIconColor = MapTacksIconTint(brighterIconColor);
+		local tintedIconColor = MapTacks.IconTint(brighterIconColor);
 		self.m_Instance.UnitIcon:SetColor(tintedIconColor);
+	else
+		-- full color
+		self.m_Instance.UnitIcon:SetColor(-1);  -- pure white
 	end
 	self.m_Instance.FlagBase:SetColor( primaryColor );
 	self.m_Instance.FlagBaseOutline:SetColor( primaryColor );
@@ -265,19 +266,23 @@ function MapPinFlag.SetFlagUnitEmblem( self : MapPinFlag )
 	local pMapPin = self:GetMapPin();
     if pMapPin ~= nil then
 		local iconName = pMapPin:GetIconName();
-		local iconType = MapTacksType(pMapPin);
-		if iconType == MAPTACKS_COLOR then
-			self.m_Instance.DistrictIcon:SetIcon(iconName);
-			self.m_Instance.DistrictIcon:SetHide(false);
+		local iconType = MapTacks.IconType(pMapPin);
+		if iconType == MapTacks.HEX then
+			-- district icons are embedded into the tack head (HexIcon)
+			if not self.m_Instance.HexIcon:SetIcon(iconName) then
+				self.m_Instance.HexIcon:SetIcon(MapTacks.UNKNOWN);
+			end
+			self.m_Instance.HexIcon:SetHide(false);
 			self.m_Instance.UnitIcon:SetHide(true);
 		else
-			local size = (iconType == MAPTACKS_STOCK and 24) or 26;
+			-- other icons sit on top of the tack (UnitIcon)
+			local size = MapTacks.iconSizes[iconType];
 			self.m_Instance.UnitIcon:SetSizeVal(size, size);
 			if not self.m_Instance.UnitIcon:SetIcon(iconName) then
-				self.m_Instance.UnitIcon:SetIcon("ICON_MAP_PIN_UNKNOWN_WHITE");
+				self.m_Instance.UnitIcon:SetIcon(MapTacks.UNKNOWN);
 			end
 			self.m_Instance.UnitIcon:SetHide(false);
-			self.m_Instance.DistrictIcon:SetHide(true);
+			self.m_Instance.HexIcon:SetHide(true);
 		end
 
 	end
@@ -297,14 +302,14 @@ function MapPinFlag.OverrideDimmed( self : MapPinFlag, bOverride : boolean )
 	self.m_OverrideDimmed = bOverride;
     self:UpdateDimmedState();
 end
-     
+
 -----------------------------------------------------------------
 -- Set the flag's alpha state, based on the current dimming flags.
 function MapPinFlag.UpdateDimmedState( self : MapPinFlag )
 	if( self.m_IsDimmed and not self.m_OverrideDimmed ) then
         self.m_Instance.FlagRoot:SetAlpha( ALPHA_DIM );
 	else
-        self.m_Instance.FlagRoot:SetAlpha( 1.0 );         
+        self.m_Instance.FlagRoot:SetAlpha( 1.0 );
     end
 end
 
@@ -328,10 +333,10 @@ end
 function MapPinFlag.UpdateFlagType( self : MapPinFlag )
     local textureName:string;
     local maskName:string;
-				
+
     textureName = TEXTURE_BASE;
     maskName	= TEXTURE_MASK_BASE;
-     
+
 	self.m_Instance.FlagBaseDarken:SetTexture( textureName );
 	self.m_Instance.FlagBaseLighten:SetTexture( textureName );
     self.m_Instance.FlagBase:SetTexture( textureName );
@@ -340,7 +345,7 @@ function MapPinFlag.UpdateFlagType( self : MapPinFlag )
     self.m_Instance.NormalSelect:SetTexture( textureName );
 	self.m_Instance.FlagOver:SetTexture( textureName );
     self.m_Instance.LightEffect:SetTexture( textureName );
-        
+
    self.m_Instance.NormalScrollAnim:SetMask( maskName );
 end
 
@@ -379,18 +384,18 @@ end
 -- The selection state has changed.
 function MapPinFlag.UpdateSelected( self : MapPinFlag, isSelected : boolean )
     self.m_IsSelected = isSelected;
-        
+
 	self.m_Instance.NormalSelect:SetHide( not self.m_IsSelected );
 
-        
+
 	-- If selected, change our parent to the selection container so we are on top in the drawing order
     if( self.m_IsSelected ) then
         self.m_Instance.Anchor:ChangeParent( m_SelectedContainer );
     else
-		-- Re-attach back to the manager parent            			
-		self.m_Instance.Anchor:ChangeParent( self.m_InstanceManager.m_ParentControl );			            
+		-- Re-attach back to the manager parent
+		self.m_Instance.Anchor:ChangeParent( self.m_InstanceManager.m_ParentControl );
     end
-        
+
     self:OverrideDimmed( self.m_IsSelected );
 end
 
@@ -449,7 +454,7 @@ function CreateMapPinFlag(mapPinCfg : table)
 		if(flagInstance ~= nil) then
 			-- Flag already exists, we're probably just reusing the pinID, refresh the pin.
 			flagInstance:UpdateName();
-			flagInstance:UpdatePosition();		
+			flagInstance:UpdatePosition();
 			return;
 		end
 
@@ -621,7 +626,6 @@ function StackMapPin(pMapPin :table)
 	local iW, iH = Map.GetGridSize();
 	local y = pMapPin:GetHexY() % iH;
 	local x = pMapPin:GetHexX() % iW;
-	-- print(string.format('%d %d', x, y));
 	local stack = m_MapPinStacks[y][x];
 	if stack then
 		stack[#stack + 1] = pMapPin;
@@ -699,7 +703,7 @@ function Initialize()
 
 	Events.BeginWonderReveal.Add( OnBeginWonderReveal );
 	Events.Camera_Updated.Add( OnCameraUpdate );
-	Events.CombatVisBegin.Add( OnCombatVisBegin );		
+	Events.CombatVisBegin.Add( OnCombatVisBegin );
 	Events.CombatVisEnd.Add( OnCombatVisEnd );
 	Events.EndWonderReveal.Add( OnEndWonderReveal );
 	Events.LocalPlayerChanged.Add(OnLocalPlayerChanged);

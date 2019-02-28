@@ -2,221 +2,473 @@
 -- MapTacks
 -- utility functions
 
-local g_enableWonders = false;
+-- ===========================================================================
+-- Global data
 
-local g_debugLeader = nil;
--- g_debugLeader = GameInfo.Leaders.LEADER_BARBAROSSA
--- g_debugLeader = GameInfo.Leaders.LEADER_CATHERINE_DE_MEDICI
--- g_debugLeader = GameInfo.Leaders.LEADER_CLEOPATRA
--- g_debugLeader = GameInfo.Leaders.LEADER_GANDHI
--- g_debugLeader = GameInfo.Leaders.LEADER_GILGAMESH
--- g_debugLeader = GameInfo.Leaders.LEADER_GORGO
--- g_debugLeader = GameInfo.Leaders.LEADER_HARDRADA
--- g_debugLeader = GameInfo.Leaders.LEADER_HOJO
--- g_debugLeader = GameInfo.Leaders.LEADER_MVEMBA
--- g_debugLeader = GameInfo.Leaders.LEADER_PEDRO
--- g_debugLeader = GameInfo.Leaders.LEADER_PERICLES
--- g_debugLeader = GameInfo.Leaders.LEADER_PETER_GREAT
--- g_debugLeader = GameInfo.Leaders.LEADER_PHILIP_II
--- g_debugLeader = GameInfo.Leaders.LEADER_QIN
--- g_debugLeader = GameInfo.Leaders.LEADER_SALADIN
--- g_debugLeader = GameInfo.Leaders.LEADER_TOMYRIS
--- g_debugLeader = GameInfo.Leaders.LEADER_TRAJAN
--- g_debugLeader = GameInfo.Leaders.LEADER_T_ROOSEVELT
--- g_debugLeader = GameInfo.Leaders.LEADER_VICTORIA
--- g_debugLeader = GameInfo.Leaders.LEADER_JOHN_CURTIN
--- g_debugLeader = GameInfo.Leaders.LEADER_MONTEZUMA
--- g_debugLeader = GameInfo.Leaders.LEADER_ALEXANDER
--- g_debugLeader = GameInfo.Leaders.LEADER_CYRUS
--- g_debugLeader = GameInfo.Leaders.LEADER_AMANITORE
--- g_debugLeader = GameInfo.Leaders.LEADER_JADWIGA
+-- Note that this is not shared between different calling modules.
+-- To get that you either need to share data through ExposedMembers:
+--     ExposedMembers.MapTacks = ExposedMembers.MapTacks or {};
+--     MapTacks = ExposedMembers.MapTacks;
+-- or share functions through LuaEvents:
+--     LuaEvents.MapTacks_Function.Add(MapTacks.Function);
+
+MapTacks = MapTacks or {};
+local MapTacks = MapTacks;  -- localize access
+
+-- Values for MapTacks.iconTypes["ICON_NAME"]:
+MapTacks.STOCK = 1;  -- stock icons
+MapTacks.WHITE = 2;  -- white icons (units, spy ops)
+MapTacks.GRAY = 3;   -- gray shaded icons (improvements, commands)
+MapTacks.COLOR = 4;  -- full color icons (buildings, wonders)
+MapTacks.HEX = 5;  -- full color icons with hex backgrounds (districts)
+MapTacks.iconSizes = { 24, 26, 26, 32, 32, };
+
+-- Other constants
+MapTacks.UNKNOWN = "ICON_CIVILIZATION_UNKNOWN";
+
+-- shorthand for common GameInfo lookups
+local cmd = GameInfo.UnitCommands;
+local ops = GameInfo.UnitOperations;
 
 -- ===========================================================================
-local g_stockIcons = {
-	{ name="ICON_MAP_PIN_STRENGTH" },
-	{ name="ICON_MAP_PIN_RANGED"   },
-	{ name="ICON_MAP_PIN_BOMBARD"  },
-	{ name="ICON_MAP_PIN_DISTRICT" },
-	{ name="ICON_MAP_PIN_CHARGES"  },
-	{ name="ICON_MAP_PIN_DEFENSE"  },
-	{ name="ICON_MAP_PIN_MOVEMENT" },
-	{ name="ICON_MAP_PIN_NO"       },
-	{ name="ICON_MAP_PIN_PLUS"     },
-	{ name="ICON_MAP_PIN_CIRCLE"   },
-	{ name="ICON_MAP_PIN_TRIANGLE" },
-	{ name="ICON_MAP_PIN_SUN"      },
-	{ name="ICON_MAP_PIN_SQUARE"   },
-	{ name="ICON_MAP_PIN_DIAMOND"  },
+-- synthetic icons (not in database)
+local ICON_BARBARIAN_CAMP = {
+	name="ICON_NOTIFICATION_BARBARIANS_SIGHTED",
+	tooltip="LOC_IMPROVEMENT_BARBARIAN_CAMP_NAME",
 };
-local g_buildOps = {
-	GameInfo.UnitOperations.UNITOPERATION_PLANT_FOREST,
-	GameInfo.UnitOperations.UNITOPERATION_REMOVE_FEATURE,
-	GameInfo.UnitOperations.UNITOPERATION_HARVEST_RESOURCE,
+local ICON_GOODY_HUT = {
+	name="ICON_NOTIFICATION_DISCOVER_GOODY_HUT",
+	tooltip="LOC_IMPROVEMENT_GOODY_HUT_NAME",
 };
-local g_miscIcons = {
-	GameInfo.UnitOperations.UNITOPERATION_BUILD_ROUTE,
-	GameInfo.UnitOperations.UNITOPERATION_CLEAR_CONTAMINATION,
-	GameInfo.UnitOperations.UNITOPERATION_REPAIR,
-	GameInfo.UnitOperations.UNITOPERATION_DESIGNATE_PARK,
-	GameInfo.UnitOperations.UNITOPERATION_EXCAVATE,
-	GameInfo.UnitOperations.UNITOPERATION_MAKE_TRADE_ROUTE,
-	{
-		Icon="ICON_UNITOPERATION_SPY_COUNTERSPY_ACTION",
-		-- Description="LOC_UNIT_SPY_NAME",
-		Description="LOC_PROMOTION_CLASS_SPY_NAME",
-	},
-	{
-		Icon="ICON_NOTIFICATION_BARBARIANS_SIGHTED",
-		Description="LOC_IMPROVEMENT_BARBARIAN_CAMP_NAME",
-	},
-	{
-		Icon="ICON_NOTIFICATION_DISCOVER_GOODY_HUT",
-		Description="LOC_IMPROVEMENT_GOODY_HUT_NAME",
-	},
-	-- GameInfo.Notifications.NOTIFICATION_CITY_RANGE_ATTACK,
-	-- GameInfo.Notifications.NOTIFICATION_BARBARIANS_SIGHTED,
-	-- GameInfo.Notifications.NOTIFICATION_DISCOVER_GOODY_HUT,
-	GameInfo.UnitOperations.UNITOPERATION_PILLAGE,
-	GameInfo.UnitOperations.UNITOPERATION_WMD_STRIKE,
-	-- GameInfo.UnitCommands.UNITCOMMAND_PLUNDER_TRADE_ROUTE,
-	GameInfo.UnitCommands.UNITCOMMAND_FORM_ARMY,
-	GameInfo.UnitCommands.UNITCOMMAND_ACTIVATE_GREAT_PERSON,
+local ICON_SPY = {
+	name="ICON_UNITOPERATION_SPY_COUNTERSPY_ACTION",
+	-- tooltip="LOC_UNIT_SPY_NAME",
+	tooltip="LOC_PROMOTION_CLASS_SPY_NAME",
 };
 
 -- ===========================================================================
--- Build the grid of map pin icon options
-function MapTacksIconOptions(stockIcons : table)
-	local icons = {};
-	local activePlayerID = Game.GetLocalPlayer();
-	local pPlayerCfg = PlayerConfigurations[activePlayerID];
+-- Timeline value based on tech/civic cost
+function MapTacks.Timeline(a)
+	local techCost = 0;
+	if a.PrereqTech ~= nil then
+		tech = GameInfo.Technologies[a.PrereqTech];
+		techCost = tech.Cost;
+	end
+	local civicCost = 0;
+	if a.PrereqCivic ~= nil then
+		civic = GameInfo.Civics[a.PrereqCivic];
+		civicCost = civic.Cost;
+	end
+	local cost = math.max(techCost, civicCost);
+	return cost;
+end
 
-	local leader = GameInfo.Leaders[pPlayerCfg:GetLeaderTypeID()];
-	if g_debugLeader then leader = g_debugLeader; end
-	local civ = leader.CivilizationCollection[1];
-	-- print(civ.CivilizationType);
+function MapTacks.TimelineSort(a, b)
+	local atime = MapTacks.Timeline(a);
+	local btime = MapTacks.Timeline(b);
+	-- primary sort: tech/civic timeline
+	if atime ~= btime then
+		return atime < btime;
+	end
+	-- secondary sort: build cost
+	acost = a.Cost or 0;
+	bcost = b.Cost or 0;
+	if acost ~= bcost then
+		return acost < bcost;
+	end
+	-- tertiary sort: localized icon name
+	aname = Locale.Lookup(a.Name);
+	bname = Locale.Lookup(b.Name);
+	return Locale.Compare(aname, bname) == -1;
+end
 
-	-- Get unique traits for the player civilization
+function MapTacks.DescriptionSort(a, b)
+	aname = Locale.Lookup(a.Description);
+	bname = Locale.Lookup(b.Description);
+	return Locale.Compare(aname, bname) == -1;
+end
+
+-- ===========================================================================
+-- Database utility functions
+local g_gameTraitsCache :table = nil;
+function MapTacks.GameTraits()
 	local traits = {};
+
+	-- Return a copy of the global cache, if it's initialized.
+	if g_gameTraitsCache then
+		for k,v in pairs(g_gameTraitsCache) do traits[k] = v; end
+		return traits;
+	end
+
+	-- Otherwise, analyze the game info for available features.
+	-- print("initializing MapTacks.GameTraits()");
+
+	-- forest planting
+	for item in GameInfo.Features() do
+		if item.AddCivic then
+			traits.UNITOPERATION_PLANT_FOREST = true;
+		end
+	end
+	-- resource harvesting
+	for item in GameInfo.Resources() do
+		if #item.Harvests ~= 0 then
+			traits.UNITOPERATION_HARVEST_RESOURCE = true;
+		end
+	end
+	-- road building
+	for item in GameInfo.Routes() do
+		if #item.ValidBuildUnits ~= 0 then
+			traits.UNITOPERATION_BUILD_ROUTE = true;
+		end
+	end
+	-- unit classes: paradrop, rock band
+	local paradrop = {};
+	local rockband = {};
+	for item in GameInfo.TypeTags() do
+		if item.Tag == "CLASS_PARADROP" then
+			paradrop[item.Type] = true;
+		end
+		if item.Tag == "CLASS_ROCK_BAND" then
+			rockband[item.Type] = true;
+		end
+	end
+	-- unit abilities: espionage, naturalism, archaeology, trade
+	for item in GameInfo.Units() do
+		if item.Spy then
+			traits.ICON_SPY = true;
+		end
+		if item.ParkCharges ~= 0 then
+			traits.UNITOPERATION_DESIGNATE_PARK = true;
+		end
+		if item.ExtractsArtifacts then
+			traits.UNITOPERATION_EXCAVATE = true;
+		end
+		if item.MakeTradeRoute then
+			-- if we have traders, include the trade AND road icons
+			traits.UNITOPERATION_MAKE_TRADE_ROUTE = true;
+			traits.UNITOPERATION_BUILD_ROUTE = true;
+		end
+		if rockband[item.UnitType] then
+			traits.UNITOPERATION_TOURISM_BOMB = true;
+		end
+		if paradrop[item.UnitType] then
+			traits.UNITCOMMAND_PARADROP = true;
+		end
+	end
+
+	-- Cache a copy of the traits.
+	-- Do not return the cache directly, as the caller will be adding
+	-- player-specific traits to the returned table.
+	g_gameTraitsCache = {};
+	for k,v in pairs(traits) do g_gameTraitsCache[k] = v; end
+	return traits;
+end
+
+function MapTacks.PlayerTraits(playerID :number)
+	-- First, get the player-independent game info.
+	local traits = MapTacks.GameTraits();
+	-- Then, add the player-specific traits.
+	local playerConfig = PlayerConfigurations[playerID];
+	local leader = GameInfo.Leaders[playerConfig:GetLeaderTypeID()];
 	for i, item in ipairs(leader.TraitCollection) do
 		traits[item.TraitType] = true;
-		-- print(item.TraitType);
 	end
-	for i, item in ipairs(civ.TraitCollection) do
+	local civilization = leader.CivilizationCollection[1];
+	for i, item in ipairs(civilization.TraitCollection) do
 		traits[item.TraitType] = true;
-		-- print(item.TraitType);
 	end
-	-- Get unique district replacement info
-	local districts = {};
-	for item in GameInfo.Districts() do
-		if traits[item.TraitType] then
-			for i, swap in ipairs(item.ReplacesCollection) do
-				local base = swap.ReplacesDistrictType;
-				districts[base] = item;
-				-- print(item.DistrictType, "replaces", base);
-			end
-		end
-	end
+	local buildops = {};
+	return traits;
+end
 
-	-- Standard map pins
-	for i, item in ipairs(stockIcons or g_stockIcons) do
-		table.insert(icons, item);
-	end
+function MapTacks.StockIcons()
+	stock = {
+		{ name="ICON_MAP_PIN_STRENGTH" },
+		{ name="ICON_MAP_PIN_RANGED"   },
+		{ name="ICON_MAP_PIN_BOMBARD"  },
+		{ name="ICON_MAP_PIN_DISTRICT" },
+		{ name="ICON_MAP_PIN_CHARGES"  },
+		{ name="ICON_MAP_PIN_DEFENSE"  },
+		{ name="ICON_MAP_PIN_MOVEMENT" },
+		{ name="ICON_MAP_PIN_NO"       },
+		{ name="ICON_MAP_PIN_PLUS"     },
+		{ name="ICON_MAP_PIN_CIRCLE"   },
+		{ name="ICON_MAP_PIN_TRIANGLE" },
+		{ name="ICON_MAP_PIN_SUN"      },
+		{ name="ICON_MAP_PIN_SQUARE"   },
+		{ name="ICON_MAP_PIN_DIAMOND"  },
+	};
+	-- This creates a different table each time, which is important because the
+	-- layout algorithm adds more icons to this section.
+	return stock;
+end
 
-	-- Districts
-	table.insert(icons, MapTacksIcon(GameInfo.Districts.DISTRICT_WONDER));
+function MapTacks.PlayerDistricts(traits :table)
+	-- First, determine which districts to ignore.
+	local skipDistricts = {};
 	for item in GameInfo.Districts() do
 		local itype = item.DistrictType;
-		if districts[itype] then
-			-- unique district replacements for this civ
-			table.insert(icons, MapTacksIcon(districts[itype]));
-		elseif item.TraitType then
-			-- skip other unique districts
-		elseif itype ~= "DISTRICT_WONDER" then
-			table.insert(icons, MapTacksIcon(item));
+		local trait = item.TraitType;
+		if itype == "DISTRICT_WONDER" then
+			-- this goes in the wonders section instead
+			skipDistricts[itype] = itype
+		elseif traits[trait] then
+			-- unique district for our civ
+			-- mark any districts replaced by this one
+			for i, swap in ipairs(item.ReplacesCollection) do
+				local base = swap.ReplacesDistrictType;
+				skipDistricts[base] = itype;
+			end
+		elseif trait then
+			-- unique district for another civ
+			skipDistricts[itype] = trait;
 		end
 	end
+	-- Then, collect all of the districts for this civ.
+	local districts = {};
+	for item in GameInfo.Districts() do
+		if not skipDistricts[item.DistrictType] then
+			table.insert(districts, item);
+		end
+	end
+	table.sort(districts, MapTacks.TimelineSort);
+	return districts;
+end
 
+function MapTacks.PlayerImprovements(traits :table)
 	-- Improvements
-	local builderIcons = {};
-	local uniqueIcons = {};
-	local governorIcons = {};
-	local minorCivIcons = {};
-	local engineerIcons = {};
+	local builder = {};
+	local unique = {};
+	local governor = {};
+	local minorCiv = {};
+	local engineer = {};
+	-- read Improvements database
 	for item in GameInfo.Improvements() do
 		-- does this improvement have a valid build unit?
 		local units = item.ValidBuildUnits;
 		if #units ~= 0 then
-			local entry = MapTacksIcon(item);
 			local unit = GameInfo.Units[units[1].UnitType];
 			local trait = item.TraitType or unit.TraitType;
-			-- print(valid.UnitType, trait);
 			if trait then
-				-- print(trait);
 				if traits[trait] then
-					-- separate unique improvements
-					table.insert(uniqueIcons, entry);
+					table.insert(unique, item);
 				elseif trait == "TRAIT_CIVILIZATION_NO_PLAYER" then
-					-- governor improvements
-					table.insert(governorIcons, entry);
+					table.insert(governor, item);
 				elseif trait:sub(1, 10) == "MINOR_CIV_" then
-					table.insert(minorCivIcons, entry);
+					table.insert(minorCiv, item);
 				end
 			elseif unit.UnitType == "UNIT_BUILDER" then
-				table.insert(builderIcons, entry);
+				table.insert(builder, item);
 			else
-				table.insert(engineerIcons, entry);
+				table.insert(engineer, item);
 			end
+			-- print(item.Name, MapTacks.Timeline(item));
 		end
 	end
-	if #uniqueIcons == 0 then
-		-- if no unique improvement, use a generic icon
-		table.insert(uniqueIcons, MapTacksIcon(
-			GameInfo.UnitOperations.UNITOPERATION_BUILD_IMPROVEMENT))
+	-- sort lists by timeline
+	table.sort(builder, MapTacks.TimelineSort);
+	table.sort(unique, MapTacks.TimelineSort);
+	table.sort(governor, MapTacks.TimelineSort);
+	table.sort(minorCiv, MapTacks.TimelineSort);
+	table.sort(engineer, MapTacks.TimelineSort);
+	-- additional engineer operations
+	if traits.UNITOPERATION_BUILD_ROUTE then
+		table.insert(engineer, 1, ops.UNITOPERATION_BUILD_ROUTE);
 	end
+	-- additional builder & support operations
+	local buildops = {};
+	if traits.UNITOPERATION_DESIGNATE_PARK then
+		table.insert(buildops, ops.UNITOPERATION_DESIGNATE_PARK);
+	end
+	if traits.UNITOPERATION_PLANT_FOREST then
+		table.insert(buildops, ops.UNITOPERATION_PLANT_FOREST);
+	end
+	table.insert(buildops, ops.UNITOPERATION_REMOVE_FEATURE);
+	-- collect all of the miscellaneous builds & improvements
+	local misc = {};
+	for i,v in ipairs(governor) do table.insert(misc, v); end
+	for i,v in ipairs(minorCiv) do table.insert(misc, v); end
+	for i,v in ipairs(engineer) do table.insert(misc, v); end
+	for i,v in ipairs(buildops) do table.insert(misc, v); end
+	return builder, unique, misc, governor, minorCiv, engineer, buildops;
+end
 
-	for i,v in ipairs(uniqueIcons) do table.insert(icons, v); end
-	for i,v in ipairs(builderIcons) do table.insert(icons, v); end
-	for i,v in ipairs(g_buildOps) do table.insert(icons, MapTacksIcon(v)); end
-	for i,v in ipairs(governorIcons) do table.insert(icons, v); end
-	for i,v in ipairs(minorCivIcons) do table.insert(icons, v); end
-	for i,v in ipairs(engineerIcons) do table.insert(icons, v); end
-	for i,v in ipairs(g_miscIcons) do table.insert(icons, MapTacksIcon(v)); end
+function MapTacks.PlayerActions(traits :table)
+	local actions = {};
+	-- Note that all of these ops/cmd lookups degrade gracefully to nil,
+	-- and table.insert(actions, nil) is a safe no-op.
+	table.insert(actions, ops.UNITOPERATION_REPAIR);
+	if traits.UNITOPERATION_HARVEST_RESOURCE then
+		table.insert(actions, ops.UNITOPERATION_HARVEST_RESOURCE);
+	end
+	if traits.UNITOPERATION_MAKE_TRADE_ROUTE then
+		table.insert(actions, ops.UNITOPERATION_MAKE_TRADE_ROUTE);
+	end
+	if traits.ICON_SPY then
+		table.insert(actions, ICON_SPY);
+	end
+	if traits.UNITOPERATION_EXCAVATE then
+		table.insert(actions, ops.UNITOPERATION_EXCAVATE);
+	end
+	if traits.UNITOPERATION_TOURISM_BOMB then
+		table.insert(actions, ops.UNITOPERATION_TOURISM_BOMB);
+	end
+	if traits.UNITCOMMAND_PARADROP then
+		table.insert(actions, cmd.UNITCOMMAND_PARADROP);
+	end
+	table.insert(actions, cmd.UNITCOMMAND_FORM_ARMY or cmd.UNITCOMMAND_FORM_CORPS);
+	return actions;
+end
 
-	-- Great people
+function MapTacks.PlayerGreatPeople(traits :table)
+	local people = {};
 	for item in GameInfo.GreatPersonClasses() do
-		table.insert(icons, MapTacksIcon(item));
+		table.insert(people, item);
 	end
+	return people;
+end
 
-	-- Wonders
-	if g_enableWonders then
-		for item in GameInfo.Buildings() do
-			if item.IsWonder then
-				table.insert(icons, MapTacksIcon(item));
-			end
+function MapTacks.PlayerWonders(traits :table)
+	local wonders = {};
+	for item in GameInfo.Buildings() do
+		if item.IsWonder then
+			table.insert(wonders, item);
 		end
 	end
+	-- also include the generic icon, if there are any wonders
+	if #wonders ~= 0 then
+		table.insert(wonders, GameInfo.Districts.DISTRICT_WONDER);
+	end
+	table.sort(wonders, MapTacks.TimelineSort);
+	return wonders;
+end
 
-	return icons;
+-- ===========================================================================
+-- Build the grid of map pin icon options
+local g_playerIconsCache = {};
+function MapTacks.IconOptions(playerID :number)
+	-- Return cached values if we have seen this player before.
+	local cache = g_playerIconsCache[playerID];
+	if cache then return cache; end
+	print(string.format("initializing MapTacks.IconOptions(%d)", playerID));
+
+	-- Gather all of the icon sets from the database.
+	local stock = MapTacks.StockIcons();
+	local traits = MapTacks.PlayerTraits(playerID);
+	local districts = MapTacks.PlayerDistricts(traits);
+	local builder, unique, buildmisc = MapTacks.PlayerImprovements(traits);
+	local actions = MapTacks.PlayerActions(traits);
+	local people = MapTacks.PlayerGreatPeople(traits);
+	local wonders = MapTacks.PlayerWonders(traits);
+
+	-- Grid design width guides.
+	local loose = 9;
+	local tight = 7;
+	local widow = 3;
+
+	-- Lay out the improvement & build icons.
+	local columns = math.max(loose, #districts);  -- preliminary
+	local small = math.min(#builder, #buildmisc) + #unique;
+	local large = math.max(#builder, #buildmisc);
+	-- Merge small sections.
+	-- The unique improvements go into the smallest remaining section.
+	if small <= widow or small + large <= columns then
+		for i,v in ipairs(unique) do table.insert(builder, i, v); end
+		for i,v in ipairs(buildmisc) do table.insert(builder, v); end
+		buildmisc = {};
+	elseif #builder <= #buildmisc then
+		for i,v in ipairs(unique) do table.insert(builder, i, v); end
+	else
+		for i,v in ipairs(unique) do table.insert(buildmisc, i, v); end
+	end
+
+	-- Merge small district & wonder sections.
+	local columns = math.max(loose, #builder, #buildmisc);  -- preliminary
+	if #wonders <= widow or #districts + #wonders <= columns then
+		for i,v in ipairs(wonders) do table.insert(districts, v); end
+		wonders = {};
+	elseif #districts <= widow then
+		for i,v in ipairs(districts) do table.insert(wonders, i, v); end
+		districts = {};
+	end
+
+	-- Determine the design width.
+	local columns = math.max(tight, #districts, #builder, #buildmisc); -- final
+	print(tostring(columns) .. " grid columns");
+
+	-- Assign a few basic icons to the stock icons or actions section.
+	local stockSpace = columns - #stock;
+	-- Where will pillage fit?
+	if stockSpace < 1 or stockSpace == 2 then
+		table.insert(actions, 1, ops.UNITOPERATION_PILLAGE);
+	else
+		table.insert(stock, 1, ops.UNITOPERATION_PILLAGE);
+		stockSpace = stockSpace - 1;
+	end
+	-- Where will barbarians & goody huts fit?
+	-- if stockSpace < 0 then stockSpace = stockSpace + columns; end
+	if stockSpace < 2 then
+		table.insert(actions, 1, ICON_GOODY_HUT);
+		table.insert(actions, 2, ICON_BARBARIAN_CAMP);
+	else
+		table.insert(stock, 1, ICON_GOODY_HUT);
+		table.insert(stock, 2, ICON_BARBARIAN_CAMP);
+	end
+
+	-- Merge small action & great people sections.
+	if #actions <= widow or #people <= widow or #actions + #people <= columns then
+		for i,v in ipairs(people) do table.insert(actions, v); end
+		people = {};
+	end
+
+	local sections = {};
+	table.insert(sections, stock);
+	table.insert(sections, districts);
+	table.insert(sections, builder);
+	table.insert(sections, buildmisc);
+	table.insert(sections, actions);
+	table.insert(sections, people);
+	table.insert(sections, wonders);
+
+	-- convert everything to the right format
+	local grid = {};
+	for j,section in ipairs(sections) do
+		if #section ~= 0 then
+			local row = {};
+			for i,item in ipairs(section) do
+				table.insert(row, MapTacks.Icon(item));
+			end
+			table.insert(grid, row);
+		end
+	end
+	-- cache and return the results
+	g_playerIconsCache[playerID] = grid;
+	return grid;
 end
 
 -- ===========================================================================
 -- Given a GameInfo object, determine its icon and tooltip
-function MapTacksIcon(item)
+function MapTacks.Icon(item)
 	local name :string = nil;
 	local tooltip :string = nil;
-	if item.GreatPersonClassType then  -- note, districts also have this field
+	if item == nil then
+		return nil
+	elseif item.name then
+		-- already constructed
+		return item;
+	elseif item.GreatPersonClassType then  -- this must come before districts
 		name = item.ActionIcon;
 		tooltip = item.Name;
-	elseif item.BuildingType then
-		name = "ICON_"..item.BuildingType;
-		tooltip = item.BuildingType;
-	elseif item.DistrictType then
+	elseif item.DistrictType then  -- because great people have district types
 		name = "ICON_"..item.DistrictType;
 		if item.CityCenter or item.InternalOnly then
 			tooltip = item.Name
 		else
 			tooltip = item.DistrictType;
 		end
+	elseif item.BuildingType then
+		name = "ICON_"..item.BuildingType;
+		tooltip = item.BuildingType;
 	elseif item.ImprovementType then
 		name = item.Icon;
 		tooltip = item.ImprovementType;
@@ -234,39 +486,63 @@ function MapTacksIcon(item)
 end
 
 -- ===========================================================================
--- Given an icon name, determine its color and size profile
-MAPTACKS_STOCK = 0;  -- stock icons
-MAPTACKS_WHITE = 1;  -- white icons (units, spy ops)
-MAPTACKS_GRAY = 2;   -- gray shaded icons (improvements, commands)
-MAPTACKS_COLOR = 3;  -- full color icons (districts, wonders)
-function MapTacksType(pin : table)
-	if not pin then return nil; end
-	local iconName = pin:GetIconName();
-	if iconName:sub(1,5) ~= "ICON_" then return nil; end
-	local iconType = iconName:sub(6, 10);
-	if iconType == "MAP_P" then
-		return MAPTACKS_STOCK;
-	elseif iconType == "UNIT_" then
-		return MAPTACKS_WHITE;
-	elseif iconType == "DISTR" then
-		return MAPTACKS_COLOR;
-	elseif iconType == "BUILD" then  -- wonders
-		return MAPTACKS_COLOR;
-	else
-		return MAPTACKS_GRAY;
+local function InitializeTypes()
+	-- initialize global type table
+	MapTacks.iconTypes = {};
+	stock = MapTacks.StockIcons();
+	for i, item in ipairs(stock) do
+		MapTacks.iconTypes[item.name] = MapTacks.STOCK;
+	end
+	for item in GameInfo.Units() do
+		MapTacks.iconTypes["ICON_"..item.UnitType] = MapTacks.WHITE;
+	end
+	MapTacks.iconTypes[ICON_BARBARIAN_CAMP.name] = MapTacks.GRAY;
+	MapTacks.iconTypes[ICON_GOODY_HUT.name] = MapTacks.GRAY;
+	MapTacks.iconTypes[ICON_SPY.name] = MapTacks.GRAY;
+	for item in GameInfo.Improvements() do
+		MapTacks.iconTypes[item.Icon] = MapTacks.GRAY;
+	end
+	for item in GameInfo.UnitCommands() do
+		MapTacks.iconTypes[item.Icon] = MapTacks.GRAY;
+	end
+	for item in GameInfo.UnitOperations() do
+		MapTacks.iconTypes[item.Icon] = MapTacks.GRAY;
+	end
+	for item in GameInfo.GreatPersonClasses() do
+		MapTacks.iconTypes[item.ActionIcon] = MapTacks.GRAY;
+	end
+	for item in GameInfo.Buildings() do
+		MapTacks.iconTypes["ICON_"..item.BuildingType] = MapTacks.COLOR;
+	end
+	for item in GameInfo.Districts() do
+		MapTacks.iconTypes["ICON_"..item.DistrictType] = MapTacks.HEX;
 	end
 end
 
 -- ===========================================================================
--- Get player colors (with debug override)
-function MapTacksColors(playerID : number)
-	local primaryColor, secondaryColor = UI.GetPlayerColors(playerID);
-	if g_debugLeader then
-		local colors = GameInfo.PlayerColors[g_debugLeader.Hash];
-		primaryColor = UI.GetColorValue(colors.PrimaryColor);
-		secondaryColor = UI.GetColorValue(colors.SecondaryColor);
+-- Given an icon name, determine its color and size profile
+function MapTacks.IconType(pin :table)
+	if not pin then return nil; end
+	local iconName = pin:GetIconName();
+	-- look up icon types recorded during initialization
+	if MapTacks.iconTypes == nil then InitializeTypes(); end
+	local iconType = MapTacks.iconTypes[iconName];
+	if iconType then return iconType; end
+	-- print(iconName, iconType);
+	-- fallback code in case some random/modded stuff falls through the cracks
+	if iconName:sub(1,5) ~= "ICON_" then return nil; end
+	local iconType = iconName:sub(6, 10);
+	if iconType == "MAP_P" then
+		return MapTacks.STOCK;
+	elseif iconType == "UNIT_" then
+		return MapTacks.WHITE;
+	elseif iconType == "BUILD" then  -- wonders
+		return MapTacks.COLOR;
+	elseif iconType == "DISTR" then
+		return MapTacks.HEX;
+	else
+		return MapTacks.GRAY;
 	end
-	return primaryColor, secondaryColor;
 end
 
 -- ===========================================================================
@@ -280,7 +556,7 @@ end
 -- The darkest colors need shadow=56, light=112, max=128 for legibility.
 -- Other colors look good around 1.5-1.8x brightness, matching midtones.
 local g_tintCache = {};
-function MapTacksIconTint( abgr : number, debug : number )
+function MapTacks.IconTint(abgr :number)
 	if g_tintCache[abgr] ~= nil then return g_tintCache[abgr]; end
 	local r = abgr % 256;
 	local g = math.floor(abgr / 256) % 256;
@@ -306,7 +582,7 @@ end
 
 -- ===========================================================================
 -- Simpler version of DarkenLightenColor
-function MapTacksTint( abgr : number, tint : number )
+function MapTacks.Tint( abgr : number, tint : number )
 	local r = abgr % 256;
 	local g = math.floor(abgr / 256) % 256;
 	local b = math.floor(abgr / 65536) % 256;
@@ -317,67 +593,29 @@ function MapTacksTint( abgr : number, tint : number )
 end
 
 -- ===========================================================================
--- XXX: Create a test pattern of icons on the map
-function MapTacksTestPattern()
-	print("MapTacksTestPattern: start");
-	local iW, iH = Map.GetGridSize();
-	items = MapTacksIconOptions();
-	for i, item in ipairs(items) do
-		local x = ((i-1) % 15 - 7) % iW;
-		local y = 4 - math.floor((i-1) / 15);
-		MapTacksTestPin(x, y, item);
+-- Dump reference info
+function MapTacks.ReferenceInfo()
+	-- Unit Commands/Operations
+	print("COMMANDS --------------------------------------------------------");
+	for item in GameInfo.UnitCommands() do
+		if item.VisibleInUI then
+			print(item.CategoryInUI, item.CommandType);
+		end
 	end
-	Network.BroadcastPlayerInfo();
-	UI.PlaySound("Map_Pin_Add");
-	print("MapTacksTestPattern: end");
-end
-
-function MapTacksTestPin(x, y, item)
-	local name = item and item.name;
-	print(string.format("%d %d %s", x, y, tostring(name)));
-	local activePlayerID = Game.GetLocalPlayer();
-	local pPlayerCfg = PlayerConfigurations[activePlayerID];
-	local pMapPin = pPlayerCfg:GetMapPin(x, y);
-	pMapPin:SetName("");
-	pMapPin:SetIconName(name);
-	pMapPin:SetVisibility(ChatTargetTypes.CHATTARGET_ALL);
-	pPlayerCfg:GetMapPins();
+	print("OPERATIONS ------------------------------------------------------");
+	for item in GameInfo.UnitOperations() do
+		if item.VisibleInUI then
+			print(item.CategoryInUI, item.OperationType);
+		end
+	end
 end
 
 -- ===========================================================================
 -- Reference info
 
--- ===========================================================================
--- Civilization color values
---         maxrgb luma
--- RUSSIA      20   20
--- GERMANY     63   61
--- NUBIA      108   74
--- ARABIA     118   99
--- PERSIA     164   69
--- JAPAN      166   64
--- AZTEC      181   98
--- SCYTHIA    184   67
--- KONGO      207   74
--- INDIA      239  216
--- SPARTA     239  232
--- SPAIN      241  214
--- BRAZIL     245  221
--- SUMERIA    246  171
--- NORWAY     254  104
--- ROME       255  212
--- MACEDON    255  238
--- EGYPT      255  244
--- FRANCE     255  248
--- POLAND     255  251
--- AMERICA    255  255
--- AUSTRALIA  255  255
--- CHINA      255  255
--- ENGLAND    255  255
--- GREECE     255  255
-
--- ===========================================================================
--- Unit commands
+-- COMMANDS -------------------------------------------------------------------
+-- ATTACK:
+--   UNITCOMMAND_PRIORITY_TARGET  -- Rise & Fall
 -- INPLACE:
 --   UNITCOMMAND_WAKE
 --   UNITCOMMAND_CANCEL
@@ -385,12 +623,13 @@ end
 --   UNITCOMMAND_GIFT
 -- MOVE:
 --   UNITCOMMAND_AIRLIFT
+--   UNITCOMMAND_PARADROP  -- Rise & Fall
+--   UNITCOMMAND_MOVE_JUMP  -- Gathering Storm
 -- SECONDARY:
 --   UNITCOMMAND_DELETE
 -- SPECIFIC:
 --   UNITCOMMAND_PROMOTE
 --   UNITCOMMAND_UPGRADE
---   UNITCOMMAND_AUTOMATE  -- not VisibleInUI
 --   UNITCOMMAND_ENTER_FORMATION
 --   UNITCOMMAND_EXIT_FORMATION
 --   UNITCOMMAND_ACTIVATE_GREAT_PERSON
@@ -398,12 +637,13 @@ end
 --   UNITCOMMAND_FORM_CORPS
 --   UNITCOMMAND_FORM_ARMY
 --   UNITCOMMAND_PLUNDER_TRADE_ROUTE
+--   UNITCOMMAND_CONDEMN_HERETIC
 --   UNITCOMMAND_NAME_UNIT
 --   UNITCOMMAND_WONDER_PRODUCTION
 --   UNITCOMMAND_HARVEST_WONDER
-
--- ===========================================================================
--- Unit operations
+--   UNITCOMMAND_PROJECT_PRODUCTION  -- Rise & Fall
+--
+-- OPERATIONS -----------------------------------------------------------------
 -- ATTACK:
 --   UNITOPERATION_AIR_ATTACK
 --   UNITOPERATION_WMD_STRIKE
@@ -418,6 +658,7 @@ end
 --   UNITOPERATION_PLANT_FOREST
 --   UNITOPERATION_REMOVE_FEATURE
 --   UNITOPERATION_REMOVE_IMPROVEMENT
+--   UNITOPERATION_BUILD_IMPROVEMENT_ADJACENT  -- Gathering Storm
 -- INPLACE:
 --   UNITOPERATION_FORTIFY
 --   UNITOPERATION_HEAL
@@ -427,12 +668,8 @@ end
 --   UNITOPERATION_ALERT
 -- MOVE:
 --   UNITOPERATION_DEPLOY
---   UNITOPERATION_DISEMBARK  -- not VisibleInUI
---   UNITOPERATION_EMBARK  -- not VisibleInUI
 --   UNITOPERATION_MOVE_TO
---   UNITOPERATION_MOVE_TO_UNIT  -- not VisibleInUI
 --   UNITOPERATION_REBASE
---   UNITOPERATION_ROUTE_TO  -- not VisibleInUI
 --   UNITOPERATION_SPY_COUNTERSPY  -- special handling in unit panel
 --   UNITOPERATION_SPY_TRAVEL_NEW_CITY
 --   UNITOPERATION_TELEPORT_TO_CITY
@@ -445,6 +682,10 @@ end
 --   UNITOPERATION_SPY_SABOTAGE_PRODUCTION
 --   UNITOPERATION_SPY_SIPHON_FUNDS
 --   UNITOPERATION_SPY_STEAL_TECH_BOOST
+--   UNITOPERATION_SPY_FABRICATE_SCANDAL  -- Rise & Fall
+--   UNITOPERATION_SPY_FOMENT_UNREST  -- Rise & Fall
+--   UNITOPERATION_SPY_NEUTRALIZE_GOVERNOR  -- Rise & Fall
+--   UNITOPERATION_SPY_BREACH_DAM  -- Gathering Storm
 -- SECONDARY:
 --   UNITOPERATION_AUTOMATE_EXPLORE
 -- SPECIFIC:
@@ -462,8 +703,7 @@ end
 --   UNITOPERATION_REPAIR_ROUTE
 --   UNITOPERATION_RETRAIN
 --   UNITOPERATION_SPREAD_RELIGION
---   UNITOPERATION_SWAP_UNITS  -- not VisibleInUI
 --   UNITOPERATION_UPGRADE
---   UNITOPERATION_WAIT_FOR  -- not VisibleInUI
-
+--   UNITOPERATION_RELIGIOUS_HEAL
+--   UNITOPERATION_TOURISM_BOMB  -- Gathering Storm
 -- vim: sw=4 ts=4
