@@ -169,9 +169,7 @@ function MapTacks.PlayerTraits(playerID :number)
 	local traits = MapTacks.GameTraits();
 	-- Then, add the player-specific traits.
 	local playerConfig = PlayerConfigurations[playerID];
-	if playerConfig == nil then
-		return traits;
-	end
+	if playerConfig == nil then return traits; end  -- e.g. in benchmark mode
 	local leader = GameInfo.Leaders[playerConfig:GetLeaderTypeID()];
 	for i, item in ipairs(leader.TraitCollection) do
 		traits[item.TraitType] = true;
