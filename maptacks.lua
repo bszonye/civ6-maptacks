@@ -169,6 +169,9 @@ function MapTacks.PlayerTraits(playerID :number)
 	local traits = MapTacks.GameTraits();
 	-- Then, add the player-specific traits.
 	local playerConfig = PlayerConfigurations[playerID];
+	if playerConfig == nil then
+		return traits;
+	end
 	local leader = GameInfo.Leaders[playerConfig:GetLeaderTypeID()];
 	for i, item in ipairs(leader.TraitCollection) do
 		traits[item.TraitType] = true;
@@ -177,7 +180,6 @@ function MapTacks.PlayerTraits(playerID :number)
 	for i, item in ipairs(civilization.TraitCollection) do
 		traits[item.TraitType] = true;
 	end
-	local buildops = {};
 	return traits;
 end
 
