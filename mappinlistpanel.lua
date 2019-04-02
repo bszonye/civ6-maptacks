@@ -1,7 +1,8 @@
-----------------------------------------------------------------  
+----------------------------------------------------------------
 -- Map Pin List Panel
-----------------------------------------------------------------  
+----------------------------------------------------------------
 
+include( "MapTacks" );
 
 local m_playerMapPins	:table = {};
 local m_MapPinListButtonToPinEntry :table = {}; -- map pin entries keyed to their MapPinListButton object string names.  This is currently just used for sorting, please becareful if you use it for anything else as it is cleared after use.
@@ -9,7 +10,7 @@ local m_MapPinListButtonToPinEntry :table = {}; -- map pin entries keyed to thei
 local PlayerMapPinListTTStr :string = Locale.Lookup( "LOC_MAP_PIN_LIST_REMOTE_PIN_TOOLTIP" );
 local RemoteMapPinListTTStr :string = Locale.Lookup( "LOC_MAP_PIN_LIST_REMOTE_PIN_TOOLTIP" );
 
-------------------------------------------------- 
+-------------------------------------------------
 -- Map Pin List Scripting
 -------------------------------------------------
 function GetMapPinConfig(iPlayerID :number, mapPinID :number)
@@ -29,7 +30,7 @@ function SetMapPinIcon(imageControl :table, mapPinIconName :string)
 	if(imageControl ~= nil and mapPinIconName ~= nil) then
 		local iconName = mapPinIconName;
 		if(not imageControl:SetIcon(iconName)) then
-			imageControl:SetIcon("ICON_MAP_PIN_SQUARE");
+			imageControl:SetIcon(MapTacks.UNKNOWN);
 		end
 	end
 end
@@ -41,7 +42,11 @@ function SortMapPinEntryStack(a, b)
 	local controlStringB = tostring(b);
 	local pinEntryA = m_MapPinListButtonToPinEntry[controlStringA];
 	local pinEntryB = m_MapPinListButtonToPinEntry[controlStringB];
-	if (pinEntryA ~= nil and pinEntryB ~= nil) then
+	if (pinEntryA and pinEntryB) then
+		if pinEntryA.unnamedID ~= pinEntryB.unnamedID then
+			-- sort unnamed pins at the end, in ID order
+			return (pinEntryA.unnamedID or -1) < (pinEntryB.unnamedID or -1);
+		end
 		local pinNameA :string = Locale.ToLower(pinEntryA.MapPinName:GetText());
 		local pinNameB :string = Locale.ToLower(pinEntryB.MapPinName:GetText());
 
@@ -61,7 +66,9 @@ function UpdateMapPinListEntry(iPlayerID :number, mapPinID :number)
 		-- Determine map pin display name.
 		local pinName :string = mapPinCfg:GetName();
 		if(pinName == nil) then
-			pinName = Locale.Lookup( "LOC_MAP_PIN_DEFAULT_NAME", mapPinCfg:GetID() );
+			local id = mapPinCfg:GetID();
+			pinName = Locale.Lookup( "LOC_MAP_PIN_DEFAULT_NAME", id+1 );
+			mapPinEntry.unnamedID = id;  -- for sorting
 		end
 		mapPinEntry.MapPinName:SetText(pinName);
 
@@ -105,7 +112,7 @@ function GetMapPinListEntry(iPlayerID :number, mapPinID :number)
 		else
 			mapPinEntry.EditMapPin:SetHide(true);
 		end
-		
+
 		mapPinEntry.MapPinListButton:RegisterCallback(Mouse.eLClick, OnMapPinEntryLeftClick);
 
 		if(iPlayerID == Game.GetLocalPlayer()) then
@@ -115,12 +122,7 @@ function GetMapPinListEntry(iPlayerID :number, mapPinID :number)
 		end
 
 		UpdateMapPinListEntry(iPlayerID, mapPinID);
-
 		Controls.MapPinEntryStack:CalculateSize();
-		Controls.MapPinEntryStack:ReprocessAnchoring();
-
-		--Controls.MapPinLogPanel:CalculateInternalSize();
-		--Controls.MapPinLogPanel:ReprocessAnchoring();
 	end
 	return mapPinEntry;
 end
@@ -148,15 +150,20 @@ function BuildMapPinList()
 
 	-- Don't need this anymore, get rid of the references so they can be properly released!
 	m_MapPinListButtonToPinEntry = {};
-	
+
 	-- Recalc after sorting so the anchoring can account for hidden elements.
 	Controls.MapPinEntryStack:CalculateSize();
-	Controls.MapPinEntryStack:ReprocessAnchoring();
-	Controls.MapPinPanel:ReprocessAnchoring();
+
+	-- Dynamically resize scroll panel
+	local maxY = 15 * 25 - 1;  -- show up to 15 pins without a scrollbar
+	local stackY = Controls.MapPinEntryStack:GetSizeY();
+	local panelY = math.min(maxY, stackY);
+	Controls.MapPinScrollPanel:SetSizeY(panelY);
+	Controls.MapPinStack:CalculateSize();
 end
 
 
-------------------------------------------------- 
+-------------------------------------------------
 -- Button Event Handlers
 -------------------------------------------------
 function OnMapPinEntryLeftClick(iPlayerID :number, mapPinID :number)
@@ -195,7 +202,7 @@ function OnAddPinButton()
 end
 
 
-------------------------------------------------- 
+-------------------------------------------------
 -- External Event Handlers
 -------------------------------------------------
 function OnPlayerInfoChanged(playerID)
@@ -222,11 +229,10 @@ end
 -- ShowHideHandler
 -------------------------------------------------
 function ShowHideHandler( bIsHide, bIsInit )
-	if(not bIsHide) then 
-	end	
+	if(not bIsHide) then
+	end
 end
 ContextPtr:SetShowHideHandler( ShowHideHandler );
-
 
 -- ===========================================================================
 function Initialize()
@@ -235,7 +241,6 @@ function Initialize()
 	Events.PlayerInfoChanged.Add(OnPlayerInfoChanged);
 	Events.InterfaceModeChanged.Add( OnInterfaceModeChanged );
 	Events.LocalPlayerChanged.Add( OnLocalPlayerChanged );
-
 
 	BuildMapPinList();
 end
