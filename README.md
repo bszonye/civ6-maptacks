@@ -4,8 +4,8 @@ The Map Tacks mod is now
 
 This optional add-on makes a few small changes to the official interface:
 
-* improves the editor layout for Gathering Storm districts
-* fixes some in-game text that still refers to map _pins_ instead of _tacks._
+* improve the editor layout for Gathering Storm districts
+* fix some in-game text that still refers to map pins instead of tacks
 
 ## Compatibility
 The Map Tacks mod does not affect saved games, so you can add it to a game in
