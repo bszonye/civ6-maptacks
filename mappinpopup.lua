@@ -130,7 +130,7 @@ function PopulateIconOptions()
 	-- Fit the icons within 1024x768
 	-- If a mod adds a ton of new improvements/districts we might need to add a scrollbar
 	local MIN_COLS = 8;
-	local MAX_COLS = 16;
+	local MAX_COLS = 18;
 	local MAX_ROWS = 12;
 
 	-- find the dimensions that have the fewest blank spaces that fits the minimum resolution
@@ -162,6 +162,10 @@ function PopulateIconOptions()
 		-- dynamically determine section spacing
 		local ht = math.floor((#section + columns - 1) / columns);
 		local wd = columns;
+		-- rebalance sections with very short final rows
+		if (#section % wd) < MIN_COLS then
+			wd = math.floor((#section + ht - 1) / ht);
+		end
 		sectionTable.IconOptionRowStack:SetWrapWidth(44 * wd);
 		if j > 1 and (ht > 1 or columns < #g_iconPulldownOptions[j - 1]) then
 			-- leave a break around multi-row sections
