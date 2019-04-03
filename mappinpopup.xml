@@ -2,7 +2,6 @@
 <Context xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="..\..\..\..\..\CivTech\Libs\ForgeUI\ForgeUI_Assets\Controls.xsd"
   ColorSet="Beige_Black" FontStyle="Shadow">
 
-
   <Box Color="0,0,0,150" Size="parent,parent" ConsumeMouse="1">
     <AlphaAnim        ID="PopupAlphaIn" AlphaBegin="0" AlphaEnd="1" Speed="3" Function="Root" Cycle="Once" Size="parent,parent">
       <SlideAnim      ID="PopupSlideIn" Start="0,-20" End="0,0" Speed="3" Function="Root" Cycle="Once" Size="parent,parent">
@@ -45,7 +44,7 @@
   </Box>
 
   <Instance Name="IconOptionRowInstance">
-    <Stack ID="IconOptionRowStack" Anchor="C,T" StackGrowth="Down" Padding="4" WrapWidth="40" WrapGrowth="Right"/>
+    <Stack ID="IconOptionRowStack" Anchor="C,T" StackGrowth="Right" Padding="4" WrapWidth="40" WrapGrowth="Down"/>
   </Instance>
 
   <Instance Name="IconOptionInstance">

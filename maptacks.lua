@@ -1,7 +1,5 @@
 -- ===========================================================================
--- MapTacks
--- utility functions
-
+-- MapTacks utility functions
 -- ===========================================================================
 -- Global data
 
@@ -283,7 +281,11 @@ function MapTacks.PlayerImprovements(traits :table)
 	if traits.UNITOPERATION_PLANT_FOREST then
 		table.insert(buildops, ops.UNITOPERATION_PLANT_FOREST);
 	end
+	if traits.UNITOPERATION_HARVEST_RESOURCE then
+		table.insert(buildops, ops.UNITOPERATION_HARVEST_RESOURCE);
+	end
 	table.insert(buildops, ops.UNITOPERATION_REMOVE_FEATURE);
+	table.insert(buildops, ops.UNITOPERATION_REPAIR);
 	-- collect all of the miscellaneous builds & improvements
 	local misc = {};
 	for i,v in ipairs(governor) do table.insert(misc, v); end
@@ -297,10 +299,11 @@ function MapTacks.PlayerActions(traits :table)
 	local actions = {};
 	-- Note that all of these ops/cmd lookups degrade gracefully to nil,
 	-- and table.insert(actions, nil) is a safe no-op.
-	table.insert(actions, ops.UNITOPERATION_REPAIR);
-	if traits.UNITOPERATION_HARVEST_RESOURCE then
-		table.insert(actions, ops.UNITOPERATION_HARVEST_RESOURCE);
-	end
+	table.insert(actions, ops.UNITOPERATION_PILLAGE);
+	-- table.insert(actions, ops.UNITOPERATION_REPAIR);
+	-- if traits.UNITOPERATION_HARVEST_RESOURCE then
+	-- 	table.insert(actions, ops.UNITOPERATION_HARVEST_RESOURCE);
+	-- end
 	if traits.UNITOPERATION_MAKE_TRADE_ROUTE then
 		table.insert(actions, ops.UNITOPERATION_MAKE_TRADE_ROUTE);
 	end
@@ -316,7 +319,8 @@ function MapTacks.PlayerActions(traits :table)
 	if traits.UNITCOMMAND_PARADROP then
 		table.insert(actions, cmd.UNITCOMMAND_PARADROP);
 	end
-	table.insert(actions, cmd.UNITCOMMAND_FORM_ARMY or cmd.UNITCOMMAND_FORM_CORPS);
+	table.insert(actions, cmd.UNITCOMMAND_FORM_CORPS);
+	table.insert(actions, cmd.UNITCOMMAND_FORM_ARMY);
 	return actions;
 end
 
@@ -361,73 +365,33 @@ function MapTacks.IconOptions(playerID :number)
 	local people = MapTacks.PlayerGreatPeople(traits);
 	local wonders = MapTacks.PlayerWonders(traits);
 
-	-- Grid design width guides.
-	local loose = 9;
-	local tight = 7;
-	local widow = 3;
+	-- We decided to simplify the groupings of icons so they are more consistent
+	-- across different rulesets, MapPinPopup will find the best layout that fits 
+	-- in the minimum resolution and will center partial rows -kjones
 
-	-- Lay out the improvement & build icons.
-	local columns = math.max(loose, #districts);  -- preliminary
-	local small = math.min(#builder, #buildmisc) + #unique;
-	local large = math.max(#builder, #buildmisc);
-	-- Merge small sections.
-	-- The unique improvements go into the smallest remaining section.
-	if small <= widow or small + large <= columns then
-		for i,v in ipairs(unique) do table.insert(builder, i, v); end
-		for i,v in ipairs(buildmisc) do table.insert(builder, v); end
-		buildmisc = {};
-	elseif #builder <= #buildmisc then
-		for i,v in ipairs(unique) do table.insert(builder, i, v); end
-	else
-		for i,v in ipairs(unique) do table.insert(buildmisc, i, v); end
-	end
+	-- Add these to the first row
+	table.insert(stock, 1, ICON_GOODY_HUT);
+	table.insert(stock, 2, ICON_BARBARIAN_CAMP);
+
+	-- Group together unit actions/improvements/greatpeople
+	for i,v in ipairs(unique) do table.insert(builder, i, v); end
+	for i,v in ipairs(buildmisc) do table.insert(builder, v); end
+	for i,v in ipairs(actions) do table.insert(builder, v); end
+	for i,v in ipairs(people) do table.insert(builder, v); end
 
 	-- Merge small district & wonder sections.
-	local columns = math.max(loose, #builder, #buildmisc);  -- preliminary
-	if #wonders <= widow or #districts + #wonders <= columns then
+	if #wonders <= 3 or #districts + #wonders <= 16 then
 		for i,v in ipairs(wonders) do table.insert(districts, v); end
 		wonders = {};
-	elseif #districts <= widow then
+	elseif #districts <= 3 then
 		for i,v in ipairs(districts) do table.insert(wonders, i, v); end
 		districts = {};
-	end
-
-	-- Determine the design width.
-	local columns = math.max(tight, #districts, #builder, #buildmisc); -- final
-	print(tostring(columns) .. " grid columns");
-
-	-- Assign a few basic icons to the stock icons or actions section.
-	local stockSpace = columns - #stock;
-	-- Where will pillage fit?
-	if stockSpace < 1 or stockSpace == 2 then
-		table.insert(actions, 1, ops.UNITOPERATION_PILLAGE);
-	else
-		table.insert(stock, 1, ops.UNITOPERATION_PILLAGE);
-		stockSpace = stockSpace - 1;
-	end
-	-- Where will barbarians & goody huts fit?
-	-- if stockSpace < 0 then stockSpace = stockSpace + columns; end
-	if stockSpace < 2 then
-		table.insert(actions, 1, ICON_GOODY_HUT);
-		table.insert(actions, 2, ICON_BARBARIAN_CAMP);
-	else
-		table.insert(stock, 1, ICON_GOODY_HUT);
-		table.insert(stock, 2, ICON_BARBARIAN_CAMP);
-	end
-
-	-- Merge small action & great people sections.
-	if #actions <= widow or #people <= widow or #actions + #people <= columns then
-		for i,v in ipairs(people) do table.insert(actions, v); end
-		people = {};
 	end
 
 	local sections = {};
 	table.insert(sections, stock);
 	table.insert(sections, districts);
 	table.insert(sections, builder);
-	table.insert(sections, buildmisc);
-	table.insert(sections, actions);
-	table.insert(sections, people);
 	table.insert(sections, wonders);
 
 	-- convert everything to the right format
@@ -549,47 +513,28 @@ end
 -- Calculate icon tint color
 -- Icons generally have light=224, shadow=112 (out of 255).
 -- So, to match icons to civ colors, ideally brighten the original color:
--- by 255/224 to match light areas, or by 255/112 to match shadows.
+-- by 255/224 to match light areas, or by 128/112 to match shadows.
 --
--- In practice:
--- Light colors look best as bright as possible without distortion.
--- The darkest colors need shadow=56, light=112, max=128 for legibility.
--- Other colors look good around 1.5-1.8x brightness, matching midtones.
-local g_tintCache = {};
+-- brightens colors without changing hue
+-- if luma == 0, aim for .25 luma
+-- if luma == 1, aim for 1.0 luma
+-- linearly blend between 0 and 1
 function MapTacks.IconTint(abgr :number)
-	if g_tintCache[abgr] ~= nil then return g_tintCache[abgr]; end
-	local r = abgr % 256;
-	local g = math.floor(abgr / 256) % 256;
-	local b = math.floor(abgr / 65536) % 256;
-	local max = math.max(r, g, b, 1);  -- avoid division by zero
-	local light = 255/max;  -- maximum brightness without distortion
-	local dark = 128/max;  -- minimum brightness
-	local x = 1.6;  -- match midtones
-	if light < x then x = light; elseif x < dark then x = dark; end
+	local r, g, b, a = UI.SRGBToLinear(abgr);
+	local luma = (0.2126 * r) + (0.7152 * g) + (0.0722 * b);
+	
+	local epsilon = 1.0 / 1024;
+	if luma < epsilon then
+		-- pure black will be tinted to gray
+		return UI.LinearToSRGB(0.25, 0.25, 0.25, a);
+	end
 
-	-- sRGB luma
-	-- local v = 0.2126 * r + 0.7152 * g + 0.0722 * b;
-	-- print(string.format("m%d r%d g%d b%d", max, r, g, b));
-	-- print(string.format("%0.3f %0.3f", x, 255/max));
-	r = math.min(255, math.floor(x * r + 0.5));
-	g = math.min(255, math.floor(x * g + 0.5));
-	b = math.min(255, math.floor(x * b + 0.5));
-	local tint = ((-256 + b) * 256 + g) * 256 + r;
-	g_tintCache[abgr] = tint;
-	-- print(string.format("saved %d = tint %d", abgr, tint));
-	return tint;
-end
-
--- ===========================================================================
--- Simpler version of DarkenLightenColor
-function MapTacks.Tint( abgr : number, tint : number )
-	local r = abgr % 256;
-	local g = math.floor(abgr / 256) % 256;
-	local b = math.floor(abgr / 65536) % 256;
-	r = math.min(math.max(0, r + tint), 255);
-	g = math.min(math.max(0, g + tint), 255);
-	b = math.min(math.max(0, b + tint), 255);
-	return ((-256 + b) * 256 + g) * 256 + r;
+	local scale = ((0.75 * luma) + 0.25) / luma;
+	r = math.min(1.0, r * scale);
+	g = math.min(1.0, g * scale);
+	b = math.min(1.0, b * scale);
+	
+	return UI.LinearToSRGB(r, g, b, a);
 end
 
 -- ===========================================================================

@@ -1,33 +1,11 @@
-# Map Tacks 2.0.1 [<img align="right" src="maptacks.png" height="256" width="256">](https://steamcommunity.com/sharedfiles/filedetails/?id=1122081356)
-Adds new map icons  
-Enhances list interface  
-Fixes bugs and styling  
+# Map Tacks 3.0.0 [<img align="right" src="maptacks.png" height="256" width="256">](https://steamcommunity.com/sharedfiles/filedetails/?id=1122081356)
+The Map Tacks mod is now
+[included in Civilization VI](https://civilization.com/news/entries/civilization-vi-gathering-storm-patch-update-april-2019/)!
 
-## New icons
-The map tack editor adds many new icons:
+This optional add-on makes a few small changes to the official interface:
 
-* districts
-* improvements
-* villages and barbarians
-* common unit actions
-* great people
-* wonders
-
-All new icons have tooltips, including game effects for districts,
-improvements, and wonders.
-
-## Scrollable map tack list
-The list dynamically resizes to show up to 15 map tacks, with a scrollbar to
-manage longer lists.  It groups all named locations at the top, followed by all
-unnamed locations in numerical order.
-
-## Bug fixes and restyling
-The mod fixes a few base-game bugs and styling problems.  It handles large
-numbers of map tacks without breaking the popup list or causing performance
-problems.  Unnamed markers now sort correctly when there are more than ten.
-Labels and controls have more consistent alignment and spacing.  The mod
-improves overlapping and stacked icons, so that closer tacks always look
-closer, and the current player always appears on top in multiplayer.
+* improve the editor layout for Gathering Storm districts
+* fix some in-game text that still refers to map pins instead of tacks
 
 ## Compatibility
 The Map Tacks mod does not affect saved games, so you can add it to a game in
