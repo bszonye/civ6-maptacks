@@ -8,11 +8,12 @@ include( "PlayerTargetLogic" );
 include( "ToolTipHelper" );
 include( "MapTacks" );
 
+
 ----------------------------------------------------------------
 -- Globals
 ----------------------------------------------------------------
-local COLOR_YELLOW				:number = 0xFF2DFFF8;
-local COLOR_WHITE				:number = 0xFFFFFFFF;
+local COLOR_YELLOW : number = UI.GetColorValue("COLOR_YELLOW");
+local COLOR_WHITE  : number = UI.GetColorValue("COLOR_WHITE");
 
 local NO_EDIT_PIN_ID :number = -1;
 local g_editPinID :number = NO_EDIT_PIN_ID;
@@ -126,24 +127,42 @@ function PopulateIconOptions()
 	g_iconOptionEntries = {};
 	Controls.IconOptionStack:DestroyAllChildren();
 
-	-- calculate column width
-	local columns = 7;
-	for j, section in ipairs(g_iconPulldownOptions) do
-		local width = #section;
-		if columns < width and width <= 21 and 1 < j then
-			columns = width;
+	-- Fit the icons within 1024x768
+	-- If a mod adds a ton of new improvements/districts we might need to add a scrollbar
+	local MIN_COLS = 8;
+	local MAX_COLS = 16;
+	local MAX_ROWS = 12;
+
+	-- find the dimensions that have the fewest blank spaces that fits the minimum resolution
+	local columns = MAX_COLS;
+	local nMinBlanks = MAX_COLS * MAX_ROWS;
+	for i=MIN_COLS,MAX_COLS do
+		local nBlanks = 0;
+		local nRows = 0;
+		for j, section in ipairs(g_iconPulldownOptions) do
+			nRows = nRows + math.ceil(#section / i);
+			local remainder = #section % i;
+			if remainder > 0 then
+				nBlanks = nBlanks + (i - remainder);
+			end
+		end
+		if nBlanks < nMinBlanks and nRows <= MAX_ROWS then
+			nMinBlanks = nBlanks;
+			columns = i;
 		end
 	end
-	local sectionTable = {};
+	print("Selected " .. columns .. " columns");
+
 	local controlTable = {};
 	local newIconEntry = {};
 	for j, section in ipairs(g_iconPulldownOptions) do
 		g_iconOptionEntries[j] = {};
+		local sectionTable = {};
 		ContextPtr:BuildInstanceForControl( "IconOptionRowInstance", sectionTable, Controls.IconOptionStack );
 		-- dynamically determine section spacing
 		local ht = math.floor((#section + columns - 1) / columns);
-		local wd = math.floor((#section + ht - 1) / ht);
-		sectionTable.IconOptionRowStack:SetWrapWidth(40 * ht);
+		local wd = columns;
+		sectionTable.IconOptionRowStack:SetWrapWidth(44 * wd);
 		if j > 1 and (ht > 1 or columns < #g_iconPulldownOptions[j - 1]) then
 			-- leave a break around multi-row sections
 			sectionTable.IconOptionRowStack:SetOffsetY(8);
@@ -165,29 +184,26 @@ function PopulateIconOptions()
 			g_iconOptionEntries[j][i] = newIconEntry;
 
 			UpdateIconOptionColor(i, j);
-		end
-		for i=#section+1,ht*wd do
-			-- fill out section blocks with disabled boxes
-			controlTable = {};
-			ContextPtr:BuildInstanceForControl( "IconOptionInstance", controlTable, sectionTable.IconOptionRowStack );
-			controlTable.IconOptionButton:SetDisabled(true);
-			controlTable.Icon:SetHide(true);
+			
+			if (#section % wd) ~= 0 then
+				-- this section has a partially filled row, create a new stack at
+				-- the end of the final full row, so it can be centered properly
+				if (i % wd) == 0 and (i / wd) == (ht - 1) then
+					sectionTable = {};
+					ContextPtr:BuildInstanceForControl( "IconOptionRowInstance", sectionTable, Controls.IconOptionStack );
+					sectionTable.IconOptionRowStack:SetWrapWidth(44 * wd);
+				end
+			end
 		end
 	end
 
 	-- set width dynamically according to widest section
 	Controls.Window:SetSizeX(44 * columns + 30);
 	Controls.OptionsStack:SetWrapWidth(44 * columns + 8);
-	-- Controls.PinFrame:SetSizeX(44 * (columns - 4) + 2);
 	Controls.IconOptionStack:CalculateSize();
-	Controls.IconOptionStack:ReprocessAnchoring();
 	Controls.OptionsStack:CalculateSize();
-	Controls.OptionsStack:ReprocessAnchoring();
 	Controls.WindowContentsStack:CalculateSize();
-	Controls.WindowContentsStack:ReprocessAnchoring();
 	Controls.WindowStack:CalculateSize();
-	Controls.WindowStack:ReprocessAnchoring();
-	Controls.WindowContainer:ReprocessAnchoring();
 end
 
 -- ===========================================================================

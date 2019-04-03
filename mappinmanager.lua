@@ -8,21 +8,22 @@ include( "SupportFunctions" );
 include( "Colors" );
 include( "MapTacks" );
 
+
 -- ===========================================================================
 --	CONSTANTS
 -- ===========================================================================
 
 local ALPHA_DIM					:number = 0.45;
-local COLOR_RED					:number = 0xFF0101F5;
-local COLOR_YELLOW				:number = 0xFF2DFFF8;
-local COLOR_GREEN				:number = 0xFF4CE710;
+local COLOR_RED					:number = UI.GetColorValueFromHexLiteral(0xFF0101F5);
+local COLOR_YELLOW				:number = UI.GetColorValueFromHexLiteral(0xFF2DFFF8);
+local COLOR_GREEN				:number = UI.GetColorValueFromHexLiteral(0xFF4CE710);
+local COLOR_WHITE				:number = UI.GetColorValueFromHexLiteral(0xFFFFFFFF);
 local FLAGSTATE_NORMAL			:number= 0;
 local FLAGSTATE_FORTIFIED		:number= 1;
 local FLAGSTATE_EMBARKED		:number= 2;
 local FLAGSTYLE_MILITARY		:number= 0;
 local FLAGSTYLE_CIVILIAN		:number= 1;
 local FLAGTYPE_UNIT				:number= 0;
-local ZOOM_MULT_DELTA			:number = .01;
 local TEXTURE_BASE				:string = "MapPinFlag";
 local TEXTURE_MASK_BASE			:string = "MapPinFlagMask";
 
@@ -37,9 +38,6 @@ local m_SelectedContainer			:table = ContextPtr:LookUpControl( "../SelectedMapPi
 
 local m_InstanceManager		:table = InstanceManager:new( "MapPinFlag",	"Anchor", Controls.MapPinFlags );
 
-local m_cameraFocusX				:number = -1;
-local m_cameraFocusY				:number = -1;
-local m_zoomMultiplier				:number = 1;
 local m_MapPinInstances				:table  = {};
 local m_MapPinStacks				:table  = {};
 
@@ -201,6 +199,7 @@ end
 
 ------------------------------------------------------------------
 function OnMapPinFlagRightClick( playerID : number, pinID : number )
+	-- TODO it might be nice to enable this if shift is down
 	--[[
 	-- If we are the owner of this pin, delete the pin.
 	if(playerID == Game.GetLocalPlayer()) then
@@ -232,10 +231,9 @@ end
 function MapPinFlag.SetColor( self : MapPinFlag )
 	local primaryColor, secondaryColor = UI.GetPlayerColors(self.m_Player:GetID());
 
-	local darkerFlagColor   :number = MapTacks.Tint(primaryColor, -85);
-	local brighterFlagColor :number = MapTacks.Tint(primaryColor, 90);
-	local brighterIconColor :number = MapTacks.Tint(secondaryColor, 20);
-	-- local darkerIconColor   :number = MapTacks.Tint(secondaryColor, -30);
+	local darkerFlagColor   :number = UI.DarkenLightenColor(primaryColor,  -85, 255);
+	local brighterFlagColor :number = UI.DarkenLightenColor(primaryColor,   90, 255);
+	local brighterIconColor :number = UI.DarkenLightenColor(secondaryColor, 20, 255);
 
 	local iconType = MapTacks.IconType(self:GetMapPin()) or MapTacks.STOCK;
 	-- set icon tint appropriate for the icon color
@@ -248,7 +246,7 @@ function MapPinFlag.SetColor( self : MapPinFlag )
 		self.m_Instance.UnitIcon:SetColor(tintedIconColor);
 	else
 		-- full color
-		self.m_Instance.UnitIcon:SetColor(-1);  -- pure white
+		self.m_Instance.UnitIcon:SetColor(COLOR_WHITE);
 	end
 	self.m_Instance.FlagBase:SetColor( primaryColor );
 	self.m_Instance.FlagBaseOutline:SetColor( primaryColor );
@@ -417,13 +415,14 @@ function MapPinFlag.SetPosition( self : MapPinFlag, worldX : number, worldY : nu
 		local pMapPin : table = self:GetMapPin();
 		if (pMapPin ~= nil) then
 			-- If there are multiple map pins sharing a hex, recenter them
-			local stack = GetPinStack(pMapPin);
-			local found = false;
-			local depth = 0;
-			for i, pin in ipairs(stack) do
+			local kStack : table = GetPinStack(pMapPin);
+			local found : boolean = false;
+			local depth : number = 0;
+			for i, pin in ipairs(kStack) do
 				if pin == pMapPin then
 					found = true;
-				elseif not found then
+					break;
+				else
 					depth = depth + 1;
 				end
 			end
@@ -466,23 +465,6 @@ end
 -- ===========================================================================
 --	Engine Event
 -- ===========================================================================
--------------------------------------------------
--- Zoom level calculation
--------------------------------------------------
-function OnCameraUpdate( vFocusX:number, vFocusY:number, fZoomLevel:number )
-	m_cameraFocusX	= vFocusX;
-	m_cameraFocusY	= vFocusY;
-
-	-- If no change in the zoom, no update necessary.
-	if( math.abs( (1-fZoomLevel) - m_zoomMultiplier ) < ZOOM_MULT_DELTA ) then
-		return;
-	end
-	m_zoomMultiplier= 1-fZoomLevel;
-
-	-- Map pins do not really use zoom, so skip the refresh.
-	-- Refresh();
-end
-
 ------------------------------------------------------------------
 function OnPlayerConnectChanged(iPlayerID)
 	-- When a human player connects/disconnects, their unit flag tooltips need to be updated.
@@ -702,7 +684,6 @@ function Initialize()
 	ContextPtr:SetShutdown( OnShutdown );
 
 	Events.BeginWonderReveal.Add( OnBeginWonderReveal );
-	Events.Camera_Updated.Add( OnCameraUpdate );
 	Events.CombatVisBegin.Add( OnCombatVisBegin );
 	Events.CombatVisEnd.Add( OnCombatVisEnd );
 	Events.EndWonderReveal.Add( OnEndWonderReveal );

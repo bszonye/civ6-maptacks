@@ -122,9 +122,7 @@ function GetMapPinListEntry(iPlayerID :number, mapPinID :number)
 		end
 
 		UpdateMapPinListEntry(iPlayerID, mapPinID);
-
 		Controls.MapPinEntryStack:CalculateSize();
-		Controls.MapPinEntryStack:ReprocessAnchoring();
 	end
 	return mapPinEntry;
 end
@@ -155,16 +153,13 @@ function BuildMapPinList()
 
 	-- Recalc after sorting so the anchoring can account for hidden elements.
 	Controls.MapPinEntryStack:CalculateSize();
-	Controls.MapPinEntryStack:ReprocessAnchoring();
+
 	-- Dynamically resize scroll panel
 	local maxY = 15 * 25 - 1;  -- show up to 15 pins without a scrollbar
 	local stackY = Controls.MapPinEntryStack:GetSizeY();
 	local panelY = math.min(maxY, stackY);
 	Controls.MapPinScrollPanel:SetSizeY(panelY);
-	Controls.MapPinScrollPanel:ReprocessAnchoring();
 	Controls.MapPinStack:CalculateSize();
-	Controls.MapPinStack:ReprocessAnchoring();
-	Controls.MapPinPanel:ReprocessAnchoring();
 end
 
 
@@ -238,7 +233,6 @@ function ShowHideHandler( bIsHide, bIsInit )
 	end
 end
 ContextPtr:SetShowHideHandler( ShowHideHandler );
-
 
 -- ===========================================================================
 function Initialize()
