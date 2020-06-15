@@ -30,8 +30,12 @@ local ops = GameInfo.UnitOperations;
 
 -- ===========================================================================
 -- synthetic icons (not in database)
-local ICON_BARBARIAN_CAMP = {
+local ICON_BARBARIANS_SIGHTED = {
 	name="ICON_NOTIFICATION_BARBARIANS_SIGHTED",
+	tooltip="LOC_NOTIFICATION_BARBARIANS_SIGHTED_MESSAGE",
+};
+local ICON_BARBARIAN_CAMP = {
+	name="ICON_NOTIFICATION_NEW_BARBARIAN_CAMP",
 	tooltip="LOC_IMPROVEMENT_BARBARIAN_CAMP_NAME",
 };
 local ICON_GOODY_HUT = {
@@ -370,8 +374,9 @@ function MapTacks.IconOptions(playerID :number)
 	-- in the minimum resolution and will center partial rows -kjones
 
 	-- Add these to the first row
-	table.insert(stock, 1, ICON_GOODY_HUT);
+	table.insert(stock, 1, ICON_BARBARIANS_SIGHTED);
 	table.insert(stock, 2, ICON_BARBARIAN_CAMP);
+	table.insert(stock, 3, ICON_GOODY_HUT);
 
 	-- Group together unit actions/improvements/greatpeople
 	for i,v in ipairs(unique) do table.insert(builder, i, v); end
@@ -460,6 +465,7 @@ local function InitializeTypes()
 	for item in GameInfo.Units() do
 		MapTacks.iconTypes["ICON_"..item.UnitType] = MapTacks.WHITE;
 	end
+	MapTacks.iconTypes[ICON_BARBARIANS_SIGHTED.name] = MapTacks.COLOR;
 	MapTacks.iconTypes[ICON_BARBARIAN_CAMP.name] = MapTacks.GRAY;
 	MapTacks.iconTypes[ICON_GOODY_HUT.name] = MapTacks.GRAY;
 	MapTacks.iconTypes[ICON_SPY.name] = MapTacks.GRAY;
