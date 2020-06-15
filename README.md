@@ -1,4 +1,4 @@
-# Map Tacks 3.0.0 [<img align="right" src="maptacks.png" height="256" width="256">](https://steamcommunity.com/sharedfiles/filedetails/?id=1122081356)
+# Map Tacks 3.1.0 [<img align="right" src="maptacks.png" height="256" width="256">](https://steamcommunity.com/sharedfiles/filedetails/?id=1122081356)
 The Map Tacks mod is now
 [included in Civilization VI](https://civilization.com/news/entries/civilization-vi-gathering-storm-patch-update-april-2019/)!
 
